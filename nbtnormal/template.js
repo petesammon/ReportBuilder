@@ -75,7 +75,7 @@ Tricuspid Valve:
 Peak regurgitant jet velocity = {{TRVmax}}, PPD = {{TRMaxPG}}
 IVC is {{IVCD}} with {{IVCC}} collapse on inspiration.
 {{PPHT}}
-PASP = {{PASP}} + RAP
+PASP = {{PASP}}
 
 Pulmonary Valve:
 {{PV}} {{PS}} {{PR}}
