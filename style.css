@@ -1,0 +1,268 @@
+:root {
+    --pico-font-size: 95%;
+    --bg-primary: #ffffff;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #d6d6d6;
+    --bg-h1: #ffffff;
+    --bg-h2: #f9f9f9;
+    --bg-h3: #ededed;
+    --bg-block: #ededed; 
+    --text-primary: #1c1c1c;
+    --text-secondary: #1f1f1f;
+    --text-contrast: #e7e7e7;
+    --accent-primary: #101010;
+    --accent-hover: #6a6a6a;
+    --border-color: #cccccc;
+}
+
+html, body {
+    height: 100%;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+}
+
+main {
+    height: calc(100% - 100px);
+    background-color: var(--bg-primary);
+}
+
+button {
+    margin: 10px 0;
+    float: right;
+    background-color: var(--accent-primary);
+    color: var(--bg-primary);
+    border: none;
+    transition: background-color 0.1s;
+}
+
+button:hover {
+    background-color: var(--accent-hover);
+}
+
+section {
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+}
+
+th {
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+td {
+    color: var(--text-secondary);
+}
+
+#results div {
+    clear: both;
+    height: calc(100% - 140px);
+    overflow: scroll;
+    background-color: var(--bg-secondary);
+}
+
+#options > div {
+    height: calc(100% - 140px);
+    overflow: scroll;
+    background-color: var(--bg-secondary);
+}
+
+#report,
+#output textarea{
+    height: calc(100% - 140px);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+#help {
+    cursor: pointer;
+    color: var(--accent-primary);
+}
+
+#help:hover {
+    color: var(--accent-hover);
+}
+
+#example code {
+    display: block;
+    white-space: pre;
+    user-select: all;
+    height: 300px;
+    overflow: scroll;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.output {
+    white-space: break-spaces;
+    color: var(--text-secondary);
+}
+
+h3 {
+    font-size: 1.2rem;
+    color: var(--text-primary);
+}
+
+body {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 5px;
+}
+
+.heading {
+    padding: 12px 10px;
+    margin: 10px 0;
+    cursor: pointer;
+    transition: background-color 0.1s;
+    user-select: none;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.heading:hover {
+    color: var(--accent-hover);
+}
+
+.heading.h1 {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text-primary);
+    background-color: var(--bg-h1);
+}
+
+.heading.h2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-left: 0;
+    color: var(--text-primary);
+    background-color: var(--bg-h2);
+}
+
+.heading.h3 {
+    font-size: 16px;
+    font-weight: bold;
+    margin-left: 10px;
+    color: var(--text-secondary);
+    background-color: var(--bg-h3);
+}
+
+.content {
+    display: none;
+    padding: 2px 15px 4px 15px;
+    margin: 0 0 0 0;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.content.h1-content {
+    margin-left: 20px;
+}
+
+.content.h2-content {
+    margin-left: 0;
+}
+
+.content.h3-content {
+    margin-left: 20px;
+}
+
+.arrow {
+    display: inline-block;
+    margin-right: 10px;
+    transition: transform 0.1s;
+    color: var(--accent-primary);
+}
+
+.heading.active .arrow {
+    transform: rotate(90deg);
+}
+
+.block {
+    padding: 6px; 
+    display: block;
+    background-color: var(--bg-block);
+    border-radius: 4px;
+    margin:6px;
+}
+
+.indent {
+    margin-left:0.5rem;
+}
+
+/* Additional styling for inputs and form elements */
+input, textarea, select {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: var(--accent-primary);
+    outline: none;
+}
+
+/* Scrollbar styling for webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
+}
+
+/* Hyperlink styling */
+a {
+    color: var(--accent-primary);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: var(--accent-hover);
+}
+
+a:visited {
+    color: var(--accent-primary);
+}
+
+a:active {
+    color: var(--text-primary);
+}
+
+.home-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+.home-button:hover {
+    background-color: var(--bg-tertiary);
+    text-decoration: none;
+}
+
+.home-icon {
+    width: 18px;
+    height: 18px;
+    color: var(--text-primary);
+}
