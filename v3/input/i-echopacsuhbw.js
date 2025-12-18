@@ -199,9 +199,9 @@ window.parseConfig = [
     },
     {
         "handle": "MVVTI",
-        "match": "MV VTI (.*)",
+        "match": "MV VTI (.*) cm",
         "label": "MV VTI",
-        "unit": ""
+        "unit": "cm"
     },
     {
         "handle": "MVPHT",
@@ -289,9 +289,9 @@ window.parseConfig = [
     },
     {
         "handle": "LVOTVTI",
-        "match": "LVOT VTI (.*)",
+        "match": "LVOT VTI (.*) cm",
         "label": "LVOT VTI",
-        "unit": ""
+        "unit": "cm"
     },
     {
         "handle": "LVOTd",

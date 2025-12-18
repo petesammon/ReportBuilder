@@ -18,9 +18,3 @@ const calculations = {
         return metrics.Weight ? Math.round(metrics.Weight) : "N/A";
     }
 };
-
-// Register Handlebars helper to round to 2dp with trailing 0s
-// i.e 1.7 -> 1.70
-Handlebars.registerHelper('2dp', function (num) {
-    return num && typeof num === 'number' ? num.toFixed(2) : "N/A";
-});

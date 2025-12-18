@@ -37,10 +37,8 @@ th {
 
 #output textarea {
     height: calc(100% - 40px);
+    font-family: monospace;
     white-space: pre-wrap;
-    max-width: 75%;
-    margin: 0 auto;
-    display: block;
 }
 
 #import h2 {
@@ -168,8 +166,7 @@ hr {
 /* Measurements panel */
 #measurements-panel {
     overflow-y: auto;
-    border-right: 2px solid rgba(128, 128, 128, 0.4);
-    padding-right: 1.5rem;
+    padding-right: 0.5rem;
 }
 
 #measurements-panel h2 {
@@ -225,21 +222,6 @@ hr {
     color: var(--pico-muted-color);
     white-space: nowrap;
     min-width: 40px;
-}
-
-/* Highlighted section styling */
-#measurements-table tr.highlight-section {
-    background-color: #ffeaea;
-}
-
-#measurements-table tr.highlight-section th {
-    background-color: #ffeaea;
-    font-weight: bold;
-    color: #000;
-}
-
-#measurements-table tr.highlight-section td {
-    background-color: #ffeaea;
 }
 
 /* Options panel */

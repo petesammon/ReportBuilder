@@ -7,7 +7,6 @@ jQuery(document).ready(function () {
     const metrics = {};
     const results = {}; // For parsed measurement data
     let summaryManuallyEdited = false;
-    const summaryCheckboxManuallyEdited = {}; // Track which checkboxes were manually changed
     let parseConfig = []; // Will be loaded dynamically
     let parseConfigMap = {}; // Will be populated after loading
     let measurements = []; // Will be loaded dynamically
@@ -24,20 +23,19 @@ jQuery(document).ready(function () {
         }
     });
 
-    // Load selected report config (measurements + options + report template)
+    // Load selected report config (measurements + options)
     function loadReportConfig(configId) {
         const config = reportConfigs.find(c => c.id === configId);
         if (!config) return;
 
         // Remove any previously loaded scripts
-        document.querySelectorAll('script[data-measurements-config], script[data-options-config], script[data-report-template]').forEach(s => s.remove());
+        document.querySelectorAll('script[data-measurements-config], script[data-options-config]').forEach(s => s.remove());
 
         let measurementsLoaded = false;
         let optionsLoaded = false;
-        let reportTemplateLoaded = false;
 
-        function checkAllLoaded() {
-            if (measurementsLoaded && optionsLoaded && reportTemplateLoaded) {
+        function checkBothLoaded() {
+            if (measurementsLoaded && optionsLoaded) {
                 console.log(`Loaded report config: ${config.name}`);
                 // Regenerate the measurements table and form
                 generateMeasurementsTable();
@@ -55,7 +53,7 @@ jQuery(document).ready(function () {
             if (window.measurements && Array.isArray(window.measurements)) {
                 measurements = window.measurements;
                 measurementsLoaded = true;
-                checkAllLoaded();
+                checkBothLoaded();
             } else {
                 alert(`Measurements configuration loaded but not found: ${config.name}`);
             }
@@ -67,13 +65,13 @@ jQuery(document).ready(function () {
 
         // Load options config
         const optionsScript = document.createElement('script');
-        optionsScript.src = config.options;
+        optionsScript.src = config.report;
         optionsScript.setAttribute('data-options-config', 'true');
         optionsScript.onload = function() {
             if (window.options && Array.isArray(window.options)) {
                 options = window.options;
                 optionsLoaded = true;
-                checkAllLoaded();
+                checkBothLoaded();
             } else {
                 alert(`Options configuration loaded but not found: ${config.name}`);
             }
@@ -82,24 +80,6 @@ jQuery(document).ready(function () {
             alert(`Failed to load options configuration: ${config.name}`);
         };
         document.head.appendChild(optionsScript);
-
-        // Load report template
-        const reportTemplateScript = document.createElement('script');
-        reportTemplateScript.src = config.report;
-        reportTemplateScript.setAttribute('data-report-template', 'true');
-        reportTemplateScript.onload = function() {
-            if (window.outputTemplate && typeof window.outputTemplate === 'function') {
-                // Template is loaded and available globally
-                reportTemplateLoaded = true;
-                checkAllLoaded();
-            } else {
-                alert(`Report template loaded but outputTemplate not found: ${config.name}`);
-            }
-        };
-        reportTemplateScript.onerror = function() {
-            alert(`Failed to load report template: ${config.name}`);
-        };
-        document.head.appendChild(reportTemplateScript);
     }
 
     // Handle report config selection
@@ -120,7 +100,7 @@ jQuery(document).ready(function () {
     let reportConfigLoaded = false;
     
     // Populate parse config dropdown
-    inputConfigs.forEach(config => {
+    parseConfigs.forEach(config => {
         const option = `<option value="${config.id}" data-file="${config.file}">${config.name}</option>`;
         $("#parse-config-select").append(option);
         
@@ -131,14 +111,14 @@ jQuery(document).ready(function () {
     });
 
     // Load the default config on page load
-    const defaultConfig = inputConfigs.find(c => c.default);
+    const defaultConfig = parseConfigs.find(c => c.default);
     if (defaultConfig) {
         loadParseConfig(defaultConfig.id);
     }
 
     // Load selected parse config
     function loadParseConfig(configId) {
-        const config = inputConfigs.find(c => c.id === configId);
+        const config = parseConfigs.find(c => c.id === configId);
         if (!config) return;
 
         // Remove any previously loaded parse config script
@@ -197,21 +177,13 @@ jQuery(document).ready(function () {
         let rows = ``;
         
         for (const section of measurements) {
-            // Add a class for highlighting sections that have highlight: true
-            const sectionClass = section.highlight ? ' class="highlight-section"' : '';
-            rows += `<tr${sectionClass}><th colspan="2">${section.title}</th></tr>`;
+            rows += `<tr><th colspan="2">${section.title}</th></tr>`;
             
             for (const handle of section.items) {
                 const details = getMeasurementDetails(handle);
-                let rawValue = results[handle] || "";
+                const displayValue = results[handle] || "";
                 
-                // Strip unit from display value if it's already included
-                let displayValue = rawValue;
-                if (details.unit && rawValue.endsWith(details.unit)) {
-                    displayValue = rawValue.slice(0, -details.unit.length);
-                }
-                
-                rows += `<tr${sectionClass}>
+                rows += `<tr>
                     <td class="label">${details.label}</td>
                     <td class="measurement-cell">
                         <input type="text" class="measurement-input" data-key="${handle}" value="${displayValue}" />
@@ -231,9 +203,6 @@ jQuery(document).ready(function () {
             
             // Store value with unit appended (no space) only if both value and unit exist
             results[key] = (value && unit) ? value + unit : value;
-            
-            // Update summary to reflect the new measurement value
-            updateSummary();
         });
     }
     
@@ -283,38 +252,14 @@ jQuery(document).ready(function () {
     function updateSummary() {
         const summaryItems = [];
         
-        // Prepare data for Handlebars - ensure units are appended to results
-        const resultsWithUnits = {};
-        Object.entries(results).forEach(([key, value]) => {
-            const config = parseConfigMap[key];
-            if (value && config?.unit) {
-                const unit = config.unit;
-                resultsWithUnits[key] = value.toString().endsWith(unit) ? value : value + unit;
-            } else {
-                resultsWithUnits[key] = value;
-            }
-        });
-        
-        const summaryData = { ...resultsWithUnits, ...metrics };
-        
         // Collect all summary items with their order
         options.forEach(section => {
             Object.entries(section.params).forEach(([key, option]) => {
                 if (option.enableSummary) {
                     const checkbox = $(`#${key}-summary`);
                     if (checkbox.length && checkbox.is(':checked') && metrics[key]?.trim()) {
-                        // Process the text through Handlebars to replace placeholders
-                        let processedText = metrics[key];
-                        try {
-                            const template = Handlebars.compile(processedText);
-                            processedText = template(summaryData);
-                        } catch (e) {
-                            // If Handlebars compilation fails, use original text
-                            console.warn(`Failed to compile summary text for ${key}:`, e);
-                        }
-                        
                         summaryItems.push({
-                            text: processedText,
+                            text: metrics[key],
                             order: option.summaryOrder ?? 999
                         });
                     }
@@ -425,74 +370,33 @@ jQuery(document).ready(function () {
 
                 // Handle conditional textarea visibility
                 if (option.conditionalText && option.options) {
-                    const handleConditionalVisibility = function () {
-                        const $select = $("select", $option);
-                        const selectedOption = $select.find(":selected");
-                        const selectedLabel = selectedOption.text();
-                        const selectedTitle = selectedOption.attr("title");
+                    $("select", $option).on("change", function () {
+                        const selectedTitle = $(this).find(":selected").attr("title");
                         const $textarea = $(".textarea-container", $option);
                         
-                        // Show textarea only when:
-                        // 1. Title is empty AND
-                        // 2. Label suggests free text entry (contains "free text" or similar)
-                        const isFreeTextOption = (selectedTitle === "" || selectedTitle === undefined) && 
-                                                selectedLabel.toLowerCase().includes("free text");
-                        
-                        if (isFreeTextOption) {
+                        if (selectedTitle === "" || selectedTitle === undefined) {
                             $textarea.show();
                         } else {
                             $textarea.hide();
                             $("textarea", $option).val("");
                         }
-                    };
-                    
-                    $("select", $option).on("change", handleConditionalVisibility);
-                    
-                    // Set initial visibility based on default selection
-                    handleConditionalVisibility();
+                    });
                 }
 
                 // Main change handler
                 $("select, textarea", $option).on("change", function () {
                     if (key === 'Summary') return; // Special handling below
                     
-                    // Auto-check/uncheck summary checkbox on selection change
+                    // Auto-check summary checkbox on non-default selection
                     if (option.summaryOnChange && option.enableSummary && option.options) {
                         const selectedOption = $("select", $option).find(":selected");
-                        const selectedValue = selectedOption.val();
+                        const isDefaultOption = selectedOption.attr('title') === '' || 
+                            option.options.some(opt => 
+                                typeof opt !== 'string' && opt.default && opt.title === selectedOption.attr('title')
+                            );
                         
-                        // Only auto-change if user hasn't manually edited this checkbox
-                        if (!summaryCheckboxManuallyEdited[key]) {
-                            let shouldCheck = false;
-                            
-                            // If summaryThreshold is defined, check against threshold
-                            if (option.summaryThreshold && Array.isArray(option.summaryThreshold)) {
-                                // Check if selected value is in the threshold list
-                                shouldCheck = option.summaryThreshold.some(thresholdValue => 
-                                    selectedValue === `${key}-${thresholdValue.toLowerCase().replace(/ /g, "-")}`
-                                );
-                            } else {
-                                // Default behavior: check if not default option
-                                const isDefaultOption = selectedOption.attr('title') === '' || 
-                                    option.options.some(opt => 
-                                        typeof opt !== 'string' && opt.default && opt.title === selectedOption.attr('title')
-                                    );
-                                shouldCheck = !isDefaultOption;
-                            }
-                            
-                            $(`#${key}-summary`).prop('checked', shouldCheck);
-                            
-                            // If checking this box and it has summaryExclude, uncheck excluded items
-                            if (shouldCheck && option.summaryExclude && Array.isArray(option.summaryExclude)) {
-                                option.summaryExclude.forEach(excludeKey => {
-                                    const $excludeCheckbox = $(`#${excludeKey}-summary`);
-                                    if ($excludeCheckbox.length && $excludeCheckbox.is(':checked')) {
-                                        $excludeCheckbox.prop('checked', false);
-                                        // Mark as manually edited so it doesn't auto-check again
-                                        summaryCheckboxManuallyEdited[excludeKey] = true;
-                                    }
-                                });
-                            }
+                        if (!isDefaultOption) {
+                            $(`#${key}-summary`).prop('checked', true);
                         }
                     }
                     
@@ -512,26 +416,7 @@ jQuery(document).ready(function () {
 
                 // Summary checkbox handler
                 if (option.enableSummary) {
-                    $(`#${key}-summary`).on('change', function() {
-                        const isChecked = $(this).is(':checked');
-                        
-                        // Mark this checkbox as manually edited
-                        summaryCheckboxManuallyEdited[key] = true;
-                        
-                        // If this checkbox is checked and has summaryExclude, uncheck the excluded items
-                        if (isChecked && option.summaryExclude && Array.isArray(option.summaryExclude)) {
-                            option.summaryExclude.forEach(excludeKey => {
-                                const $excludeCheckbox = $(`#${excludeKey}-summary`);
-                                if ($excludeCheckbox.length && $excludeCheckbox.is(':checked')) {
-                                    $excludeCheckbox.prop('checked', false);
-                                    // Mark as manually edited so it doesn't auto-check again
-                                    summaryCheckboxManuallyEdited[excludeKey] = true;
-                                }
-                            });
-                        }
-                        
-                        updateSummary();
-                    });
+                    $(`#${key}-summary`).on('change', updateSummary);
                 }
                 
                 // Summary field manual edit tracking
