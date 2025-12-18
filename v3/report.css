@@ -229,17 +229,17 @@ hr {
 
 /* Highlighted section styling */
 #measurements-table tr.highlight-section {
-    background-color: #ffeaea;
+    background-color: #E7FF96;
 }
 
 #measurements-table tr.highlight-section th {
-    background-color: #ffeaea;
+    background-color: #E7FF96;
     font-weight: bold;
     color: #000;
 }
 
 #measurements-table tr.highlight-section td {
-    background-color: #ffeaea;
+    background-color: #E7FF96;
 }
 
 /* Options panel */

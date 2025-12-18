@@ -1,84 +1,96 @@
 window.outputTemplate = Handlebars.compile(
-`The following report is compiled in accordance to BSE guidelines 2020 (https://doi.org/10.1530/ERP-19-0050) with the adoption of new guidelines on Diastolic Dysfunction/Amyloid published 2024
-This is a technical report only and requires clinical interpretation by the referring/receiving clinician
+`TTE Findings: The report is compiled in accordance to a locally agreed combination of BSE Guidelines 2020 and EACVI guidelines 2016. Unless specified in the report conclusion, it is the sole responsibility of the referring physician to act upon the findings of this study. In specific cases where delay may result in patient harm, sonographers will refer for urgent clinical support.
 
-Operated and Reported by: {{Operator}}
+Performed on: {{Machine}}
+Operator: {{Operator}}
 Technical Quality: {{TechnicalQualilty}}
-Machine: {{Machine}}
 ECG: {{Rhythm}}, {{HR}}
 Height: {{Height}}, Weight: {{Weight}}, BSA: {{BSA}}
 BP: {{BP}}
-Gender: {{Gender}}
 
 Left Ventricle:
 {{#if RWMAs ~}}{{RWMAs}}
 {{/if~}}
 {{LVSF}}.
-{{LVH}}. {{LVD}}.
-(Linear 2D measurements) IVS = {{IVSd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}, PWd = {{LVPWd}}
-LVEDV/BSA = {{LVEDVInd}}, LVEDV/BSA = {{LVESVInd}}
-Biplane Simpson's EF = {{EFBP}}
-GLS = {{GLS}}
-MAPSE = {{MAPSE}}
-
-Diastolic Function:
+{{LVH}}.
+{{LVD}}.
 {{Diastology}}{{LAP}}
-Peak E velocity = {{EVel}}, Peak A velocity = {{AVel}}, E DecT = {{EDecT}}, E/A ratio = {{EARatio}}
-Septal S' = {{SPrimeSept}}, Septal E' = {{EPrimeSept}}, Septal E/E' = {{EEPrimeSept}}
-Lateral S' = {{SPrimeLat}}, Lateral E' = {{EPrimeLat}}, Lateral E/E' = {{EEPrimeLat}}
-Average S' = {{SprimeAv}}
-Average E/E' = {{EEPrimeAv}}
+
+IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
+E/A ratio = {{EARatio}}, E DecT = {{EDecT}}, Peak E velocity = {{EVel}}, Peak A velocity = {{AVel}}
+Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (averaged) = {{EEPrimeAv}}
+Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}
+Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
+Global Averaged Longitudinal Strain = {{GLS}}
+{{#if LVMeas ~}}{{LVMeas}}
+{{/if}}
 
 Mitral Valve:
-{{MV}} {{MS}} {{MR}}
+{{MV}}
+{{MS}}
+{{MR}}
+{{#if MVMeas ~}}{{MVMeas}}
+{{/if}}
 
 Left Atrium:
-{{LAtrium}}
-Biplane Simpson's Volume = {{LAESV}} (Indexed = {{LAESVInd}})
+{{LA}}
+LA volume (Biplane) = {{LAESV}}, Indexed = {{LAESVInd}}
+(Normal = <34ml/m2, Borderline dilated = 34-38ml/m2, Dilated = >38ml/m2)
 
 Aortic Valve:
-{{AV}} {{AS}} {{AR}}
-AV Vmax = {{AVVmax}}, PPd = {{AVMaxPG}}, Mean PG = {{AVMeanPG}}, VTI = {{AVVTI}}
-{{AVGradient}}
-LVOT Vmax = {{LVOTVmax}}, PPd = {{LVOTMaxPG}}, Mean PG = {{LVOTMeanPG}}, VTI = {{LVOTVTI}}
-{{LVOTGradient}}
+{{AV}}
+{{AS}}
+{{AR}}
+AV Vmax = {{AVVmax}}
+{{#if AVMeas ~}}{{AVMeas}}
+{{/if}}
 
 Aorta:
 {{Aorta}}
-Absolute: Sinus of Valsalva = {{SoV}}, Sinotubular Junction = {{StJ}}, Ascending aorta = {{Ao}}
-Indexed to Height: Sinus of Valsalva = {{SoVI}}, Sinotubular Junction = {{StJI}}, Ascending aorta = {{AoI}}
-{{Arch}} {{AoReversal}} {{Coarc}}
+(Measured leading edge to leading edge, at end diastole as per departmental protocol)
+Sinus of Valsalva = {{SoV}}, Indexed to height = {{SoVI}} (Normal range, female: 14.1-22.1mm/m)
+Sinotubular Junction = {{StJ}}, Indexed to height = {{StJI}} (Normal range, female: 12.2-19.4mm/m) 
+Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, female: 12.3-21.1mm/m) 
+{{Coarc}}
 
 Right Ventricle:
-{{RVD}} {{RVH}}
-RVD1 = {{RVD1}}
-RVOT (PLAX) = {{RVOTPLAX}}
-RVOT Diameter (Proximal) = {{RVOT1}}
-RVOT Diameter (Distal) = {{RVOT2}}
 {{RVFl}} {{RVFr}}
-TAPSE = {{TAPSE}}, RV S' = {{RVS}}
-Fractional Area Change = {{FAC}}
+{{RVD}}
+{{RVH}}
+TAPSE = {{TAPSE}}, S prime = {{RVS}}
+RVD1 = {{RVD1}}
+{{#if RVMeas ~}}{{RVMeas}}
+{{/if}}
 
-Right Atrium:
-{{RAtrium}}
-Area = {{RAA}} (Indexed area/BSA = {{RAAI}})
+Right atrium:
+{{RA}}
+RA area = {{RAA}}, Indexed = {{RAAI}}
 
 Tricuspid Valve:
-{{TV}} {{TS}} {{TR}}
-Peak regurgitant jet velocity = {{TRVmax}}, PPD = {{TRMaxPG}}
-IVC is {{IVCD}} with {{IVCC}} collapse on inspiration.
-{{PPHT}}
-PASP = {{PASP}}
+{{TV}}
+{{TS}}
+{{TR}}
+TR Vmax = {{TRVmax}}, TR MaxPG = {{TRMaxPG}}
+{{#if TVMeas ~}}{{TVMeas}}
+{{/if}}
 
 Pulmonary Valve:
-{{PV}} {{PS}} {{PR}}
+{{PV}}
+{{PS}}
+{{PR}} 
 PV Vmax = {{PVVMax}}
 PV AccT = {{PAT}}. {{PVN}}
-
+{{#if PVMeas ~}}{{PVMeas}}
+{{/if}}
 
 Miscellaneous:
+IVC is {{IVCD}} \({{IVC}}\) with {{IVCC}} collapse on inspiration estimating RA pressure at {{RAP}}mmHg. 
+Pulmonary artery systolic pressure {{PASPe}}{{PASP}}.
+{{PPHT}}
 {{ASD}}
 {{PEff}}
+{{#if PlEff ~}}{{PlEff}}
+{{/if}}
 
 Summary:
 {{Summary}}

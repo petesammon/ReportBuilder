@@ -8,6 +8,13 @@ const reportConfigs = [
         default: true,
     },
     {
+        id: "bhinormal-f",
+        name: "BHI Normal (Female)",
+        measurements: "measurements/m-bhinormal.js",
+        options: "options/o-bhinormal.js",
+        report: "report/r-bhinormal-f.js",
+    },
+    {
         id: "nbtnormal",
         name: "NBT Normal",
         measurements: "measurements/m-nbtnormal.js",
