@@ -8,7 +8,7 @@ html, body {
 }
 
 main {
-    height: calc(100% - 120px);
+    height: calc(100% - 20px);
 }
 
 button {
@@ -29,9 +29,14 @@ th {
 }
 
 /* Import and output textarea styling */
-#import textarea,
+#import textarea {
+    height: calc(100% - 60px);
+    font-family: monospace;
+    white-space: pre-wrap;
+}
+
 #output textarea {
-    height: calc(100% - 200px);
+    height: calc(100% - 40px);
     font-family: monospace;
     white-space: pre-wrap;
 }
@@ -286,8 +291,8 @@ hr {
 }
 
 /* Summary field spans columns 2-3 for full width */
-#Summary .textarea-container {
-    grid-column: 2 / 4;
+#options-content > div#Summary .textarea-container {
+    grid-column: 2 / 4 !important;
 }
 
 /* Checkbox styling */
