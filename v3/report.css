@@ -205,6 +205,10 @@ hr {
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 #measurements-table input.measurement-input {
@@ -229,17 +233,17 @@ hr {
 
 /* Highlighted section styling */
 #measurements-table tr.highlight-section {
-    background-color: #E7FF96;
+    background-color: #e8f5e9;
 }
 
 #measurements-table tr.highlight-section th {
-    background-color: #E7FF96;
+    background-color: var(--pico-primary);
     font-weight: bold;
-    color: #000;
+    color: var(--pico-primary-inverse);
 }
 
 #measurements-table tr.highlight-section td {
-    background-color: #E7FF96;
+    background-color: #e8f5e9;
 }
 
 /* Options panel */
@@ -289,6 +293,38 @@ hr {
     margin-bottom: 0;
 }
 
+/* Button container for clickText fields */
+.button-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.button-container button {
+    margin-bottom: 0;
+    float: none;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+    height: auto;
+}
+
+/* Subtle styling for reveal-text-button */
+.button-container button.reveal-text-button {
+    background-color: var(--pico-secondary-background);
+    border-color: var(--pico-secondary-border);
+    color: var(--pico-secondary-inverse);
+    opacity: 0.8;
+}
+
+.button-container button.reveal-text-button:hover {
+    background-color: var(--pico-secondary-hover-background);
+    border-color: var(--pico-secondary-hover-border);
+    opacity: 1;
+}
+
+.button-container button.reveal-text-button:focus {
+    box-shadow: 0 0 0 var(--pico-outline-width) var(--pico-secondary-focus);
+}
+
 /* Textarea container */
 .textarea-container {
     display: flex;
@@ -306,6 +342,14 @@ hr {
 
 #options-content > div[id].dropdown-only .dropdown-container {
     grid-column: 2;
+}
+
+#options-content > div[id].click-text .button-container {
+    grid-column: 2;
+}
+
+#options-content > div[id].click-text .textarea-container {
+    grid-column: 3;
 }
 
 /* Summary field spans columns 2-3 for full width */

@@ -212,7 +212,7 @@ jQuery(document).ready(function () {
                 }
                 
                 rows += `<tr${sectionClass}>
-                    <td class="label">${details.label}</td>
+                    <td class="label">${details.label}<span class="copyable-value" style="opacity: 0; position: absolute; pointer-events: none;">${displayValue ? ' = ' + displayValue + (details.unit || '') : ''}</span></td>
                     <td class="measurement-cell">
                         <input type="text" class="measurement-input" data-key="${handle}" value="${displayValue}" />
                         ${details.unit ? `<span class="unit-label">${details.unit}</span>` : ''}
@@ -231,6 +231,11 @@ jQuery(document).ready(function () {
             
             // Store value with unit appended (no space) only if both value and unit exist
             results[key] = (value && unit) ? value + unit : value;
+            
+            // Update the copyable span in the label cell
+            const $row = $(this).closest('tr');
+            const $copyableSpan = $row.find('.copyable-value');
+            $copyableSpan.text(value ? ` = ${value}${unit}` : '');
             
             // Update summary to reflect the new measurement value
             updateSummary();
@@ -355,8 +360,10 @@ jQuery(document).ready(function () {
             Object.entries(section.params).forEach(([key, option]) => {
                 // Determine layout class
                 let layoutClass = '';
-                if (!option.options && option.custom) {
+                if (!option.options && option.custom && !option.clickText) {
                     layoutClass = 'no-dropdown';
+                } else if (!option.options && option.custom && option.clickText) {
+                    layoutClass = 'click-text';
                 } else if (option.options && !option.custom) {
                     layoutClass = 'dropdown-only';
                 } else if (option.options && option.custom && option.conditionalText) {
@@ -368,6 +375,11 @@ jQuery(document).ready(function () {
     <div class="label-container">
         ${option.title ? `<label>${option.title}</label>` : ''}
     </div>
+    ${option.clickText ? `
+    <div class="button-container">
+        <button type="button" class="reveal-text-button" style="margin: 0;">Add additional measurements</button>
+    </div>
+    ` : ''}
     ${option.options ? `
     <div class="dropdown-container">
         <select>
@@ -383,7 +395,7 @@ jQuery(document).ready(function () {
     </div>
     ` : ''}
     ${option.custom ? `
-    <div class="textarea-container" style="${option.conditionalText ? 'display: none;' : ''}">
+    <div class="textarea-container" style="${option.conditionalText || option.clickText ? 'display: none;' : ''}">
         <textarea class="${option.large ? 'large' : ''}"></textarea>
     </div>
     ` : ''}
@@ -450,6 +462,28 @@ jQuery(document).ready(function () {
                     
                     // Set initial visibility based on default selection
                     handleConditionalVisibility();
+                }
+
+                // Handle clickText button to reveal textarea
+                if (option.clickText && option.custom) {
+                    $(".reveal-text-button", $option).on("click", function() {
+                        const $textarea = $(".textarea-container", $option);
+                        const $button = $(this);
+                        
+                        if ($textarea.is(':visible')) {
+                            // Hide textarea, clear content, and change button text back
+                            $textarea.hide();
+                            $("textarea", $option).val("");
+                            metrics[key] = "";
+                            $button.text("Add additional measurements");
+                        } else {
+                            // Show textarea and change button text
+                            $textarea.show();
+                            $button.text("Clear additional measurements");
+                            // Focus on the textarea
+                            $("textarea", $textarea).focus();
+                        }
+                    });
                 }
 
                 // Main change handler

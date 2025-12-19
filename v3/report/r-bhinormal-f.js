@@ -33,7 +33,7 @@ Mitral Valve:
 {{/if}}
 
 Left Atrium:
-{{LA}}
+{{LAtrium}}
 LA volume (Biplane) = {{LAESV}}, Indexed = {{LAESVInd}}
 (Normal = <34ml/m2, Borderline dilated = 34-38ml/m2, Dilated = >38ml/m2)
 
@@ -51,6 +51,8 @@ Aorta:
 Sinus of Valsalva = {{SoV}}, Indexed to height = {{SoVI}} (Normal range, female: 14.1-22.1mm/m)
 Sinotubular Junction = {{StJ}}, Indexed to height = {{StJI}} (Normal range, female: 12.2-19.4mm/m) 
 Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, female: 12.3-21.1mm/m) 
+{{#if AoMeas ~}}{{AoMeas}}
+{{/if}}
 {{Coarc}}
 
 Right Ventricle:
@@ -63,7 +65,7 @@ RVD1 = {{RVD1}}
 {{/if}}
 
 Right atrium:
-{{RA}}
+{{RAtrium}}
 RA area = {{RAA}}, Indexed = {{RAAI}}
 
 Tricuspid Valve:

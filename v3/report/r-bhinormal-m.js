@@ -33,7 +33,7 @@ Mitral Valve:
 {{/if}}
 
 Left Atrium:
-{{LA}}
+{{LAtrium}}
 LA volume (Biplane) = {{LAESV}}, Indexed = {{LAESVInd}}
 (Normal = <34ml/m2, Borderline dilated = 34-38ml/m2, Dilated = >38ml/m2)
 
@@ -51,6 +51,8 @@ Aorta:
 Sinus of Valsalva = {{SoV}}, Indexed to height = {{SoVI}} (Normal range, male: 14.8-23.2mm/m)
 Sinotubular Junction = {{StJ}}, Indexed to height = {{StJI}} (Normal range, male: 12.6-19.8mm/m) 
 Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, male: 12.6-21.4mm/m) 
+{{#if AoMeas ~}}{{AoMeas}}
+{{/if}}
 {{Coarc}}
 
 Right Ventricle:
@@ -63,7 +65,7 @@ RVD1 = {{RVD1}}
 {{/if}}
 
 Right atrium:
-{{RA}}
+{{RAtrium}}
 RA area = {{RAA}}, Indexed = {{RAAI}}
 
 Tricuspid Valve:
@@ -89,8 +91,6 @@ Pulmonary artery systolic pressure {{PASPe}}{{PASP}}.
 {{PPHT}}
 {{ASD}}
 {{PEff}}
-{{#if PlEff ~}}{{PlEff}}
-{{/if}}
 
 Summary:
 {{Summary}}
