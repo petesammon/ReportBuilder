@@ -16,17 +16,17 @@ BP: {{BP}}`,
 `Left Ventricle:
 {{#if RWMAs ~}}{{RWMAs}}
 {{/if~}}
-{{LVSF}}.
-{{LVH}}.
-{{LVD}}.
+{{LVSF}}
+{{LVH}}
+{{LVD}}
 {{Diastology}}{{LAP}}
 
-{{{processTemplate LVMeasurements}}}`,
+{{LVMeasurements}}`,
     
     MVSection:
 `Mitral Valve:
 {{MV}} {{MS}} {{MR}}
-{{{processTemplate MVMeasurements}}}`,
+{{MVMeasurements}}`,
     
     LASection:
 `Left Atrium:
@@ -35,22 +35,20 @@ BP: {{BP}}`,
     AVSection:
 `Aortic Valve:
 {{AV}} {{AS}} {{AR}}
-{{{processTemplate AVMeasurements}}}`,
+{{AVMeasurements}}`,
     
     AoSection:
 `Aorta:
 {{Aorta}}
 (Measured leading edge to leading edge, at end diastole as per departmental protocol)
-Sinus of Valsalva = {{SoV}}, Indexed to height = {{SoVI}} (Normal range, male: 14.8-23.2mm/m)
-Sinotubular Junction = {{StJ}}, Indexed to height = {{StJI}} (Normal range, male: 12.6-19.8mm/m) 
-Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, male: 12.6-21.4mm/m) 
+{{AoMeasurements}}
 {{Coarc}}`,
     
     RVSection:
 `Right Ventricle:
-{{RVFl}} {{RVFr}}
+{{RVF}}
 {{RVD}} {{RVH}}
-{{{processTemplate RVMeasurements}}}`,
+{{RVMeasurements}}`,
     
     RASection:
 `Right atrium:
@@ -59,19 +57,21 @@ Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, male: 12.6-
     TVSection:
 `Tricuspid Valve:
 {{TV}} {{TS}} {{TR}}
-{{{processTemplate TVMeasurements}}}`,
+{{TVMeasurements}}`,
    
     PVSection:
 `Pulmonary Valve:
 {{PV}} {{PS}} {{PR}}
-{{{processTemplate PVMeasurements}}}`,
+{{PVMeasurements}}`,
     
     MiscSection:
 `Miscellaneous:
-IVC is {{IVCD}} {{#if IVC ~}}\({{IVC}}\) {{/if~}} with {{IVCC}} collapse on inspiration estimating RA pressure at {{RAP}}mmHg. 
-Pulmonary artery systolic pressure {{PASPe}}{{PASP}}.
+IVC is {{IVCD}}
+Pulmonary artery systolic pressure {{PASP}}.
 {{PPHT}}
 {{ASD}}
+{{#if PlEff ~}}{{PlEff}}
+{{/if~}}
 {{PEff}}`,    
 };
 
@@ -99,9 +99,3 @@ window.outputTemplate = Handlebars.compile(
 {{MiscSection}}
 
 {{Summary}}`, {noEscape: true});
-
-// Female measurements
-//(Measured leading edge to leading edge, at end diastole as per departmental protocol)
-// Sinus of Valsalva = {{SoV}}, Indexed to height = {{SoVI}} (Normal range, female: 14.1-22.1mm/m)
-// Sinotubular Junction = {{StJ}}, Indexed to height = {{StJI}} (Normal range, female: 12.2-19.4mm/m) 
-// Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, female: 12.3-21.1mm/m) 

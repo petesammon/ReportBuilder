@@ -113,6 +113,16 @@ jQuery(document).ready(function () {
             
             const isCustom = paramOption.custom === true;
             
+            // Check if this parameter needs conditional text
+            // Has non-default options with empty titles (for free text entry)
+            const hasConditionalText = paramOption.options && Array.isArray(paramOption.options) && 
+                paramOption.options.some(opt => {
+                    if (typeof opt === 'string') return false;
+                    const title = opt.title;
+                    const isDefault = opt.default === true;
+                    return title === "" && !isDefault;
+                });
+            
             // Build options column content
             let optionsHtml = '';
             if (isCustom) {
@@ -143,12 +153,25 @@ jQuery(document).ready(function () {
             const summaryHtml = `<input type="checkbox" id="${paramKey}-summary-modal" data-param="${paramKey}" ${defaultChecked} />`;
             
             paramRows += `
-                <tr data-param="${paramKey}">
-                    <td class="param-label">${paramOption.title || paramKey}</td>
-                    <td class="param-options">${optionsHtml}</td>
-                    <td class="param-summary">${summaryHtml}</td>
+                <tr data-param="${paramKey}" ${hasConditionalText ? 'class="has-conditional-text"' : ''}>
+                    <td class="param-label" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${paramOption.title || paramKey}</td>
+                    <td class="param-options" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${optionsHtml}</td>
+                    <td class="param-summary" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${summaryHtml}</td>
                 </tr>
             `;
+            
+            // Add conditional text row if needed
+            if (hasConditionalText && !isCustom) {
+                const largeClass = paramOption.large ? 'large' : '';
+                paramRows += `
+                    <tr id="${paramKey}-conditional-row" class="conditional-text-row" style="display: none;">
+                        <td style="border-top: none; padding-top: 0;"></td>
+                        <td colspan="2" style="border-top: none; padding-top: 0;">
+                            <textarea id="${paramKey}-conditional-textarea" class="modal-textarea ${largeClass}" data-param="${paramKey}" placeholder="Enter custom text..."></textarea>
+                        </td>
+                    </tr>
+                `;
+            }
         });
         
         // Create modal
@@ -232,32 +255,63 @@ jQuery(document).ready(function () {
             if ($select.length) {
                 $select.on('change', function() {
                     const selectedValue = $(this).val();
+                    const selectedIndex = this.selectedIndex;
+                    
+                    // Find the selected option object using selectedIndex
+                    // Note: selectedIndex includes the "Select..." option, so subtract 1
+                    let selectedOption = null;
+                    let selectedLabel = null;
+                    
+                    if (paramOption.options && selectedIndex > 0) {
+                        const optionIndex = selectedIndex - 1; // Account for "Select..." option
+                        if (optionIndex < paramOption.options.length) {
+                            const opt = paramOption.options[optionIndex];
+                            selectedOption = typeof opt === 'string' ? null : opt;
+                            if (selectedOption) {
+                                selectedLabel = selectedOption.label;
+                            }
+                        }
+                    }
                     
                     // Update metrics
                     if (window.metrics) {
                         window.metrics[paramKey] = selectedValue || "";
                     }
                     
+                    // Track the selected option object for summary text lookup
+                    if (window.selectedOptions && selectedOption) {
+                        window.selectedOptions[paramKey] = selectedOption;
+                    }
+                    
+                    // Determine if conditional textarea should be shown
+                    // Logic: title is "" (empty) AND NOT default: true
+                    const shouldShowConditional = selectedOption && 
+                                                   selectedOption.title === "" && 
+                                                   selectedOption.default !== true;
+                    
+                    // Handle conditional text (show/hide textarea based on selection)
+                    const $conditionalRow = $(`#${paramKey}-conditional-row`);
+                    const $conditionalTextarea = $(`#${paramKey}-conditional-textarea`);
+                    
+                    if ($conditionalRow.length && shouldShowConditional) {
+                        // Show conditional textarea
+                        $conditionalRow.show();
+                        $conditionalTextarea.val("");
+                        if (window.metrics) {
+                            window.metrics[paramKey] = "";
+                        }
+                        $conditionalTextarea.focus();
+                    } else if ($conditionalRow.length) {
+                        // Hide conditional textarea
+                        $conditionalRow.hide();
+                        $conditionalTextarea.val("");
+                    }
+                    
                     // Handle auto-check/uncheck for summary checkboxes
                     if (paramOption.enableSummary && $checkbox.length) {
                         let shouldCheck = false;
                         
-                        // Find the selected option object
-                        let selectedOption = null;
-                        let selectedLabel = null;
-                        
-                        if (paramOption.options) {
-                            selectedOption = paramOption.options.find(opt => {
-                                const title = typeof opt === 'string' ? opt : opt.title;
-                                return title === selectedValue;
-                            });
-                            
-                            if (selectedOption && typeof selectedOption !== 'string') {
-                                selectedLabel = selectedOption.label;
-                            }
-                        }
-                        
-                        // If this is the default option, uncheck (unless summaryDefault is true)
+                        // If this is the default option, check based on summaryDefault
                         if (selectedOption && selectedOption.default === true) {
                             shouldCheck = paramOption.summaryDefault === true;
                         }
@@ -265,8 +319,12 @@ jQuery(document).ready(function () {
                         else if (paramOption.summaryThreshold && Array.isArray(paramOption.summaryThreshold) && selectedLabel) {
                             shouldCheck = paramOption.summaryThreshold.includes(selectedLabel);
                         }
-                        // If no threshold but summaryOnChange is true, check for any non-default selection
-                        else if (paramOption.summaryOnChange === true && selectedValue !== "" && !(selectedOption && selectedOption.default === true)) {
+                        // If summaryOnChange is true, check for any non-default selection
+                        else if (paramOption.summaryOnChange === true && selectedOption && selectedOption.default !== true) {
+                            shouldCheck = true;
+                        }
+                        // If none of the above, but summaryDefault is true, keep it checked
+                        else if (paramOption.summaryDefault === true && selectedValue !== "") {
                             shouldCheck = true;
                         }
                         
@@ -286,19 +344,26 @@ jQuery(document).ready(function () {
                 });
             }
             
-            // Checkbox change handler
-            if ($checkbox.length) {
-                $checkbox.on('change', function() {
-                    // Only mark as manually edited if this wasn't a programmatic change
-                    if (!isProgrammaticChange) {
-                        if (window.summaryCheckboxManuallyEdited) {
-                            window.summaryCheckboxManuallyEdited[paramKey] = true;
-                        }
+            // Conditional textarea input handler
+            const $conditionalTextarea = $(`#${paramKey}-conditional-textarea`);
+            if ($conditionalTextarea.length) {
+                $conditionalTextarea.on('input', function() {
+                    const value = $(this).val();
+                    
+                    // Update metrics with custom text
+                    if (window.metrics) {
+                        window.metrics[paramKey] = value;
                     }
                     
-                    // Handle exclude if checked
-                    if ($(this).is(':checked')) {
-                        handleSummaryExclude(paramKey, paramOption);
+                    // Handle auto-check for summary checkbox
+                    if (paramOption.enableSummary && $checkbox.length) {
+                        let shouldCheck = false;
+                        if (value && value.trim() !== "") {
+                            shouldCheck = true;
+                        }
+                        isProgrammaticChange = true;
+                        $checkbox.prop('checked', shouldCheck);
+                        isProgrammaticChange = false;
                     }
                     
                     // Update summary
@@ -328,24 +393,24 @@ jQuery(document).ready(function () {
                 window.updateSummary();
             }
         }
-        
-        // Template button click
-        $(`.template-button[data-section="Summary"]`).on('click', function() {
-            // Sync dropdown and textarea values when opening
-            Object.entries(section.params).forEach(([paramKey, paramOption]) => {
-                const $select = $(`#${paramKey}-select`);
-                const $textarea = $(`#${paramKey}-textarea`);
-                
-                if ($select.length && window.metrics && window.metrics[paramKey]) {
-                    $select.val(window.metrics[paramKey]);
-                }
-                
-                if ($textarea.length && window.metrics && window.metrics[paramKey]) {
-                    $textarea.val(window.metrics[paramKey]);
-                }
+
+            // Template button click
+            $(`.template-button[data-section="Summary"]`).on('click', function() {
+                // Sync dropdown and textarea values when opening
+                Object.entries(section.params).forEach(([paramKey, paramOption]) => {
+                    const $select = $(`#${paramKey}-select`);
+                    const $textarea = $(`#${paramKey}-textarea`);
+                    
+                    if ($select.length && window.metrics && window.metrics[paramKey]) {
+                        $select.val(window.metrics[paramKey]);
+                    }
+                    
+                    if ($textarea.length && window.metrics && window.metrics[paramKey]) {
+                        $textarea.val(window.metrics[paramKey]);
+                    }
+                });
+                $(`#${modalId}`).addClass('active');
             });
-            $(`#${modalId}`).addClass('active');
-        });
         
         // Close button
         $(`.close-button[data-modal="${modalId}"]`).on('click', function() {
@@ -396,6 +461,16 @@ jQuery(document).ready(function () {
             const isCustom = paramOption.custom === true;
             const hasSummary = paramOption.enableSummary === true;
             
+            // Check if this parameter needs conditional text
+            // Has non-default options with empty titles (for free text entry)
+            const hasConditionalText = paramOption.options && Array.isArray(paramOption.options) && 
+                paramOption.options.some(opt => {
+                    if (typeof opt === 'string') return false;
+                    const title = opt.title;
+                    const isDefault = opt.default === true;
+                    return title === "" && !isDefault;
+                });
+            
             // Build options column content
             let optionsHtml = '';
             if (isCustom) {
@@ -429,12 +504,26 @@ jQuery(document).ready(function () {
             }
             
             paramRows += `
-                <tr data-param="${paramKey}">
-                    <td class="param-label">${paramOption.title || paramKey}</td>
-                    <td class="param-options">${optionsHtml}</td>
-                    ${hasSummary ? `<td class="param-summary">${summaryHtml}</td>` : '<td></td>'}
+                <tr data-param="${paramKey}" ${hasConditionalText ? 'class="has-conditional-text"' : ''}>
+                    <td class="param-label" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${paramOption.title || paramKey}</td>
+                    <td class="param-options" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${optionsHtml}</td>
+                    ${hasSummary ? `<td class="param-summary" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${summaryHtml}</td>` : `<td ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}></td>`}
                 </tr>
             `;
+            
+            // Add conditional text row if needed
+            if (hasConditionalText && !isCustom) {
+                const largeClass = paramOption.large ? 'large' : '';
+                paramRows += `
+                    <tr id="${paramKey}-conditional-row" class="conditional-text-row" style="display: none;">
+                        <td style="border-top: none; padding-top: 0;"></td>
+                        <td colspan="${hasSummary ? 2 : 1}" style="border-top: none; padding-top: 0;">
+                            <textarea id="${paramKey}-conditional-textarea" class="modal-textarea ${largeClass}" data-param="${paramKey}" placeholder="Enter custom text..."></textarea>
+                        </td>
+                        ${hasSummary ? '<td style="border-top: none; padding-top: 0;"></td>' : ''}
+                    </tr>
+                `;
+            }
         });
         
         // Create modal
@@ -516,32 +605,63 @@ jQuery(document).ready(function () {
             if ($select.length) {
                 $select.on('change', function() {
                     const selectedValue = $(this).val();
+                    const selectedIndex = this.selectedIndex;
+                    
+                    // Find the selected option object using selectedIndex
+                    // Note: selectedIndex includes the "Select..." option, so subtract 1
+                    let selectedOption = null;
+                    let selectedLabel = null;
+                    
+                    if (paramOption.options && selectedIndex > 0) {
+                        const optionIndex = selectedIndex - 1; // Account for "Select..." option
+                        if (optionIndex < paramOption.options.length) {
+                            const opt = paramOption.options[optionIndex];
+                            selectedOption = typeof opt === 'string' ? null : opt;
+                            if (selectedOption) {
+                                selectedLabel = selectedOption.label;
+                            }
+                        }
+                    }
                     
                     // Update metrics
                     if (window.metrics) {
                         window.metrics[paramKey] = selectedValue || "";
                     }
                     
+                    // Track the selected option object for summary text lookup
+                    if (window.selectedOptions && selectedOption) {
+                        window.selectedOptions[paramKey] = selectedOption;
+                    }
+                    
+                    // Determine if conditional textarea should be shown
+                    // Logic: title is "" (empty) AND NOT default: true
+                    const shouldShowConditional = selectedOption && 
+                                                   selectedOption.title === "" && 
+                                                   selectedOption.default !== true;
+                    
+                    // Handle conditional text (show/hide textarea based on selection)
+                    const $conditionalRow = $(`#${paramKey}-conditional-row`);
+                    const $conditionalTextarea = $(`#${paramKey}-conditional-textarea`);
+                    
+                    if ($conditionalRow.length && shouldShowConditional) {
+                        // Show conditional textarea
+                        $conditionalRow.show();
+                        $conditionalTextarea.val("");
+                        if (window.metrics) {
+                            window.metrics[paramKey] = "";
+                        }
+                        $conditionalTextarea.focus();
+                    } else if ($conditionalRow.length) {
+                        // Hide conditional textarea
+                        $conditionalRow.hide();
+                        $conditionalTextarea.val("");
+                    }
+                    
                     // Handle auto-check/uncheck for summary checkboxes
                     if (paramOption.enableSummary && $checkbox.length) {
                         let shouldCheck = false;
                         
-                        // Find the selected option object
-                        let selectedOption = null;
-                        let selectedLabel = null;
-                        
-                        if (paramOption.options) {
-                            selectedOption = paramOption.options.find(opt => {
-                                const title = typeof opt === 'string' ? opt : opt.title;
-                                return title === selectedValue;
-                            });
-                            
-                            if (selectedOption && typeof selectedOption !== 'string') {
-                                selectedLabel = selectedOption.label;
-                            }
-                        }
-                        
-                        // If this is the default option, uncheck (unless summaryDefault is true)
+                        // If this is the default option, check based on summaryDefault
                         if (selectedOption && selectedOption.default === true) {
                             shouldCheck = paramOption.summaryDefault === true;
                         }
@@ -549,8 +669,12 @@ jQuery(document).ready(function () {
                         else if (paramOption.summaryThreshold && Array.isArray(paramOption.summaryThreshold) && selectedLabel) {
                             shouldCheck = paramOption.summaryThreshold.includes(selectedLabel);
                         }
-                        // If no threshold but summaryOnChange is true, check for any non-default selection
-                        else if (paramOption.summaryOnChange === true && selectedValue !== "" && !(selectedOption && selectedOption.default === true)) {
+                        // If summaryOnChange is true, check for any non-default selection
+                        else if (paramOption.summaryOnChange === true && selectedOption && selectedOption.default !== true) {
+                            shouldCheck = true;
+                        }
+                        // If none of the above, but summaryDefault is true, keep it checked
+                        else if (paramOption.summaryDefault === true && selectedValue !== "") {
                             shouldCheck = true;
                         }
                         
@@ -570,66 +694,62 @@ jQuery(document).ready(function () {
                 });
             }
             
-            // Checkbox change handler
-            if ($checkbox.length) {
-                $checkbox.on('change', function() {
-                    // Only mark as manually edited if this wasn't a programmatic change
-                    if (!isProgrammaticChange) {
-                        if (window.summaryCheckboxManuallyEdited) {
-                            window.summaryCheckboxManuallyEdited[paramKey] = true;
-                        }
-                    }
+            // Conditional textarea input handler
+            const $conditionalTextarea = $(`#${paramKey}-conditional-textarea`);
+            if ($conditionalTextarea.length) {
+                $conditionalTextarea.on('input', function() {
+                    const value = $(this).val();
                     
-                    // Handle exclude if checked
-                    if ($(this).is(':checked')) {
-                        handleSummaryExclude(paramKey, paramOption);
+                    // Update metrics with custom text
+                    if (window.metrics) {
+                        window.metrics[paramKey] = value;
                     }
                     
                     // Update summary
                     updateSummaryNow();
                 });
             }
-        });
-        
-        // Helper function to handle summaryExclude
-        function handleSummaryExclude(paramKey, paramOption) {
-            if (paramOption.summaryExclude && Array.isArray(paramOption.summaryExclude)) {
-                paramOption.summaryExclude.forEach(excludeKey => {
-                    const $excludeCheckbox = $(`#${excludeKey}-summary-modal`);
-                    if ($excludeCheckbox.length && $excludeCheckbox.is(':checked')) {
-                        $excludeCheckbox.prop('checked', false);
-                        if (window.summaryCheckboxManuallyEdited) {
-                            window.summaryCheckboxManuallyEdited[excludeKey] = true;
+
+            // Helper function to handle summaryExclude
+            function handleSummaryExclude(paramKey, paramOption) {
+                if (paramOption.summaryExclude && Array.isArray(paramOption.summaryExclude)) {
+                    paramOption.summaryExclude.forEach(excludeKey => {
+                        const $excludeCheckbox = $(`#${excludeKey}-summary-modal`);
+                        if ($excludeCheckbox.length && $excludeCheckbox.is(':checked')) {
+                            $excludeCheckbox.prop('checked', false);
+                            if (window.summaryCheckboxManuallyEdited) {
+                                window.summaryCheckboxManuallyEdited[excludeKey] = true;
+                            }
                         }
-                    }
-                });
+                    });
+                }
             }
-        }
-        
-        // Helper to update summary immediately
-        function updateSummaryNow() {
-            if (typeof window.updateSummary === 'function') {
-                window.updateSummary();
+            
+            // Helper to update summary immediately
+            function updateSummaryNow() {
+                if (typeof window.updateSummary === 'function') {
+                    window.updateSummary();
+                }
             }
-        }
+        });
         
         // Template button click
         $(`.template-button[data-section="${sectionKey}"]`).on('click', function() {
-            // Sync dropdown and textarea values when opening
-            Object.entries(section.params).forEach(([paramKey, paramOption]) => {
-                const $select = $(`#${paramKey}-select`);
-                const $textarea = $(`#${paramKey}-textarea`);
-                
-                if ($select.length && window.metrics && window.metrics[paramKey]) {
-                    $select.val(window.metrics[paramKey]);
-                }
-                
-                if ($textarea.length && window.metrics && window.metrics[paramKey]) {
-                    $textarea.val(window.metrics[paramKey]);
-                }
+                // Sync dropdown and textarea values when opening
+                Object.entries(section.params).forEach(([paramKey, paramOption]) => {
+                    const $select = $(`#${paramKey}-select`);
+                    const $textarea = $(`#${paramKey}-textarea`);
+                    
+                    if ($select.length && window.metrics && window.metrics[paramKey]) {
+                        $select.val(window.metrics[paramKey]);
+                    }
+                    
+                    if ($textarea.length && window.metrics && window.metrics[paramKey]) {
+                        $textarea.val(window.metrics[paramKey]);
+                    }
+                });
+                $(`#${modalId}`).addClass('active');
             });
-            $(`#${modalId}`).addClass('active');
-        });
         
         // Close button
         $(`.close-button[data-modal="${modalId}"]`).on('click', function() {
@@ -649,12 +769,20 @@ jQuery(document).ready(function () {
             Object.entries(section.params).forEach(([paramKey]) => {
                 const $select = $(`#${paramKey}-select`);
                 const $textarea = $(`#${paramKey}-textarea`);
+                const $conditionalTextarea = $(`#${paramKey}-conditional-textarea`);
                 
-                if ($select.length && window.metrics) {
+                // Check conditional textarea first (highest priority)
+                if ($conditionalTextarea.length && $conditionalTextarea.is(':visible')) {
+                    if (window.metrics) {
+                        window.metrics[paramKey] = $conditionalTextarea.val() || "";
+                    }
+                }
+                // Then check regular dropdowns
+                else if ($select.length && window.metrics) {
                     window.metrics[paramKey] = $select.val() || "";
                 }
-                
-                if ($textarea.length && window.metrics) {
+                // Finally check custom textareas
+                else if ($textarea.length && window.metrics) {
                     window.metrics[paramKey] = $textarea.val() || "";
                 }
             });

@@ -6,10 +6,10 @@ Study Quality:
 - {{paramsStudyQuality}}
 
 Protocol:
-- {{{processTemplate paramsProtocol}}}
+- {{paramsProtocol}}
 
 Contrast:
-- {{{processTemplate paramsContrast}}}
+- {{paramsContrast}}
 
 Heart Rate and Blood Pressure:
 - Max HR: {{MaxHR}}

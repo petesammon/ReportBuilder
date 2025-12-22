@@ -98,7 +98,10 @@ window.measurements = [
             "AVVTI", 
             "DVI", 
             "AVA", 
-            "AVAI"
+            "AVAI",
+            "AVAccT",
+            "AVEjT",
+            "AVAccEjT",
         ]
     },
     {
@@ -172,7 +175,7 @@ window.measurements = [
     {
         title: "Pulmonary",
         items: [
-            "PVVMax",
+            "PVVmax",
             "PVMaxPG", 
             "PVMeanPG", 
             "PVVTI",

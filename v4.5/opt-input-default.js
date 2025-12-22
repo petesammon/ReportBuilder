@@ -495,7 +495,7 @@ window.parseConfig = [
         "handle": "TRVmax",
         "match": "TR Vmax (.*) m/s",
         "label": "TR VMax",
-        "unit": "m/2"
+        "unit": "m/s"
     },
     {
         "handle": "TRMaxPG",
@@ -528,10 +528,10 @@ window.parseConfig = [
         "unit": "cm2"
     },
     {
-        "handle": "PVVMax",
+        "handle": "PVVmax",
         "match": "PV Vmax (.*) m/s",
         "label": "PV Vmax",
-        "unit": "m2"
+        "unit": "m/s"
     },
     {
         "handle": "PAT",
@@ -575,6 +575,9 @@ window.parseConfig = [
         "label": "IVC Diameter",
         "unit": "mm"
     },
+    
+
+// need to download examples of and check the parsing
     {
         "handle": "DOB",
         "match": "DOB: (.*)",
@@ -585,6 +588,68 @@ window.parseConfig = [
         "handle": "Gender",
         "match": "Gender: (.*)",
         "label": "Gender",
+        "unit": ""
+    },
+    {
+        "handle": "RVOTVmax",
+        "match": "RVOT Vmax (.*) m/s",
+        "label": "RVOT Vmax",
+        "unit": "m/s"
+    },
+    {
+        "handle": "RVOTMaxPG",
+        "match": "RVOT maxPG (.*) mmHg",
+        "label": "RVOT Max PG",
+        "unit": "mmHg"
+    },
+    {
+        "handle": "RVOTMeanPG",
+        "match": "RVOT meanPG (.*) mmHg",
+        "label": "RVOT Mean PG",
+        "unit": "mmHg"
+    },
+    {
+        "handle": "RVOTVTI",
+        "match": "RVOT VTI (.*) cm",
+        "label": "RVOT VTI",
+        "unit": "cm"
+    },
+    {
+        "handle": "PVMaxPG",
+        "match": "PV maxPG (.*) mmHg",
+        "label": "PV Max PG",
+        "unit": "mmHg"
+    },
+    {
+        "handle": "PVMeanPG",
+        "match": "PV meanPG (.*) mmHg",
+        "label": "PV Mean PG",
+        "unit": "mmHg"
+    },
+    {
+        "handle": "PVVTI",
+        "match": "PV VTI (.*)",
+        "label": "PV VTI",
+        "unit": "cm"
+    },
+    
+// not to be imported...just for manual entry
+    {
+        "handle": "AVAccT",
+        "match": "",
+        "label": "Aortic Valve AccT",
+        "unit": "ms"
+    },
+    {
+        "handle": "AVEjT",
+        "match": "",
+        "label": "Aortic Valve EjT",
+        "unit": "ms"
+    },
+    {
+        "handle": "AVAccEjT",
+        "match": "",
+        "label": "Aortic Valve Acc/EjT",
         "unit": ""
     },
     {
