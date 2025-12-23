@@ -373,8 +373,13 @@ jQuery(document).ready(function () {
                 const $checkbox = $(`#${key}-summary-modal`);
                 const metricValue = metrics[key];
                 
-                // Only add if checkbox is checked and metric has value
-                if ($checkbox.length && $checkbox.is(':checked') && metricValue && metricValue.trim()) {
+                // Include if either:
+                // 1. summaryAlwaysInclude is true (no checkbox required), OR
+                // 2. checkbox exists, is checked, and has value
+                const shouldInclude = (option.summaryAlwaysInclude === true && metricValue && metricValue.trim()) ||
+                                     ($checkbox.length && $checkbox.is(':checked') && metricValue && metricValue.trim());
+                
+                if (shouldInclude) {
                     // Determine text to use: summarytext if available, otherwise the metric value (which is the title)
                     let textToUse = metricValue;
                     
@@ -685,11 +690,14 @@ jQuery(document).ready(function () {
     
     // Copy to clipboard button
     $("#copy-report").on("click", function () {
-        // First, update all section previews to ensure they're current
+        // Update all section previews to ensure they're current
         updateAllSectionPreviews();
         
-        // Update summary to ensure it's current
-        updateSummary();
+        // Note: We don't call updateSummary() here because:
+        // 1. Summary is already updated when checkboxes change (via checkbox handlers)
+        // 2. Summary is already updated when user types (via textarea input handler)
+        // 3. metrics.Summary always contains the current textarea value
+        // This preserves manual edits to the summary textarea
         
         // Prepare output by appending units to results
         const outputResults = {};

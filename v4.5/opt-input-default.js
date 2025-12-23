@@ -707,6 +707,18 @@ window.parseConfig = [
         "unit": "seconds"
     },
     {
+        "handle": "MaxDobutamineDose",
+        "match": "",
+        "label": "Max Dobutamine Dose",
+        "unit": "mcg/kg/min"
+    },
+    {
+        "handle": "AtropineDose",
+        "match": "",
+        "label": "Atropine Given",
+        "unit": "mg"
+    },
+    {
         "handle": "mlsLuminity",
         "match": "",
         "label": "mls of Luminty",
@@ -739,7 +751,13 @@ window.parseConfig = [
     {
         "handle": "Operator",
         "match": "",
-        "label": "Performed by",
+        "label": "Operator 1",
+        "unit": ""
+    },
+    {
+        "handle": "Operator2",
+        "match": "",
+        "label": "Operator 2",
         "unit": ""
     },
     {

@@ -66,13 +66,13 @@ BP: {{BP}}`,
     
     MiscSection:
 `Miscellaneous:
-IVC is {{IVCD}}
-Pulmonary artery systolic pressure {{PASP}}.
+IVC is {{{IVCD}}}
+Pulmonary artery systolic pressure {{{PASP}}}.
 {{PPHT}}
 {{ASD}}
 {{#if PlEff ~}}{{PlEff}}
 {{/if~}}
-{{PEff}}`,    
+{{{PEff}}}`,
 };
 
 // Main output template - assembles all sections into the final report

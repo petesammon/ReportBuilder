@@ -111,6 +111,9 @@ jQuery(document).ready(function () {
             const hasSummary = paramOption.enableSummary === true;
             if (!hasSummary) return;
             
+            // Skip params that should always be included (no user control needed)
+            if (paramOption.summaryAlwaysInclude === true) return;
+            
             const isCustom = paramOption.custom === true;
             
             // Check if this parameter needs conditional text

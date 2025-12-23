@@ -76,7 +76,7 @@ window.options = [
                 title: "",
                 options: [
                     { label: "No hypertrophy", title: "No left ventricular hypertrophy.", summarytext: "no hypertrophy, ", default: true },
-                    { label: "Concentric hypertrophy", title: "Concentric left ventricular hypertroph.y", summarytext: "concentric hypertrophy, "},
+                    { label: "Concentric hypertrophy", title: "Concentric left ventricular hypertrophy.", summarytext: "concentric hypertrophy, "},
                     { label: "Assymetric hypertrophy", title: "Assymetric left ventricular hypertrophy.", summarytext: "assymetric hypertrophy, "},
                     { label: "(enter free text --&gt;)", title: "" },
                 ],
@@ -526,10 +526,10 @@ PV AccT = {{PAT}}. {{PVN}}`},
             IVCD: {
                 title: "IVC Size",
                 options: [
-                    { label: "Not dilated, >50% collapse", title: "not dilated with more than 50% collapse, estimating RA pressure at 0-5mmHg", default: true },
-                    { label: "Not dilated, <50% collapse", title: "not dilated with less than 50% collapse, estimating RA pressure at 5-15mmHg" },
-                    { label: "Dilated, >50% collapse", title: "dilated with more than 50% collapse, estimating RA pressure at 5-15mmHg" },
-                    { label: "Dilated, <50% collapse", title: "dilated with less than 50% collapse, estimating RA pressure at greater than 15mmHg" },
+                    { label: "Not dilated, >50% collapse", title: "not dilated with >50% collapse, estimating RA pressure at 0-5mmHg", default: true },
+                    { label: "Not dilated, <50% collapse", title: "not dilated with <50% collapse, estimating RA pressure at 5-15mmHg" },
+                    { label: "Dilated, >50% collapse", title: "dilated with >50% collapse, estimating RA pressure at 5-15mmHg" },
+                    { label: "Dilated, <50% collapse", title: "dilated with <50% collapse, estimating RA pressure at >15mmHg" },
                     { label: "Not seen", title: "not adequately visualised, unable to estimate RA pressure" },
                     { label: "(enter free text --&gt;)", title: "" },
                 ],
@@ -609,8 +609,8 @@ Pericardial Effusion:
     - No mid-systolic RA collapse.
     - Normal IVC size, collapses.
 
-    MV inflow: Vmax cm/s, Vmin cm/s; Variation (normal range less than 25%)
-    TV inflow: Vmax cm/s, Vmin cm/s; Variation (normal range less than 40%)`, summarytext: "Small/Medium/Large global/localised pericardial effusion, mostly around the LV/RV/RA - with/without evidence of haemodynamic compromise.", },
+    MV inflow: Vmax = cm/s, Vmin = cm/s; Variation = % (normal range less than 25%)
+    TV inflow: Vmax = cm/s, Vmin = cm/s; Variation = % (normal range less than 40%)`, summarytext: "Small/Medium/Large global/localised pericardial effusion, mostly around the LV/RV/RA - with/without evidence of haemodynamic compromise.", },
                     { label: "(enter free text --&gt;)", title: "" },
                 ],
                 enableSummary: true,
@@ -630,7 +630,7 @@ Pericardial Effusion:
                     { label: "Summary", title: "Summary:", default: true },
                 ],
                 enableSummary: true,
-                summaryDefault: true,
+                summaryAlwaysInclude: true,
                 summaryOrder: 0,
             },
             SummaryLV: {

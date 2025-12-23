@@ -6,6 +6,7 @@ window.measurements = [
         highlight: true,
         items: [
             "Operator",
+            "Operator2",
             "Supervisor",
         ]
     },    
@@ -30,6 +31,14 @@ window.measurements = [
             "ExSeconds",
         ]
     }, 
+    {
+        title: "Dobutamine Stress",
+        highlight: true,
+        items: [
+            "MaxDobutamineDose",
+            "AtropineDose",
+        ]
+    },
     {
         title: "Luminity Dilution",
         highlight: true,
