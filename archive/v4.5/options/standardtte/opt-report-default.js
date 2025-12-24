@@ -19,9 +19,10 @@ BP: {{BP}}`,
 {{LVSF}}
 {{LVH}}
 {{LVD}}
-{{Diastology}}{{LAP}}
-
-{{LVMeasurements}}`,
+{{Diastology}}{{LAP}}`,
+    
+    sectLVMeasurements:
+`{{LVMeasurements}}`,
     
     MVSection:
 `Mitral Valve:
@@ -80,6 +81,8 @@ window.outputTemplate = Handlebars.compile(
 `{{DetailsSection}}
 
 {{LVSection}}
+
+{{LVMeasurements}}
 
 {{MVSection}}
 {{LASection}}

@@ -36,20 +36,21 @@ jQuery(document).ready(function () {
         }
     });
 
-    // Load selected report config (measurements + options + report template)
+    // Load selected report config (measurements + options + report template + manual measurements)
     function loadReportConfig(configId) {
         const config = reportConfigs.find(c => c.id === configId);
         if (!config) return;
 
         // Remove any previously loaded scripts
-        document.querySelectorAll('script[data-measurements-config], script[data-options-config], script[data-report-template]').forEach(s => s.remove());
+        document.querySelectorAll('script[data-measurements-config], script[data-options-config], script[data-report-template], script[data-manual-config]').forEach(s => s.remove());
 
         let measurementsLoaded = false;
         let optionsLoaded = false;
         let reportTemplateLoaded = false;
+        let manualConfigLoaded = false;
 
         function checkAllLoaded() {
-            if (measurementsLoaded && optionsLoaded && reportTemplateLoaded) {
+            if (measurementsLoaded && optionsLoaded && reportTemplateLoaded && manualConfigLoaded) {
                 console.log(`Loaded report config: ${config.name}`);
                 
                 // Clear metrics and tracking flags from previous config
@@ -121,6 +122,40 @@ jQuery(document).ready(function () {
             alert(`Failed to load report template: ${config.name}`);
         };
         document.head.appendChild(reportTemplateScript);
+
+        // Load manual measurements config (if specified)
+        if (config.manual) {
+            const manualConfigScript = document.createElement('script');
+            manualConfigScript.src = config.manual;
+            manualConfigScript.setAttribute('data-manual-config', 'true');
+            manualConfigScript.onload = function() {
+                if (window.manualConfig && Array.isArray(window.manualConfig)) {
+                    // Merge manual config with existing parseConfig
+                    // Manual configs are appended to parseConfig
+                    parseConfig = [...parseConfig, ...window.manualConfig];
+                    
+                    // Rebuild the lookup map to include manual measurements
+                    parseConfigMap = {};
+                    parseConfig.forEach(item => {
+                        parseConfigMap[item.handle] = item;
+                    });
+                    
+                    console.log(`Loaded manual config: ${config.name} (${window.manualConfig.length} manual items, ${parseConfig.length} total)`);
+                    manualConfigLoaded = true;
+                    checkAllLoaded();
+                } else {
+                    alert(`Manual configuration loaded but manualConfig not found: ${config.name}`);
+                }
+            };
+            manualConfigScript.onerror = function() {
+                alert(`Failed to load manual configuration: ${config.name}`);
+            };
+            document.head.appendChild(manualConfigScript);
+        } else {
+            // No manual config specified, mark as loaded
+            manualConfigLoaded = true;
+            checkAllLoaded();
+        }
     }
 
     // Handle report config selection
