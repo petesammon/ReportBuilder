@@ -118,9 +118,9 @@ th {
 }
 
 .template-options-table th {
-    color: var(--pico-primary);
+    color: var(--pico-muted-color);
     padding: 0.5rem;
-    text-align: left;
+    text-align: center;
     font-weight: 600;
 }
 
@@ -135,9 +135,37 @@ th {
     white-space: nowrap;
 }
 
+.template-options-table .param-edit {
+    text-align: center;
+    vertical-align: middle;
+}
+
 .template-options-table .param-options select {
     width: 100%;
     margin: 0;
+}
+
+.template-options-table .param-options .modal-edit-button,
+.template-options-table .param-edit .modal-edit-button {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 0.85rem !important;
+    float: none !important;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    background-color: var(--pico-primary-background);
+    border-color: var(--pico-primary-border);
+    color: var(--pico-primary-inverse);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.template-options-table .param-options .modal-edit-button:hover,
+.template-options-table .param-edit .modal-edit-button:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
 }
 
 .template-options-table .param-options .no-options {
@@ -195,6 +223,22 @@ th {
 .modal-exclude-button:hover {
     background-color: var(--pico-secondary-hover-background);
     border-color: var(--pico-secondary-hover-border);
+}
+
+/* Modal back button */
+.modal-back-button {
+    margin: 0 !important;
+    padding: 0.5rem 1.5rem !important;
+    font-size: 1rem !important;
+    float: none !important;
+    background-color: var(--pico-primary-background);
+    border-color: var(--pico-primary-border);
+    color: var(--pico-primary-inverse);
+}
+
+.modal-back-button:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
 }
 
 /* Modal next button */

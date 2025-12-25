@@ -201,12 +201,18 @@ jQuery(document).ready(function () {
             
             // Build options column content
             let optionsHtml = '';
+            let hasEditButton = false;
             if (isCustom) {
                 // Custom field - show textarea
                 const largeClass = paramOption.large ? 'large' : '';
                 const currentValue = window.metrics && window.metrics[paramKey] ? window.metrics[paramKey] : '';
                 optionsHtml = `<textarea id="${paramKey}-textarea" class="modal-textarea ${largeClass}" data-param="${paramKey}">${currentValue}</textarea>`;
             } else if (paramOption.options && Array.isArray(paramOption.options)) {
+                // Check if this dropdown has a custom text option (title: "" and not default)
+                const hasCustomTextOption = paramOption.options.some(opt => 
+                    typeof opt !== 'string' && opt.title === "" && opt.default !== true
+                );
+                
                 // Regular dropdown
                 optionsHtml = `
                     <select id="${paramKey}-select" data-param="${paramKey}">
@@ -220,9 +226,17 @@ jQuery(document).ready(function () {
                         }).join('')}
                     </select>
                 `;
+                
+                // Store whether this has edit button
+                hasEditButton = hasCustomTextOption;
             } else {
                 optionsHtml = `<span class="no-options">No options available</span>`;
             }
+            
+            // Build edit button column HTML
+            const editButtonHtml = hasEditButton ? 
+                `<button type="button" class="modal-edit-button" data-param="${paramKey}" title="Enter custom text">✎</button>` : 
+                '';
             
             // Build summary checkbox
             const defaultChecked = paramOption.summaryDefault ? 'checked' : '';
@@ -231,6 +245,7 @@ jQuery(document).ready(function () {
             paramRows += `
                 <tr data-param="${paramKey}" ${hasConditionalText ? 'class="has-conditional-text"' : ''}>
                     <td class="param-label" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${paramOption.title || paramKey}</td>
+                    <td class="param-edit" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${editButtonHtml}</td>
                     <td class="param-options" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${optionsHtml}</td>
                     <td class="param-summary" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${summaryHtml}</td>
                 </tr>
@@ -242,9 +257,11 @@ jQuery(document).ready(function () {
                 paramRows += `
                     <tr id="${paramKey}-conditional-row" class="conditional-text-row" style="display: none;">
                         <td style="border-top: none; padding-top: 0;"></td>
-                        <td colspan="2" style="border-top: none; padding-top: 0;">
+                        <td style="border-top: none; padding-top: 0;"></td>
+                        <td style="border-top: none; padding-top: 0;">
                             <textarea id="${paramKey}-conditional-textarea" class="modal-textarea ${largeClass}" data-param="${paramKey}" placeholder="Enter custom text..."></textarea>
                         </td>
+                        <td style="border-top: none; padding-top: 0;"></td>
                     </tr>
                 `;
             }
@@ -263,6 +280,7 @@ jQuery(document).ready(function () {
                             <thead>
                                 <tr>
                                     <th style="width: 200px;">Parameter</th>
+                                    <th style="width: 40px;"></th>
                                     <th>Options</th>
                                     <th style="width: 100px; text-align: center;">Summary</th>
                                 </tr>
@@ -450,6 +468,35 @@ jQuery(document).ready(function () {
                     updateSummaryNow();
                 });
             }
+            
+            // Modal edit button handler - activates custom text entry
+            const $editButton = $(`.modal-edit-button[data-param="${paramKey}"]`);
+            if ($editButton.length && $select.length) {
+                $editButton.on('click', function() {
+                    // Find the custom text option (title: "" and not default)
+                    if (paramOption.options && Array.isArray(paramOption.options)) {
+                        const customOptionIndex = paramOption.options.findIndex(opt => 
+                            typeof opt !== 'string' && opt.title === "" && opt.default !== true
+                        );
+                        
+                        if (customOptionIndex !== -1) {
+                            // Select the custom text option by index
+                            // Add 1 to account for "Select..." option at index 0
+                            $select[0].selectedIndex = customOptionIndex + 1;
+                            // Trigger change event to show conditional textarea
+                            $select.trigger('change');
+                            
+                            // Focus the conditional textarea after a short delay
+                            setTimeout(() => {
+                                const $conditionalTextarea = $(`#${paramKey}-conditional-textarea`);
+                                if ($conditionalTextarea.length) {
+                                    $conditionalTextarea.focus();
+                                }
+                            }, 50);
+                        }
+                    }
+                });
+            }
         });
         
         // Helper function to handle summaryExclude
@@ -559,6 +606,11 @@ jQuery(document).ready(function () {
                 const currentValue = window.metrics && window.metrics[paramKey] ? window.metrics[paramKey] : '';
                 optionsHtml = `<textarea id="${paramKey}-textarea" class="modal-textarea ${largeClass}" data-param="${paramKey}">${currentValue}</textarea>`;
             } else if (paramOption.options && Array.isArray(paramOption.options)) {
+                // Check if this dropdown has a custom text option (title: "" and not default)
+                const hasCustomTextOption = paramOption.options.some(opt => 
+                    typeof opt !== 'string' && opt.title === "" && opt.default !== true
+                );
+                
                 // Regular dropdown
                 optionsHtml = `
                     <select id="${paramKey}-select" data-param="${paramKey}">
@@ -572,9 +624,17 @@ jQuery(document).ready(function () {
                         }).join('')}
                     </select>
                 `;
+                
+                // Store whether this has edit button
+                hasEditButton = hasCustomTextOption;
             } else {
                 optionsHtml = `<span class="no-options">No options available</span>`;
             }
+            
+            // Build edit button column HTML
+            const editButtonHtml = hasEditButton ? 
+                `<button type="button" class="modal-edit-button" data-param="${paramKey}" title="Enter custom text">✎</button>` : 
+                '';
             
             // Build summary checkbox (only if enableSummary is true)
             let summaryHtml = '';
@@ -586,6 +646,7 @@ jQuery(document).ready(function () {
             paramRows += `
                 <tr data-param="${paramKey}" ${hasConditionalText ? 'class="has-conditional-text"' : ''}>
                     <td class="param-label" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${paramOption.title || paramKey}</td>
+                    <td class="param-edit" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${editButtonHtml}</td>
                     <td class="param-options" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${optionsHtml}</td>
                     ${hasSummary ? `<td class="param-summary" ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}>${summaryHtml}</td>` : `<td ${hasConditionalText ? 'style="border-bottom: none; padding-bottom: 0.25rem;"' : ''}></td>`}
                 </tr>
@@ -597,10 +658,11 @@ jQuery(document).ready(function () {
                 paramRows += `
                     <tr id="${paramKey}-conditional-row" class="conditional-text-row" style="display: none;">
                         <td style="border-top: none; padding-top: 0;"></td>
-                        <td colspan="${hasSummary ? 2 : 1}" style="border-top: none; padding-top: 0;">
+                        <td style="border-top: none; padding-top: 0;"></td>
+                        <td style="border-top: none; padding-top: 0;">
                             <textarea id="${paramKey}-conditional-textarea" class="modal-textarea ${largeClass}" data-param="${paramKey}" placeholder="Enter custom text..."></textarea>
                         </td>
-                        ${hasSummary ? '<td style="border-top: none; padding-top: 0;"></td>' : ''}
+                        <td style="border-top: none; padding-top: 0;"></td>
                     </tr>
                 `;
             }
@@ -619,6 +681,7 @@ jQuery(document).ready(function () {
                             <thead>
                                 <tr>
                                     <th style="width: 200px;">Parameter</th>
+                                    <th style="width: 40px;"></th>
                                     <th>Options</th>
                                     <th style="width: 100px; text-align: center;">Summary</th>
                                 </tr>
@@ -628,6 +691,7 @@ jQuery(document).ready(function () {
                             </tbody>
                         </table>
                         <div style="text-align: center; margin-top: 0.75rem; display: flex; justify-content: center; gap: 0.5rem; align-items: center;">
+                            <button type="button" class="modal-back-button" data-section="${sectionKey}">← Back</button>
                             <button type="button" class="modal-exclude-button" data-section="${sectionKey}" title="Exclude section from report">−</button>
                             <button type="button" class="generate-section-button" data-section="${sectionKey}">Done</button>
                             <button type="button" class="modal-next-button" data-section="${sectionKey}">Next →</button>
@@ -708,6 +772,14 @@ jQuery(document).ready(function () {
                     // Update metrics
                     if (window.metrics) {
                         window.metrics[paramKey] = selectedValue || "";
+                    }
+                    
+                    // Mark that this modal session had changes
+                    if (window.modalChangedInSession && window.modalInitialState && section.sectionPreviewKey) {
+                        const initialValue = window.modalInitialState[section.sectionPreviewKey][paramKey];
+                        if (initialValue !== selectedValue) {
+                            window.modalChangedInSession[section.sectionPreviewKey] = true;
+                        }
                     }
                     
                     // Track the selected option object for summary text lookup
@@ -795,6 +867,35 @@ jQuery(document).ready(function () {
                     updateSummaryNow();
                 });
             }
+            
+            // Modal edit button handler - activates custom text entry
+            const $editButton = $(`.modal-edit-button[data-param="${paramKey}"]`);
+            if ($editButton.length && $select.length) {
+                $editButton.on('click', function() {
+                    // Find the custom text option (title: "" and not default)
+                    if (paramOption.options && Array.isArray(paramOption.options)) {
+                        const customOptionIndex = paramOption.options.findIndex(opt => 
+                            typeof opt !== 'string' && opt.title === "" && opt.default !== true
+                        );
+                        
+                        if (customOptionIndex !== -1) {
+                            // Select the custom text option by index
+                            // Add 1 to account for "Select..." option at index 0
+                            $select[0].selectedIndex = customOptionIndex + 1;
+                            // Trigger change event to show conditional textarea
+                            $select.trigger('change');
+                            
+                            // Focus the conditional textarea after a short delay
+                            setTimeout(() => {
+                                const $conditionalTextarea = $(`#${paramKey}-conditional-textarea`);
+                                if ($conditionalTextarea.length) {
+                                    $conditionalTextarea.focus();
+                                }
+                            }, 50);
+                        }
+                    }
+                });
+            }
 
             // Helper function to handle summaryExclude
             function handleSummaryExclude(paramKey, paramOption) {
@@ -848,6 +949,22 @@ jQuery(document).ready(function () {
                     $modalExcludeButton.text('−').attr('title', 'Exclude section from report');
                 }
                 
+                // Track initial state when modal opens
+                if (!window.modalInitialState) {
+                    window.modalInitialState = {};
+                }
+                if (!window.modalChangedInSession) {
+                    window.modalChangedInSession = {};
+                }
+                
+                // Store initial state for this section
+                window.modalInitialState[sectionKey] = {};
+                window.modalChangedInSession[sectionKey] = false;
+                
+                Object.entries(section.params).forEach(([paramKey]) => {
+                    window.modalInitialState[sectionKey][paramKey] = window.metrics ? window.metrics[paramKey] : '';
+                });
+                
                 $(`#${modalId}`).addClass('active');
             });
         
@@ -886,6 +1003,23 @@ jQuery(document).ready(function () {
                     window.metrics[paramKey] = $textarea.val() || "";
                 }
             });
+            
+            // Check if we should warn about overwriting manual edits
+            const hasManualEdits = window.sectionPreviewManuallyEdited && window.sectionPreviewManuallyEdited[sectionKey];
+            const hasModalChanges = window.modalChangedInSession && window.modalChangedInSession[sectionKey];
+            
+            if (hasManualEdits && hasModalChanges) {
+                const confirmOverwrite = confirm(
+                    "You have manual edits in this section. Updating from the modal will overwrite them.\n\n" +
+                    "Click OK to overwrite your manual edits, or Cancel to keep them."
+                );
+                
+                if (!confirmOverwrite) {
+                    // User chose to keep manual edits - close modal without updating
+                    $(`#${modalId}`).removeClass('active');
+                    return;
+                }
+            }
             
             // Update section preview
             if (window.sectionPreviewManuallyEdited) {
@@ -950,6 +1084,23 @@ jQuery(document).ready(function () {
             }
         });
         
+        // Modal Back button handler
+        $(`.modal-back-button[data-section="${sectionKey}"]`).on('click', function() {
+            // Close current modal
+            $(`#${modalId}`).removeClass('active');
+            
+            // Find and open previous section modal
+            const allSections = window.options.filter(s => s.enableSectionPreview && s.sectionPreviewKey);
+            const currentIndex = allSections.findIndex(s => s.sectionPreviewKey === sectionKey);
+            
+            if (currentIndex > 0) {
+                // Open previous section's modal
+                const prevSection = allSections[currentIndex - 1];
+                const prevModalId = `${prevSection.sectionPreviewKey}-modal`;
+                $(`#${prevModalId}`).addClass('active');
+            }
+        });
+        
         // Modal Next button handler
         $(`.modal-next-button[data-section="${sectionKey}"]`).on('click', function() {
             // First, update the current section (same as Done button)
@@ -970,6 +1121,33 @@ jQuery(document).ready(function () {
                     window.metrics[paramKey] = $textarea.val() || "";
                 }
             });
+            
+            // Check if we should warn about overwriting manual edits
+            const hasManualEdits = window.sectionPreviewManuallyEdited && window.sectionPreviewManuallyEdited[sectionKey];
+            const hasModalChanges = window.modalChangedInSession && window.modalChangedInSession[sectionKey];
+            
+            if (hasManualEdits && hasModalChanges) {
+                const confirmOverwrite = confirm(
+                    "You have manual edits in this section. Updating from the modal will overwrite them.\n\n" +
+                    "Click OK to overwrite your manual edits, or Cancel to keep them and move to next section."
+                );
+                
+                if (!confirmOverwrite) {
+                    // User chose to keep manual edits - just move to next without updating
+                    $(`#${modalId}`).removeClass('active');
+                    
+                    // Find and open next section modal
+                    const allSections = window.options.filter(s => s.enableSectionPreview && s.sectionPreviewKey);
+                    const currentIndex = allSections.findIndex(s => s.sectionPreviewKey === sectionKey);
+                    
+                    if (currentIndex >= 0 && currentIndex < allSections.length - 1) {
+                        const nextSection = allSections[currentIndex + 1];
+                        const nextModalId = `${nextSection.sectionPreviewKey}-modal`;
+                        $(`#${nextModalId}`).addClass('active');
+                    }
+                    return;
+                }
+            }
             
             if (window.sectionPreviewManuallyEdited) {
                 window.sectionPreviewManuallyEdited[sectionKey] = false;
