@@ -118,9 +118,9 @@ th {
 }
 
 .template-options-table th {
-    color: var(--pico-muted-color);
+    color: var(--pico-primary);
     padding: 0.5rem;
-    text-align: center;
+    text-align: left;
     font-weight: 600;
 }
 
