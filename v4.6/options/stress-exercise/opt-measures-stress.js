@@ -5,7 +5,7 @@ window.measurements = [
         title: "Operator(s)",
         highlight: true,
         items: [
-            "Operator",
+            "Operator1",
             "Operator2",
             "Supervisor",
         ]

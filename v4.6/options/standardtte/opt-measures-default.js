@@ -5,7 +5,7 @@ window.measurements = [
         title: "PLEASE ENTER MANUALLY",
         highlight: true,
         items: [
-            "Operator",
+            "Operator1",
             "HR",
         ]
     },    

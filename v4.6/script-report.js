@@ -285,8 +285,8 @@ jQuery(document).ready(function () {
     function getMeasurementDetails(handle) {
         const config = parseConfigMap[handle];
         return config ? 
-            { label: config.label, unit: config.unit || '' } : 
-            { label: handle, unit: '' };
+            { label: config.label, unit: config.unit || '', full: config.full || false } : 
+            { label: handle, unit: '', full: false };
     }
 
     // Generate measurements table with input boxes for manual entry
@@ -311,7 +311,7 @@ jQuery(document).ready(function () {
                 rows += `<tr${sectionClass}>
                     <td class="label">${details.label}<span class="copyable-value" style="opacity: 0; position: absolute; pointer-events: none;">${displayValue ? ' = ' + displayValue + (details.unit || '') : ''}</span></td>
                     <td class="measurement-cell">
-                        <input type="text" class="measurement-input" data-key="${handle}" value="${displayValue}" />
+                        <input type="text" class="measurement-input${details.full ? ' full-width' : ''}" data-key="${handle}" value="${displayValue}" />
                         ${details.unit ? `<span class="unit-label">${details.unit}</span>` : ''}
                     </td>
                 </tr>`;

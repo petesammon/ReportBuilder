@@ -96,21 +96,17 @@ window.manualConfig = [
         "unit": ""
     },
     {
-        "handle": "Operator1",
-        "match": "",
-        "label": "Operator 1",
-        "unit": ""
-    },
-    {
         "handle": "Operator2",
         "match": "",
         "label": "Operator 2",
+        full: true,
         "unit": ""
     },
     {
         "handle": "Supervisor",
         "match": "",
         "label": "Supervised by",
+        full: true,
         "unit": ""
     },
 ];

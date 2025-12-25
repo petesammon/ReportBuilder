@@ -255,7 +255,7 @@ jQuery(document).ready(function () {
             <div id="${modalId}" class="modal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2>Summary - Template Options</h2>
+                        <h2>Summary</h2>
                         <button class="close-button" data-modal="${modalId}">&times;</button>
                     </div>
                     <div class="modal-body">
@@ -611,7 +611,7 @@ jQuery(document).ready(function () {
             <div id="${modalId}" class="modal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2>${section.title} - Template Options</h2>
+                        <h2>${section.title}</h2>
                         <button class="close-button" data-modal="${modalId}">&times;</button>
                     </div>
                     <div class="modal-body">
@@ -627,8 +627,10 @@ jQuery(document).ready(function () {
                                 ${paramRows}
                             </tbody>
                         </table>
-                        <div style="text-align: center; margin-top: 0.75rem;">
-                            <button type="button" class="generate-section-button" data-section="${sectionKey}">Generate Text</button>
+                        <div style="text-align: center; margin-top: 0.75rem; display: flex; justify-content: center; gap: 0.5rem; align-items: center;">
+                            <button type="button" class="modal-exclude-button" data-section="${sectionKey}" title="Exclude section from report">−</button>
+                            <button type="button" class="generate-section-button" data-section="${sectionKey}">Done</button>
+                            <button type="button" class="modal-next-button" data-section="${sectionKey}">Next →</button>
                         </div>
                     </div>
                 </div>
@@ -832,6 +834,20 @@ jQuery(document).ready(function () {
                         $textarea.val(window.metrics[paramKey]);
                     }
                 });
+                
+                // Sync exclude button state and modal appearance
+                const $modal = $(`#${modalId}`);
+                const $modalBody = $modal.find('.modal-body');
+                const $modalExcludeButton = $(`.modal-exclude-button[data-section="${sectionKey}"]`);
+                
+                if (window.excludedSections && window.excludedSections[sectionKey]) {
+                    $modalBody.addClass('excluded-modal');
+                    $modalExcludeButton.text('+').attr('title', 'Include section in report');
+                } else {
+                    $modalBody.removeClass('excluded-modal');
+                    $modalExcludeButton.text('−').attr('title', 'Exclude section from report');
+                }
+                
                 $(`#${modalId}`).addClass('active');
             });
         
@@ -885,6 +901,99 @@ jQuery(document).ready(function () {
             }
             
             $(`#${modalId}`).removeClass('active');
+        });
+        
+        // Modal Exclude button handler
+        $(`.modal-exclude-button[data-section="${sectionKey}"]`).on('click', function() {
+            // Initialize excludedSections if needed
+            if (!window.excludedSections) {
+                window.excludedSections = {};
+            }
+            
+            // Toggle excluded state
+            const isExcluded = window.excludedSections[sectionKey] || false;
+            window.excludedSections[sectionKey] = !isExcluded;
+            
+            const $modal = $(`#${modalId}`);
+            const $modalBody = $modal.find('.modal-body');
+            const $excludeButton = $(this);
+            const $formTextarea = $(`#${sectionKey}-textarea`);
+            const $formExcludeButton = $(`.exclude-button[data-section="${sectionKey}"]`);
+            const $formEditButton = $(`.template-button[data-section="${sectionKey}"]`);
+            
+            if (window.excludedSections[sectionKey]) {
+                // Exclude: grey out modal, update button, sync with form
+                $modalBody.addClass('excluded-modal');
+                $excludeButton.text('+').attr('title', 'Include section in report');
+                
+                // Sync with form buttons and textarea
+                $formTextarea.addClass('excluded').prop('disabled', true).css('height', '32px');
+                $formEditButton.hide();
+                $formExcludeButton.text('+').attr('title', 'Include section in report');
+            } else {
+                // Include: restore modal, update button, sync with form
+                $modalBody.removeClass('excluded-modal');
+                $excludeButton.text('−').attr('title', 'Exclude section from report');
+                
+                // Sync with form buttons and textarea
+                $formTextarea.removeClass('excluded').prop('disabled', false).css('height', '');
+                if (typeof window.autoResizeTextarea === 'function') {
+                    window.autoResizeTextarea($formTextarea);
+                }
+                $formEditButton.show();
+                $formExcludeButton.text('−').attr('title', 'Exclude section from report');
+            }
+            
+            // Update summary
+            if (typeof window.updateSummary === 'function') {
+                window.updateSummary();
+            }
+        });
+        
+        // Modal Next button handler
+        $(`.modal-next-button[data-section="${sectionKey}"]`).on('click', function() {
+            // First, update the current section (same as Done button)
+            Object.entries(section.params).forEach(([paramKey]) => {
+                const $select = $(`#${paramKey}-select`);
+                const $textarea = $(`#${paramKey}-textarea`);
+                const $conditionalTextarea = $(`#${paramKey}-conditional-textarea`);
+                
+                if ($conditionalTextarea.length && $conditionalTextarea.is(':visible')) {
+                    if (window.metrics) {
+                        window.metrics[paramKey] = $conditionalTextarea.val() || "";
+                    }
+                }
+                else if ($select.length && window.metrics) {
+                    window.metrics[paramKey] = $select.val() || "";
+                }
+                else if ($textarea.length && window.metrics) {
+                    window.metrics[paramKey] = $textarea.val() || "";
+                }
+            });
+            
+            if (window.sectionPreviewManuallyEdited) {
+                window.sectionPreviewManuallyEdited[sectionKey] = false;
+            }
+            if (typeof window.updateSectionPreview === 'function') {
+                window.updateSectionPreview(sectionKey);
+            }
+            if (typeof window.updateSummary === 'function') {
+                window.updateSummary();
+            }
+            
+            // Close current modal
+            $(`#${modalId}`).removeClass('active');
+            
+            // Find and open next section modal
+            const allSections = window.options.filter(s => s.enableSectionPreview && s.sectionPreviewKey);
+            const currentIndex = allSections.findIndex(s => s.sectionPreviewKey === sectionKey);
+            
+            if (currentIndex >= 0 && currentIndex < allSections.length - 1) {
+                // Open next section's modal immediately
+                const nextSection = allSections[currentIndex + 1];
+                const nextModalId = `${nextSection.sectionPreviewKey}-modal`;
+                $(`#${nextModalId}`).addClass('active');
+            }
         });
     }
     

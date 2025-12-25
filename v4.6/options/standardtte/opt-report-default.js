@@ -6,7 +6,7 @@ window.sectionTemplates = {
     
     DetailsSection: 
 `Performed on: {{Machine}}
-Operator: {{Operator}}
+Operator: {{Operator1}}
 Technical Quality: {{TechnicalQualilty}}
 ECG: {{Rhythm}}, {{HR}}
 Height: {{Height}}, Weight: {{Weight}}, BSA: {{BSA}}
