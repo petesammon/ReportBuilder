@@ -49,8 +49,9 @@ th {
 
 .modal.active {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
+    padding-top: 5vh;
 }
 
 .modal-content {
@@ -80,6 +81,16 @@ th {
 .modal-header .close-button {
     position: absolute;
     right: 1rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: var(--pico-border-width) solid var(--pico-muted-border-color);
+    background-color: #f8f9fa;
 }
 
 .modal-body {
@@ -119,9 +130,10 @@ th {
 
 .template-options-table th {
     color: var(--pico-muted-color);
-    padding: 0.5rem;
+    padding: 0.3rem 0.5rem;
     text-align: center;
     font-weight: 600;
+    font-size: 0.8rem;
 }
 
 .template-options-table td {
@@ -195,25 +207,28 @@ th {
     font-family: inherit;
 }
 
+/* DEPRECATED: Use textareaSize attribute instead of .large class */
+/*
 .template-options-table .modal-textarea.large {
     min-height: 8rem;
     height: 8rem;
     resize: vertical;
 }
+*/
 
 /* Generate section button */
 .generate-section-button {
     margin: 0 !important;
-    padding: 0.5rem 1.5rem !important;
-    font-size: 1rem !important;
+    padding: 0.45rem 1.35rem !important;
+    font-size: 0.9rem !important;
     float: none !important;
 }
 
 /* Modal exclude button */
 .modal-exclude-button {
     margin: 0 !important;
-    padding: 0.5rem 1rem !important;
-    font-size: 1rem !important;
+    padding: 0.45rem 0.9rem !important;
+    font-size: 0.9rem !important;
     float: none !important;
     background-color: var(--pico-secondary-background);
     border-color: var(--pico-secondary-border);
@@ -228,8 +243,8 @@ th {
 /* Modal back button */
 .modal-back-button {
     margin: 0 !important;
-    padding: 0.5rem 1.5rem !important;
-    font-size: 1rem !important;
+    padding: 0.45rem 1.35rem !important;
+    font-size: 0.9rem !important;
     float: none !important;
     background-color: var(--pico-primary-background);
     border-color: var(--pico-primary-border);
@@ -244,8 +259,8 @@ th {
 /* Modal next button */
 .modal-next-button {
     margin: 0 !important;
-    padding: 0.5rem 1.5rem !important;
-    font-size: 1rem !important;
+    padding: 0.45rem 1.35rem !important;
+    font-size: 0.9rem !important;
     float: none !important;
     background-color: var(--pico-primary-background);
     border-color: var(--pico-primary-border);
@@ -253,6 +268,22 @@ th {
 }
 
 .modal-next-button:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
+}
+
+/* Modal close button */
+.modal-close-button {
+    margin: 0 !important;
+    padding: 0.45rem 1.35rem !important;
+    font-size: 0.9rem !important;
+    float: none !important;
+    background-color: var(--pico-primary-background);
+    border-color: var(--pico-primary-border);
+    color: var(--pico-primary-inverse);
+}
+
+.modal-close-button:hover {
     background-color: var(--pico-primary-hover-background);
     border-color: var(--pico-primary-hover-border);
 }
@@ -360,12 +391,14 @@ textarea {
     box-sizing: border-box;
 }
 
-/* Large textarea variant */
+/* DEPRECATED: Use textareaSize attribute instead of .large class */
+/*
 textarea.large {
     min-height: 8rem;
     height: auto;
     resize: vertical;
 }
+*/
 
 /* Horizontal rules */
 hr {
@@ -679,14 +712,6 @@ hr {
 
 .section-preview textarea:focus {
     background-color: var(--pico-form-element-active-background-color);
-}
-
-/* Generate section button */
-.generate-section-button {
-    margin: 0 !important;
-    padding: 0.5rem 1.5rem !important;
-    font-size: 1rem !important;
-    float: none !important;
 }
 
 /* Checkbox styling */

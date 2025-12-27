@@ -25,7 +25,6 @@ window.options = [
                     { label: "Fair", title: "Fair", default: true },
                     { label: "Poor", title: "Poor" },
                     { label: "Very poor", title: "Very poor" },
-                    { label: "(blank)", title: ""},
                 ],
             },
             Machine: {
@@ -35,7 +34,6 @@ window.options = [
                     { label: "GE 95", title: "GE E95", default: true },
                     { label: "GE S70", title: "GE S70" },
                     { label: "GE iQ", title: "GE iQ" },
-                    { label: "(blank)", title: "" },
                 ],
             },
             Rhythm: {
@@ -43,13 +41,12 @@ window.options = [
                 options: [
                     { label: "Sinus rhythm", title: "Sinus rhythm", default: true },
                     { label: "AF", title: "Atrial fibrillation" },
-                    { label: "(blank)", title: "" },
                 ],
             },
         },
     },
     {
-        title: "Left Ventricle (text)",
+        title: "Left Ventricle",
         enableSectionPreview: true,
         sectionPreviewKey: "LVSection",
         params: {
@@ -57,23 +54,22 @@ window.options = [
                 title: "RWMAs",
                 options: [
                     { label: "(none)", title: "", default: true },
-                    { label: "(blank)", title: "", summarytext: "Regional wall motion abnormalities described above."},
+                    { label: "", title: "", summarytext: "Regional wall motion abnormalities described above."},
                 ],
                 enableSummary: true,
                 summaryDefault: false,
                 summaryOnChange: true,
-                large: true,
+                textareaSize: 5,
                 summaryOrder: 1,
             },
             LVComments: {
                 title: "Other comments",
                 options: [
                     { label: "(none)", title: "", default: true },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
-                large: true,
+                textareaSize: 3,
                 summaryOrder: 2,
             },
             LVSF: {
@@ -85,7 +81,6 @@ window.options = [
                     { label: "Moderately impaired systolic function", title: "Moderately impaired left ventricular systolic function.", summarytext: "Moderately impaired left ventricular systolic function,"},
                     { label: "Severely impaired systolic function", title: "Severely impaired left ventricular systolic function.", summarytext: "Severely impaired left ventricular systolic function,"},
                     { label: "Impaired systolic function", title: "Impaired left ventricular systolic function.", summarytext: "Impaired left ventricular systolic function,"},
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: true,
@@ -97,7 +92,6 @@ window.options = [
                     { label: "No hypertrophy", title: "No left ventricular hypertrophy.", summarytext: "no hypertrophy,", default: true },
                     { label: "Concentric hypertrophy", title: "Concentric left ventricular hypertrophy.", summarytext: "concentric hypertrophy,"},
                     { label: "Assymetric hypertrophy", title: "Assymetric left ventricular hypertrophy.", summarytext: "assymetric hypertrophy,"},
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: true,
@@ -110,7 +104,6 @@ window.options = [
                     { label: "Mild dilatation", title: "Mild left ventricular dilatation", summarytext: "mild dilatation." },
                     { label: "Moderate dilatation", title: "Moderate left ventricular dilatation", summarytext: "moderate dilatation." },
                     { label: "Severe dilatation", title: "Severe left ventricular dilatation", summarytext: "severe dilatation." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: true,
@@ -122,7 +115,6 @@ window.options = [
                     { label: "Normal diastolic function", title: "Normal diastolic function for age", default: true },
                     { label: "Impaired diastolic function", title: "Impaired diastolic function" },
                     { label: "Indeterminate diastolic function", title: "Indeterminate diastolic function" },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -132,11 +124,10 @@ window.options = [
             LAP: {
                 title: "Filling pressure",
                 options: [
-                    { label: "(blank)", title: ".", default: true },
+                    { label: "", title: ".", default: true },
                     { label: "Normal filling pressures", title: ", normal filling pressures.", summarytext: "^, normal filling pressures.",},
                     { label: "Indeterminate filling pressures", title: ", indeterminate filling pressures.", summarytext: "^, indeterminate filling pressures.", },
                     { label: "Elevated filling pressures", title: ", elevated filling pressures.", summarytext: "^, elevated filling pressures.", },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -206,7 +197,6 @@ Global Averaged Longitudinal Strain = {{GLS}}`},
                     { label: "BioMVR, stable", title: "BioMVR in situ, stable." },
                     { label: "Mechanical MVR, stable", title: "Mechanical MVR in situ, stable." },
                     { label: "Mitral TEER, stable", title: "Mitral TEER device(s) in situ, stable." },
-                    { label: "(blank)", title: "" },
                 ],
             },
             MS: {
@@ -220,7 +210,6 @@ Global Averaged Longitudinal Strain = {{GLS}}`},
                     { label: "Possible obstruction", title: "Possible obstruction to forwards flow." },
                     { label: "Probable obstruction", title: "Probable obstruction to forwards flow." },
                     { label: "Obstructed", title: "Obstructed forwards flow." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -244,7 +233,6 @@ Global Averaged Longitudinal Strain = {{GLS}}`},
                     { label: "Mild residual regurgitation", title: "Mild residual mitral regurgitation." },
                     { label: "Moderate residual regurgitation", title: "Moderate residual mitral regurgitation." },
                     { label: "Severe residual regurgitation", title: "Severe residual mitral regurgitation." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -275,12 +263,11 @@ MR Jet: VC width = {{MRVCD}}, PISAr (Als Vel. of {{MRALSVEL}}) = {{MRPISA}}, VTI
         sectionPreviewKey: "LASection",
         params: {
             LAtrium: {
-                title: "",
+                title: "Size",
                 options: [
                     { label: "Not dilated", title: "Not dilated.", default: true },
                     { label: "Borderline dilated", title: "Borderline dilated.", summarytext: "Borderline dilated left atrium."},
                     { label: "Dilated", title: "Dilated.", summarytext: "Dilated left atrium." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -294,14 +281,13 @@ MR Jet: VC width = {{MRVCD}}, PISAr (Als Vel. of {{MRALSVEL}}) = {{MRPISA}}, VTI
         sectionPreviewKey: "AVSection",
         params: {
             AV: {
-                title: "",
+                title: "Leaflets",
                 options: [
                     { label: "Trileaflet, normal", title: "Trileaflet, thin and mobile cusps, opens well.", default: true },
                     { label: "Trileaflet, thickened and restricted", title: "Trileaflet, thickened cusps with restricted opening."},
                     { label: "BAV", title: "Bicuspid aortic valve.", summarytext: "Bicuspid aortic valve."},
                     { label: "BioAVR", title: "BioAVR in situ, stable.", summarytext: "BioAVR stable."},
                     { label: "Mechanical AVR", title: "Mechanical AVR in situ, stable.", summarytext: "Mechanical AVR stable." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -311,7 +297,7 @@ MR Jet: VC width = {{MRVCD}}, PISAr (Als Vel. of {{MRALSVEL}}) = {{MRPISA}}, VTI
                 summaryExclude: ["SummaryValves"],
             },
             AS: {
-                title: "",
+                title: "Stenosis",
                 options: [
                     { label: "No stenosis", title: "No aortic stenosis.", default: true },
                     { label: "Mild stenosis", title: "Mild aortic stenosis. " },
@@ -322,7 +308,6 @@ MR Jet: VC width = {{MRVCD}}, PISAr (Als Vel. of {{MRALSVEL}}) = {{MRPISA}}, VTI
                     { label: "Possible obstruction", title: "Possible obstruction. " },
                     { label: "Probable obstruction", title: "Probable obstruction. " },
                     { label: "Evidence of obstruction", title: "Evidence of obstruction. " },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -331,7 +316,7 @@ MR Jet: VC width = {{MRVCD}}, PISAr (Als Vel. of {{MRALSVEL}}) = {{MRPISA}}, VTI
                 summaryExclude: ["SummaryValves"],
             },
             AR: {
-                title: "",
+                title: "Regurgitation",
                 options: [
                     { label: "No regurgitation", title: "No aortic regurgitation. ", default: true },
                     { label: "Trivial regurgitation", title: "Trivial aortic regurgitation. " },
@@ -347,7 +332,6 @@ MR Jet: VC width = {{MRVCD}}, PISAr (Als Vel. of {{MRALSVEL}}) = {{MRPISA}}, VTI
                     { label: "Mild residual regurgitation", title: "Mild residual aortic regurgitation." },
                     { label: "Moderate residual regurgitation", title: "Moderate residual aortic regurgitation." },
                     { label: "Severe residual regurgitation", title: "Severe residual aortic regurgitation." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -386,7 +370,6 @@ AccT = {{AVAccT}}, EjT = {{AVEjT}}, Acc/EjT = {{AVAccEjT}}`},
                     { label: "Dilated root and ascending", title: "Dilated aortic root and proximal ascending aorta."},
                     { label: "Dilated root only", title: "Dilated aortic root.\nNon-dilated proximal ascending aorta.", summarytext: "Dilated aortic root." },
                     { label: "Dilated ascending aorta only", title: "Dilated proximal ascending aorta.\nNon-dilated root.", summarytext: "Dilated proximal ascending aorta." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -414,7 +397,6 @@ Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, female: 12.
                     { label: "No coarctation", title: "No coarctation.", default: true },
                     { label: "Unable to assess - poor views", title: "Unable to assess for coarctation due to poor arch views."},
                     { label: "Coarctation demonstrated", title: "Evidence of aortic coarctation.", summarytext: "Evidence of aortic coarctation (see notes above)."},
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -430,35 +412,32 @@ Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, female: 12.
         sectionPreviewKey: "RVSection",
         params: {
             RVF: {
-                title: "",
+                title: "Function",
                 options: [
                     { label: "Normal function", title: "Normal radial and longitudinal function.", summarytext: "Normal right ventricular function,", default: true },
                     { label: "Impaired radial function only", title: "Impaired radial function, normal longitudinal function.", summarytext: "Impaired right ventricular function," },
                     { label: "Impaired longitudinal function only", title: "Impaired longitudinal function, normal radial function.", summarytext: "Impaired right ventricular function," },
                     { label: "Impaired radial and longitudinal function", title: "Impaired radial and longitudinal function.", summarytext: "Impaired right ventricular function," },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: true,
                 summaryOrder: 10,
             },      
             RVD: {
-                title: "",
+                title: "Dilatation",
                 options: [
                     { label: "Not dilated", title: "No right ventricular dilatation.", summarytext: "normal size", default: true },
                     { label: "Dilated", title: "Dilated right ventricle.", summarytext: "dilated" },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: true,
                 summaryOrder: 10,
             },
             RVH: {
-                title: "",
+                title: "Hypertrophy",
                 options: [
                     { label: "No hypertrophy", title: "No right ventricular hypertrophy.", summarytext: "^.", default: true },
                     { label: "Hypertrophied", title: "Hypertrophied right ventricle.", summarytext: ", hypertrophied." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: true,
@@ -485,11 +464,10 @@ TAPSE = {{TAPSE}}, S prime = {{RVS}}, FAC = {{FAC}}`},
         sectionPreviewKey: "RASection",
         params: {
             RAtrium: {
-                title: "",
+                title: "Size",
                 options: [
                     { label: "Not dilated", title: "Not dilated.", default: true },
                     { label: "Dilated", title: "Dilated.", summarytext: "Dilated right atrium."  },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -503,20 +481,18 @@ TAPSE = {{TAPSE}}, S prime = {{RVS}}, FAC = {{FAC}}`},
         sectionPreviewKey: "TVSection",
         params: {
             TV: {
-                title: "",
+                title: "Leaflets",
                 options: [
                     { label: "Normal leaflets", title: "Thin and mobile leaflets, opens well.", default: true },
-                    { label: "(blank)", title: "" },
                 ],
             },
             TS: {
-                title: "",
+                title: "Stenosis",
                 options: [
                     { label: "No stenosis", title: "No tricuspid stenosis.", default: true },
                     { label: "Mild stenosis", title: "Mild tricuspid stenosis." },
                     { label: "Moderate stenosis", title: "Moderate tricuspid stenosis." },
                     { label: "Severe stenosis", title: "Severe tricuspid stenosis." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -525,13 +501,12 @@ TAPSE = {{TAPSE}}, S prime = {{RVS}}, FAC = {{FAC}}`},
                 summaryExclude: ["SummaryValves"],
             },
             TR: {
-                title: "",
+                title: "Regurgitation",
                 options: [
                     { label: "Trivial regurgitation", title: "Trivial tricuspid regurgitation.", default: true },
                     { label: "Mild regurgitation", title: "Mild tricuspid regurgitation." },
                     { label: "Moderate regurgitation", title: "Moderate tricuspid regurgitation." },
                     { label: "Severe regurgitation", title: "Severe tricuspid regurgitation." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -566,20 +541,18 @@ TR Jet: VC width = {{TRVCD}}, PISAr (Als Vel. of {{TRALSVEL}}) = {{TRPISA}}, VTI
         sectionPreviewKey: "PVSection",
         params: {
             PV: {
-                title: "",
+                title: "Leaflets",
                 options: [
                     { label: "Normal leaflets", title: "Thin and mobile cusps where seen.", default: true },
-                    { label: "(blank)", title: "" },
                 ],
             },
             PS: {
-                title: "",
+                title: "Stenosis",
                 options: [
                     { label: "No stenosis", title: "No pulmonary stenosis.", default: true },
                     { label: "Mild stenosis", title: "Mild pulmonary stenosis." },
                     { label: "Moderate stenosis", title: "Moderate pulmonary stenosis." },
                     { label: "Severe stenosis", title: "Severe pulmonary stenosis." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -588,13 +561,12 @@ TR Jet: VC width = {{TRVCD}}, PISAr (Als Vel. of {{TRALSVEL}}) = {{TRPISA}}, VTI
                 summaryExclude: ["SummaryValves"],
             },
             PR: {
-                title: "",
+                title: "Regurgitation",
                 options: [
                     { label: "Trivial regurgitation", title: "Trivial pulmonary regurgitation.", default: true },
                     { label: "Mild regurgitation", title: "Mild pulmonary regurgitation." },
                     { label: "Moderate regurgitation", title: "Moderate pulmonary regurgitation." },
                     { label: "Severe regurgitation", title: "Severe pulmonary regurgitation." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -604,7 +576,7 @@ TR Jet: VC width = {{TRVCD}}, PISAr (Als Vel. of {{TRALSVEL}}) = {{TRPISA}}, VTI
                 summaryExclude: ["SummaryValves"],
             },
             PVN: {
-                title: "",
+                title: "Systolic Notch",
                 options: [
                     { label: "No systolic notch", title: "No mid-systolic notch.", default: true },
                     { label: "Systolic notch demonstrated", title: "Systolic notch demonstrated." },
@@ -635,14 +607,12 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
                     { label: "Dilated, >50% collapse", title: "dilated with >50% collapse, estimating RA pressure at 5-15mmHg" },
                     { label: "Dilated, <50% collapse", title: "dilated with <50% collapse, estimating RA pressure at >15mmHg" },
                     { label: "(Not adequately visualised)", title: "not adequately visualised, unable to estimate RA pressure" },
-                    { label: "(blank)", title: "" },
                 ],
             },
             PASP: {
-                title: "PASP =",
+                title: "ePASP",
                 options: [
                     { label: "not estimated in the absence of TR Vmax", title: "not estimated in the absence of TR Vmax", default: true },
-                    { label: "(blank)", title: "" },
                 ]
             },
             PPHT: {
@@ -652,7 +622,6 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
                     { label: "Intermediate", title: "Intermediate echocardiographic probability of pulmonary hypertension." },
                     { label: "High", title: "High echocardiographic probability of pulmonary hypertension." },
                     { label: "(Unable to assess)", title: "Unable to reliably assess probability of pulmonary hypertension." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -661,7 +630,7 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
                 summaryOrder: 80,
             },
             ASD: {
-                title: "Atrial Septal Defect",
+                title: "ASD/PFO",
                 options: [
                     { label: "No obvious ASD", title: "No obvious atrial septal defect imaged on CFM.", default: true },
                     { label: "Thin and mobile but no ASD", title: "The atrial septum is thin and mobile, but with no obvious defect imaged on CFM."},
@@ -669,8 +638,8 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
                     { label: "Small ASD/PFO, left-to-right shunt", title: "Small ASD/PFO demonstrated with resting left-to-right shunt demonstrated on CFM." },
                     { label: "Medium ASD/PFO, left-to-right shunt", title: "Medium ASD/PFO demonstrated with resting left-to-right shunt demonstrated on CFM." },
                     { label: "Large ASD/PFO, left-to-right shunt", title: "Large ASD/PFO demonstrated with resting left-to-right shunt demonstrated on CFM." },
-                    { label: "(blank)", title: "" },
                 ],
+                textareaSize: 2,
                 enableSummary: true,
                 summaryDefault: false,
                 summaryOnChange: true,
@@ -684,7 +653,6 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
                     { label: "Left pleural effusion", title: "Left pleural effusion noted.", summarytext: "Left pleural effusion." },
                     { label: "Right pleural effusion", title: "Right pleural effusion noted.", summarytext: "Right pleural effusion." },
                     { label: "Bilateral pleural effusions", title: "Bilateral pleural effusions noted.", summarytext: "Bilateral pleural effusions." },
-                    { label: "(blank)", title: "" },
                 ],
                 enableSummary: true,
                 summaryOnChange: true,
@@ -698,7 +666,7 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
                     { label: "Trivial pericardial effusion", title: "Trivial pericardial effusion." },
                     { label: "Small pericardial effusion - no compromise", title: "Trivial pericardial effusion without signs of haemodynamic compromise." },
                     { label: "Full Effusion Template", title: `
-Pericardial Effusion:            
+Pericardial Effusion:  
     Small/Medium/Large global/localised pericardial effusion, mostly around the LV/RV/RA - with/without evidence of haemodynamic compromise.
     
     Measures maximally at end-diastole:
@@ -716,8 +684,8 @@ Pericardial Effusion:
 
     MV inflow: Vmax = cm/s, Vmin = cm/s; Variation = % (normal range <25%)
     TV inflow: Vmax = cm/s, Vmin = cm/s; Variation = % (normal range <40%)`, summarytext: "Small/Medium/Large global/localised pericardial effusion, mostly around the LV/RV/RA - with/without evidence of haemodynamic compromise.", },
-                    { label: "(blank)", title: "" },
                 ],
+                textareaSize: 15,
                 enableSummary: true,
                 summaryOnChange: true,
                 summaryDefault: false,
@@ -730,7 +698,7 @@ Pericardial Effusion:
         sectionPreviewKey: "SummarySection",
         params: {
             SummaryTitle: {
-                title: "Header",
+                title: "",
                 options: [
                     { label: "Summary", title: "Summary:", default: true },
                 ],
@@ -745,7 +713,6 @@ Pericardial Effusion:
                     { label: "Biplane + GLS", title: "Estimated ejection fraction {{EFAuto}}, GLS {{GLS}}"},
                     { label: "Auto EF", title: "Estimated ejection fraction {{EFAuto}}"},
                     { label: "Auto EF + GLS", title: "Estimated ejection fraction {{EFAuto}}, GLS {{GLS}}"},
-                    { label: "(none)", title: ""},
                 ],
                 enableSummary: true,
                 summaryDefault: true,
@@ -765,7 +732,7 @@ Pericardial Effusion:
             Summary: {
                 title: "",
                 custom: true,
-                large: true,
+                textareaSize: 5,
             },
         },
     },

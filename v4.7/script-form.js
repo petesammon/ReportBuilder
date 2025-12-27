@@ -195,14 +195,14 @@ jQuery(document).ready(function () {
             let hasEditButton = false;
             if (isCustom) {
                 // Custom field - show textarea
-                const largeClass = paramOption.large ? 'large' : '';
+                const textareaSize = paramOption.textareaSize || 1;
+                const heightStyle = textareaSize > 1 ? `style="height: ${1.5 + (textareaSize - 1) * 1.3}rem; min-height: ${1.5 + (textareaSize - 1) * 1.3}rem;"` : '';
                 const currentValue = window.metrics && window.metrics[paramKey] ? window.metrics[paramKey] : '';
-                optionsHtml = `<textarea id="${paramKey}-textarea" class="modal-textarea ${largeClass}" data-param="${paramKey}">${currentValue}</textarea>`;
+                optionsHtml = `<textarea id="${paramKey}-textarea" class="modal-textarea" data-param="${paramKey}" ${heightStyle}>${currentValue}</textarea>`;
             } else if (paramOption.options && Array.isArray(paramOption.options)) {
                 // Regular dropdown
                 optionsHtml = `
                     <select id="${paramKey}-select" data-param="${paramKey}">
-                        <option value="">Select...</option>
                         ${paramOption.options.map(opt => {
                             const isString = typeof opt === 'string';
                             const label = isString ? opt : (opt.label || opt.title);
@@ -239,13 +239,14 @@ jQuery(document).ready(function () {
             
             // Add custom text row if customText is enabled
             if (hasCustomText && !isCustom) {
-                const largeClass = paramOption.large ? 'large' : '';
+                const textareaSize = paramOption.textareaSize || 1;
+                const heightStyle = textareaSize > 1 ? `style="height: ${1.5 + (textareaSize - 1) * 1.3}rem; min-height: ${1.5 + (textareaSize - 1) * 1.3}rem;"` : '';
                 paramRows += `
                     <tr id="${paramKey}-custom-row" class="custom-text-row" style="display: none;">
                         <td style="border-top: none; padding-top: 0;"></td>
                         <td style="border-top: none; padding-top: 0;"></td>
                         <td style="border-top: none; padding-top: 0;">
-                            <textarea id="${paramKey}-custom-textarea" class="modal-textarea ${largeClass}" data-param="${paramKey}" placeholder="Edit custom text..."></textarea>
+                            <textarea id="${paramKey}-custom-textarea" class="modal-textarea" data-param="${paramKey}" placeholder="Edit custom text..." ${heightStyle}></textarea>
                         </td>
                         <td style="border-top: none; padding-top: 0;"></td>
                     </tr>
@@ -261,6 +262,10 @@ jQuery(document).ready(function () {
                         <h2>Summary</h2>
                         <button class="close-button" data-modal="${modalId}">&times;</button>
                     </div>
+                    <div class="modal-actions">
+                        <button type="button" class="modal-back-button" data-section="Summary">← Back</button>
+                        <button type="button" class="modal-close-button" data-section="Summary">Close</button>
+                    </div>
                     <div class="modal-body">
                         <table class="template-options-table">
                             <thead>
@@ -275,10 +280,6 @@ jQuery(document).ready(function () {
                                 ${paramRows}
                             </tbody>
                         </table>
-                        <div style="text-align: center; margin-top: 0.75rem; display: flex; justify-content: center; gap: 0.5rem; align-items: center;">
-                            <button type="button" class="modal-back-button" data-section="Summary">← Back</button>
-                            <button type="button" class="generate-section-button" data-section="Summary">Done</button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -339,12 +340,11 @@ jQuery(document).ready(function () {
                     const selectedIndex = this.selectedIndex;
                     
                     // Find the selected option object using selectedIndex
-                    // Note: selectedIndex includes the "Select..." option, so subtract 1
                     let selectedOption = null;
                     let selectedLabel = null;
                     
-                    if (paramOption.options && selectedIndex > 0) {
-                        const optionIndex = selectedIndex - 1; // Account for "Select..." option
+                    if (paramOption.options && selectedIndex >= 0) {
+                        const optionIndex = selectedIndex;
                         if (optionIndex < paramOption.options.length) {
                             const opt = paramOption.options[optionIndex];
                             selectedOption = typeof opt === 'string' ? null : opt;
@@ -458,6 +458,7 @@ jQuery(document).ready(function () {
                             $customTextarea.val(currentValue);
                             $customRow.show();
                             $customTextarea.focus();
+                            $customTextarea.select();
                             // Grey out dropdown slightly
                             $select.css({
                                 'opacity': '0.6',
@@ -554,8 +555,8 @@ jQuery(document).ready(function () {
             }
         });
         
-        // Summary modal Done button
-        $(`.generate-section-button[data-section="Summary"]`).on('click', function() {
+        // Summary modal Close button
+        $(`.modal-close-button[data-section="Summary"]`).on('click', function() {
             // Collect dropdown and textarea values before closing
             Object.entries(section.params).forEach(([paramKey]) => {
                 const $select = $(`#${paramKey}-select`);
@@ -597,14 +598,14 @@ jQuery(document).ready(function () {
             let hasEditButton = false;
             if (isCustom) {
                 // Custom field - show textarea
-                const largeClass = paramOption.large ? 'large' : '';
+                const textareaSize = paramOption.textareaSize || 1;
+                const heightStyle = textareaSize > 1 ? `style="height: ${1.5 + (textareaSize - 1) * 1.3}rem; min-height: ${1.5 + (textareaSize - 1) * 1.3}rem;"` : '';
                 const currentValue = window.metrics && window.metrics[paramKey] ? window.metrics[paramKey] : '';
-                optionsHtml = `<textarea id="${paramKey}-textarea" class="modal-textarea ${largeClass}" data-param="${paramKey}">${currentValue}</textarea>`;
+                optionsHtml = `<textarea id="${paramKey}-textarea" class="modal-textarea" data-param="${paramKey}" ${heightStyle}>${currentValue}</textarea>`;
             } else if (paramOption.options && Array.isArray(paramOption.options)) {
                 // Regular dropdown
                 optionsHtml = `
                     <select id="${paramKey}-select" data-param="${paramKey}">
-                        <option value="">Select...</option>
                         ${paramOption.options.map(opt => {
                             const isString = typeof opt === 'string';
                             const label = isString ? opt : (opt.label || opt.title);
@@ -644,13 +645,14 @@ jQuery(document).ready(function () {
             
             // Add custom text row if customText is enabled
             if (hasCustomText && !isCustom) {
-                const largeClass = paramOption.large ? 'large' : '';
+                const textareaSize = paramOption.textareaSize || 1;
+                const heightStyle = textareaSize > 1 ? `style="height: ${1.5 + (textareaSize - 1) * 1.3}rem; min-height: ${1.5 + (textareaSize - 1) * 1.3}rem;"` : '';
                 paramRows += `
                     <tr id="${paramKey}-custom-row" class="custom-text-row" style="display: none;">
                         <td style="border-top: none; padding-top: 0;"></td>
                         <td style="border-top: none; padding-top: 0;"></td>
                         <td style="border-top: none; padding-top: 0;">
-                            <textarea id="${paramKey}-custom-textarea" class="modal-textarea ${largeClass}" data-param="${paramKey}" placeholder="Edit custom text..."></textarea>
+                            <textarea id="${paramKey}-custom-textarea" class="modal-textarea" data-param="${paramKey}" placeholder="Edit custom text..." ${heightStyle}></textarea>
                         </td>
                         <td style="border-top: none; padding-top: 0;"></td>
                     </tr>
@@ -666,6 +668,12 @@ jQuery(document).ready(function () {
                         <h2>${section.title}</h2>
                         <button class="close-button" data-modal="${modalId}">&times;</button>
                     </div>
+                    <div class="modal-actions">
+                        <button type="button" class="modal-back-button" data-section="${sectionKey}">← Back</button>
+                        <button type="button" class="modal-exclude-button" data-section="${sectionKey}" title="Exclude section from report">−</button>
+                        <button type="button" class="generate-section-button" data-section="${sectionKey}">Done</button>
+                        <button type="button" class="modal-next-button" data-section="${sectionKey}">Next →</button>
+                    </div>
                     <div class="modal-body">
                         <table class="template-options-table">
                             <thead>
@@ -680,12 +688,6 @@ jQuery(document).ready(function () {
                                 ${paramRows}
                             </tbody>
                         </table>
-                        <div style="text-align: center; margin-top: 0.75rem; display: flex; justify-content: center; gap: 0.5rem; align-items: center;">
-                            <button type="button" class="modal-back-button" data-section="${sectionKey}">← Back</button>
-                            <button type="button" class="modal-exclude-button" data-section="${sectionKey}" title="Exclude section from report">−</button>
-                            <button type="button" class="generate-section-button" data-section="${sectionKey}">Done</button>
-                            <button type="button" class="modal-next-button" data-section="${sectionKey}">Next →</button>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -744,12 +746,11 @@ jQuery(document).ready(function () {
                     const selectedIndex = this.selectedIndex;
                     
                     // Find the selected option object using selectedIndex
-                    // Note: selectedIndex includes the "Select..." option, so subtract 1
                     let selectedOption = null;
                     let selectedLabel = null;
                     
-                    if (paramOption.options && selectedIndex > 0) {
-                        const optionIndex = selectedIndex - 1; // Account for "Select..." option
+                    if (paramOption.options && selectedIndex >= 0) {
+                        const optionIndex = selectedIndex;
                         if (optionIndex < paramOption.options.length) {
                             const opt = paramOption.options[optionIndex];
                             selectedOption = typeof opt === 'string' ? null : opt;
@@ -860,6 +861,7 @@ jQuery(document).ready(function () {
                             $customTextarea.val(currentValue);
                             $customRow.show();
                             $customTextarea.focus();
+                            $customTextarea.select();
                             // Grey out dropdown slightly
                             $select.css({
                                 'opacity': '0.6',
