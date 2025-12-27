@@ -2,7 +2,7 @@ const reportConfigs = [
     {
         id: "standardtte",
         name: "Standard TTE",
-        manual: false,
+        manual: "options/standardtte/opt-manual-default.js",
         measurements: "options/standardtte/opt-measures-default.js",
         options: "options/standardtte/opt-form-default.js",
         report: "options/standardtte/opt-report-default.js",
