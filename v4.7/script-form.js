@@ -275,8 +275,9 @@ jQuery(document).ready(function () {
                                 ${paramRows}
                             </tbody>
                         </table>
-                        <div style="text-align: center; margin-top: 0.75rem;">
-                            <button type="button" class="update-summary-button">Done</button>
+                        <div style="text-align: center; margin-top: 0.75rem; display: flex; justify-content: center; gap: 0.5rem; align-items: center;">
+                            <button type="button" class="modal-back-button" data-section="Summary">← Back</button>
+                            <button type="button" class="generate-section-button" data-section="Summary">Done</button>
                         </div>
                     </div>
                 </div>
@@ -520,9 +521,42 @@ jQuery(document).ready(function () {
             }
         });
         
-        // Update Summary button (the "Done" button in the modal)
-        $(`.update-summary-button`).on('click', function() {
-            // Collect dropdown and textarea values
+        // Summary modal Back button - go back to last section
+        $(`.modal-back-button[data-section="Summary"]`).on('click', function() {
+            // Collect dropdown and textarea values before closing
+            Object.entries(section.params).forEach(([paramKey]) => {
+                const $select = $(`#${paramKey}-select`);
+                const $textarea = $(`#${paramKey}-textarea`);
+                
+                if ($select.length && window.metrics) {
+                    window.metrics[paramKey] = $select.val() || "";
+                }
+                
+                if ($textarea.length && window.metrics) {
+                    window.metrics[paramKey] = $textarea.val() || "";
+                }
+            });
+            
+            // Update summary
+            if (typeof window.updateSummary === 'function') {
+                window.updateSummary();
+            }
+            
+            // Close Summary modal
+            $(`#${modalId}`).removeClass('active');
+            
+            // Find and open the last section modal
+            const allSections = window.options.filter(s => s.enableSectionPreview && s.sectionPreviewKey);
+            if (allSections.length > 0) {
+                const lastSection = allSections[allSections.length - 1];
+                const lastModalId = `${lastSection.sectionPreviewKey}-modal`;
+                $(`#${lastModalId}`).addClass('active');
+            }
+        });
+        
+        // Summary modal Done button
+        $(`.generate-section-button[data-section="Summary"]`).on('click', function() {
+            // Collect dropdown and textarea values before closing
             Object.entries(section.params).forEach(([paramKey]) => {
                 const $select = $(`#${paramKey}-select`);
                 const $textarea = $(`#${paramKey}-textarea`);
@@ -1075,7 +1109,7 @@ jQuery(document).ready(function () {
                     // User chose to keep manual edits - just move to next without updating
                     $(`#${modalId}`).removeClass('active');
                     
-                    // Find and open next section modal
+                    // Find and open next section modal or Summary modal
                     const allSections = window.options.filter(s => s.enableSectionPreview && s.sectionPreviewKey);
                     const currentIndex = allSections.findIndex(s => s.sectionPreviewKey === sectionKey);
                     
@@ -1083,6 +1117,9 @@ jQuery(document).ready(function () {
                         const nextSection = allSections[currentIndex + 1];
                         const nextModalId = `${nextSection.sectionPreviewKey}-modal`;
                         $(`#${nextModalId}`).addClass('active');
+                    } else if (currentIndex === allSections.length - 1) {
+                        // This is the last section - open Summary modal
+                        $('#Summary-modal').addClass('active');
                     }
                     return;
                 }
@@ -1101,7 +1138,7 @@ jQuery(document).ready(function () {
             // Close current modal
             $(`#${modalId}`).removeClass('active');
             
-            // Find and open next section modal
+            // Find and open next section modal or Summary modal
             const allSections = window.options.filter(s => s.enableSectionPreview && s.sectionPreviewKey);
             const currentIndex = allSections.findIndex(s => s.sectionPreviewKey === sectionKey);
             
@@ -1110,6 +1147,9 @@ jQuery(document).ready(function () {
                 const nextSection = allSections[currentIndex + 1];
                 const nextModalId = `${nextSection.sectionPreviewKey}-modal`;
                 $(`#${nextModalId}`).addClass('active');
+            } else if (currentIndex === allSections.length - 1) {
+                // This is the last section - open Summary modal
+                $('#Summary-modal').addClass('active');
             }
         });
     }

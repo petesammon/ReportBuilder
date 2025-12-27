@@ -1,84 +1,255 @@
 :root {
-    --pico-font-size: 100%;
+    --pico-font-size: 95%;
+    --bg-primary: #ffffff;
+    --bg-secondary: #ffffff;
+    --bg-tertiary: #d6d6d6;
+    --bg-h1: #ffffff;
+    --bg-h2: #f9f9f9;
+    --bg-h3: #ededed;
+    --bg-block: #ededed; 
+    --text-primary: #1c1c1c;
+    --text-secondary: #1f1f1f;
+    --text-contrast: #e7e7e7;
+    --accent-primary: #101010;
+    --accent-hover: #6a6a6a;
+    --border-color: #cccccc;
 }
 
 html, body {
     height: 100%;
-    overflow: hidden;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
 }
 
 main {
-    height: calc(100% - 120px);
+    height: calc(100% - 100px);
+    background-color: var(--bg-primary);
 }
 
 button {
     margin: 10px 0;
     float: right;
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+    background-color: var(--accent-primary);
+    color: var(--bg-primary);
+    border: none;
+    transition: background-color 0.1s;
+}
+
+button:hover {
+    background-color: var(--accent-hover);
 }
 
 section {
     height: 100%;
     overflow: hidden;
-    padding: 1rem;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
 }
 
 th {
     font-weight: bold;
+    color: var(--text-primary);
 }
 
-/* Import and output textarea styling */
-#import textarea,
-#output textarea {
-    height: calc(100% - 200px);
-    font-family: monospace;
-    white-space: pre-wrap;
+td {
+    color: var(--text-secondary);
 }
 
-#import h2 {
-    text-align: center;
+#results div {
+    clear: both;
+    height: calc(100% - 140px);
+    overflow: scroll;
+    background-color: var(--bg-secondary);
 }
 
-#import .format-selector {
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
+#options > div {
+    height: calc(100% - 140px);
+    overflow: scroll;
+    background-color: var(--bg-secondary);
 }
 
-#import .format-selector label {
-    margin-bottom: 0;
-    min-width: 100px;
+#report,
+#output textarea{
+    height: calc(100% - 140px);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
 }
 
-#import .format-selector select {
-    margin-bottom: 0;
-    max-width: 300px;
+#help {
+    cursor: pointer;
+    color: var(--accent-primary);
 }
 
-#import .format-selector button {
-    float: none;
-    margin: 0;
+#help:hover {
+    color: var(--accent-hover);
 }
 
-h2 {
-    margin-bottom: 1rem;
-    font-size: 1.3rem;
+#example code {
+    display: block;
+    white-space: pre;
+    user-select: all;
+    height: 300px;
+    overflow: scroll;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.output {
+    white-space: break-spaces;
+    color: var(--text-secondary);
 }
 
 h3 {
-    font-size: 1.1rem;
-    margin: 0.8rem 0 0.5rem 0;
+    font-size: 1.2rem;
+    color: var(--text-primary);
 }
 
-/* Home button styling */
+body {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 5px;
+}
+
+.heading {
+    padding: 12px 10px;
+    margin: 10px 0;
+    cursor: pointer;
+    transition: background-color 0.1s;
+    user-select: none;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.heading:hover {
+    color: var(--accent-hover);
+}
+
+.heading.h1 {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text-primary);
+    background-color: var(--bg-h1);
+}
+
+.heading.h2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-left: 0;
+    color: var(--text-primary);
+    background-color: var(--bg-h2);
+}
+
+.heading.h3 {
+    font-size: 16px;
+    font-weight: bold;
+    margin-left: 10px;
+    color: var(--text-secondary);
+    background-color: var(--bg-h3);
+}
+
+.content {
+    display: none;
+    padding: 2px 15px 4px 15px;
+    margin: 0 0 0 0;
+    background-color: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.content.h1-content {
+    margin-left: 20px;
+}
+
+.content.h2-content {
+    margin-left: 0;
+}
+
+.content.h3-content {
+    margin-left: 20px;
+}
+
+.arrow {
+    display: inline-block;
+    margin-right: 10px;
+    transition: transform 0.1s;
+    color: var(--accent-primary);
+}
+
+.heading.active .arrow {
+    transform: rotate(90deg);
+}
+
+.block {
+    padding: 6px; 
+    display: block;
+    background-color: var(--bg-block);
+    border-radius: 4px;
+    margin:6px;
+}
+
+.indent {
+    margin-left:0.5rem;
+}
+
+/* Additional styling for inputs and form elements */
+input, textarea, select {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+input:focus, textarea:focus, select:focus {
+    border-color: var(--accent-primary);
+    outline: none;
+}
+
+/* Scrollbar styling for webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-primary);
+}
+
+/* Hyperlink styling */
+a {
+    color: var(--accent-primary);
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: var(--accent-hover);
+}
+
+a:visited {
+    color: var(--accent-primary);
+}
+
+a:active {
+    color: var(--text-primary);
+}
+
 .home-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 10px;
+    gap: 8px;
+    padding: 8px 12px;
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 8px;
@@ -94,217 +265,4 @@ h3 {
     width: 18px;
     height: 18px;
     color: var(--text-primary);
-}
-
-/* Form elements */
-label {
-    margin-bottom: 0.25rem;
-    font-size: 0.85rem;
-    font-weight: 500;
-}
-
-select {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.85rem;
-    margin-bottom: 0.5rem;
-}
-
-/* Default compact textarea */
-textarea {
-    padding: 0.4rem 0.6rem;
-    font-size: 0.85rem;
-    min-height: 0;
-    height: 2.2rem;
-    line-height: 1.2;
-    margin-bottom: 0.5rem;
-    resize: none;
-    box-sizing: border-box;
-}
-
-/* Large textarea variant */
-textarea.large {
-    min-height: 8rem;
-    height: auto;
-    resize: vertical;
-}
-
-/* Horizontal rules */
-hr {
-    margin: 1rem 0;
-    opacity: 0.3;
-}
-
-/* Two-column layout for measurements and options */
-.two-column-layout {
-    display: grid;
-    grid-template-columns: 350px 1fr;
-    grid-gap: 1.5rem;
-    height: 100%;
-}
-
-/* Report template selector at top of options page */
-#options .report-template-selector {
-    grid-column: 1 / -1;
-    margin-bottom: 1rem;
-    text-align: center;
-}
-
-#options .report-template-selector label {
-    min-width: 120px;
-}
-
-#options .report-template-selector select {
-    max-width: 300px;
-    margin-bottom: 0;
-}
-
-/* Measurements panel */
-#measurements-panel {
-    overflow-y: auto;
-    padding-right: 0.5rem;
-}
-
-#measurements-panel h2 {
-    position: sticky;
-    top: 0;
-    background: var(--pico-background-color);
-    z-index: 10;
-    padding: 0.5rem 0;
-    margin-top: 0;
-}
-
-#measurements-table {
-    font-size: 0.85rem;
-}
-
-#measurements-table table {
-    width: 100%;
-    margin: 0;
-}
-
-#measurements-table th {
-    text-align: left;
-    padding: 0.5rem 0.25rem;
-    font-size: 0.9rem;
-}
-
-#measurements-table td {
-    padding: 0.25rem 0.25rem;
-    border-bottom: 1px solid rgba(128, 128, 128, 0.1);
-}
-
-#measurements-table td.measurement-cell {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-}
-
-#measurements-table input.measurement-input {
-    width: 120px;
-    padding: 0.3rem 0.4rem;
-    font-size: 0.8rem;
-    margin: 0;
-    min-height: 0;
-    height: 1.8rem;
-    border: 1px solid rgba(128, 128, 128, 0.2);
-    border-radius: 4px;
-    box-sizing: border-box;
-    text-align: right;
-}
-
-#measurements-table .unit-label {
-    font-size: 0.75rem;
-    color: var(--pico-muted-color);
-    white-space: nowrap;
-    min-width: 40px;
-}
-
-/* Options panel */
-#options-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow-y: auto;
-}
-
-#options-content {
-    flex: 1;
-    padding-right: 0.5rem;
-}
-
-/* Four-column layout: label | dropdown/textarea | textarea | checkbox */
-#options-content > div[id] {
-    display: grid;
-    grid-template-columns: 140px 1fr 1fr 80px;
-    grid-gap: 0.75rem;
-    align-items: start;
-    margin-bottom: 0.5rem;
-}
-
-/* Label column */
-.label-container {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    padding-top: 0.4rem;
-}
-
-.label-container label {
-    margin-bottom: 0;
-    font-size: 0.85rem;
-    font-weight: 500;
-    text-align: right;
-}
-
-/* Dropdown container */
-.dropdown-container {
-    display: flex;
-    flex-direction: column;
-}
-
-.dropdown-container select {
-    margin-bottom: 0;
-}
-
-/* Textarea container */
-.textarea-container {
-    display: flex;
-    flex-direction: column;
-}
-
-.textarea-container textarea {
-    margin-bottom: 0;
-}
-
-/* Layout adjustments */
-#options-content > div[id].no-dropdown .textarea-container {
-    grid-column: 2;
-}
-
-#options-content > div[id].dropdown-only .dropdown-container {
-    grid-column: 2;
-}
-
-/* Summary field spans columns 2-3 for full width */
-#Summary .textarea-container {
-    grid-column: 2 / 4;
-}
-
-/* Checkbox styling */
-.summary-checkbox-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.4rem;
-    border-radius: 4px;
-    height: fit-content;
-    grid-column: 4;
-}
-
-.summary-checkbox-container input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    margin: 0;
-    cursor: pointer;
-    accent-color: var(--pico-primary);
 }
