@@ -715,7 +715,7 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
                 title: "Septal Motion",
                 options: [
                     { label: "Normal", title: "Normal septal motion.", default: true },
-                    { label: "Bounce", title: "Septal bounce, suggestive of ventricular interdependence."},
+                    { label: "Septal bounce", title: "Septal bounce."},
                 ],
             },
             paramsRVCollapse: {

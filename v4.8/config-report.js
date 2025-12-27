@@ -19,7 +19,7 @@ const reportConfigs = [
     {
         id: "peff",
         name: "Pericardial Effusion",
-        manual: "options/peff/opt-manual-peff.js",
+        manual: "options/standardtte/opt-manual-default.js",
         measurements: "options/peff/opt-measures-peff.js",
         options: "options/peff/opt-form-peff.js",
         report: "options/peff/opt-report-peff.js",

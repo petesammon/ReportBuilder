@@ -1,5 +1,3 @@
-// Measurements configuration for display
-// Defines which measurements to show and in what order
 window.measurements = [
     {
         title: "Left Ventricle",
@@ -35,8 +33,10 @@ window.measurements = [
         items: [
             "EffMVVmax",
             "EffMVVmin",
+            "EffMVVar",
             "EffTVVmax",
             "EffTVVmin",
+            "EffTVVar",
         ]
     },     
 ];
