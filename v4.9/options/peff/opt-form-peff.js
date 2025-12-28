@@ -111,7 +111,7 @@ window.options = [
     {
         title: "Summary",
         params: {
-            paramsSummary: {
+            paramsSummaryHeader: {
                 title: "",
                 options: [
                     { label: "Summary", title: "Summary:", default: true },

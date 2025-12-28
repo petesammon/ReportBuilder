@@ -20,15 +20,13 @@ jQuery(document).ready(function () {
         // Modals are appended to body, not to #options-content, so they persist across rebuilds
         $('.modal:not(#import-modal)').remove();
         
+        // Reset hidden sections for new template (prevents state from previous template persisting)
+        window.hiddenSections = {};
+        
         // Build sections with textareas
         window.options.forEach(section => {
             if (section.enableSectionPreview && section.sectionPreviewKey) {
                 const sectionKey = section.sectionPreviewKey;
-                
-                // Initialize hidden sections tracking
-                if (!window.hiddenSections) {
-                    window.hiddenSections = {};
-                }
                 
                 // Initialize excluded sections if defaultExcluded is set
                 if (section.defaultExcluded && !window.excludedSections) {
@@ -38,18 +36,22 @@ jQuery(document).ready(function () {
                     window.excludedSections[sectionKey] = true;
                 }
                 
-                // Skip rendering or hide if defaultHidden is true
+                // Set hidden state if defaultHidden is true
                 const isDefaultHidden = section.defaultHidden === true;
-                if (isDefaultHidden && window.hiddenSections[sectionKey] === undefined) {
+                if (isDefaultHidden) {
                     window.hiddenSections[sectionKey] = true;
                 }
                 const hiddenStyle = isDefaultHidden && window.hiddenSections[sectionKey] ? 'style="display: none;"' : '';
+                
+                // Use different button for triggered sections (defaultHidden)
+                const buttonText = isDefaultHidden ? '×' : '−';
+                const buttonClass = isDefaultHidden ? 'exclude-button reset-trigger-button' : 'exclude-button';
                 
                 const $sectionRow = $(`
                     <div class="form-row" data-section="${sectionKey}" ${hiddenStyle}>
                         <div class="form-left">
                             <h3>${section.title}</h3>
-                            <button type="button" class="exclude-button" data-section="${sectionKey}">−</button>
+                            <button type="button" class="${buttonClass}" data-section="${sectionKey}" data-is-triggered="${isDefaultHidden}">${buttonText}</button>
                             <button type="button" class="template-button" data-section="${sectionKey}">✎</button>
                         </div>
                         <div class="form-right">
@@ -85,34 +87,90 @@ jQuery(document).ready(function () {
                 
                 // Exclude button handler
                 $excludeButton.on('click', function() {
-                    // Initialize excludedSections if needed
-                    if (!window.excludedSections) {
-                        window.excludedSections = {};
-                    }
+                    const isTriggered = $(this).data('is-triggered');
                     
-                    // Toggle excluded state
-                    const isExcluded = window.excludedSections[sectionKey] || false;
-                    window.excludedSections[sectionKey] = !isExcluded;
-                    
-                    // Update UI
-                    if (window.excludedSections[sectionKey]) {
-                        // Exclude: grey out, disable, collapse, hide edit button
-                        $textarea.addClass('excluded').prop('disabled', true);
-                        $textarea.css('height', '32px'); // Match button height
-                        $editButton.hide();
-                        $excludeButton.text('+').attr('title', 'Include section in report');
+                    if (isTriggered) {
+                        // This is a triggered section - reset the trigger
+                        
+                        // Hide the section
+                        if (window.hiddenSections) {
+                            window.hiddenSections[sectionKey] = true;
+                        }
+                        $sectionRow.hide();
+                        
+                        // Exclude it from the report
+                        if (!window.excludedSections) {
+                            window.excludedSections = {};
+                        }
+                        window.excludedSections[sectionKey] = true;
+                        
+                        // Find and reset the dropdown that triggers this section
+                        window.options.forEach(section => {
+                            if (!section.params) return;
+                            
+                            Object.entries(section.params).forEach(([paramKey, paramOption]) => {
+                                if (!paramOption.options || !Array.isArray(paramOption.options)) return;
+                                
+                                // Check if any option triggers this section
+                                paramOption.options.forEach(opt => {
+                                    if (typeof opt !== 'string' && opt.triggerSection === sectionKey) {
+                                        // Found the parameter that can trigger this section
+                                        // Reset to default option
+                                        const defaultOption = paramOption.options.find(o => 
+                                            typeof o !== 'string' && o.default === true
+                                        );
+                                        
+                                        if (defaultOption) {
+                                            // Update the dropdown in both Summary and Section modals
+                                            $(`#${paramKey}-select`).val(defaultOption.title).trigger('change');
+                                            
+                                            // Update section preview for the section containing this parameter
+                                            if (section.sectionPreviewKey && typeof window.updateSectionPreview === 'function') {
+                                                window.updateSectionPreview(section.sectionPreviewKey);
+                                            }
+                                        }
+                                    }
+                                });
+                            });
+                        });
+                        
+                        // Update summary
+                        if (typeof window.updateSummary === 'function') {
+                            window.updateSummary();
+                        }
+                        
                     } else {
-                        // Include: restore normal state, expand, show edit button
-                        $textarea.removeClass('excluded').prop('disabled', false);
-                        $textarea.css('height', ''); // Clear inline height
-                        window.autoResizeTextarea($textarea); // Restore auto-sized height
-                        $editButton.show();
-                        $excludeButton.text('−').attr('title', 'Exclude section from report');
-                    }
-                    
-                    // Update summary to reflect exclusion/inclusion
-                    if (typeof window.updateSummary === 'function') {
-                        window.updateSummary();
+                        // Regular section - toggle exclude state
+                        
+                        // Initialize excludedSections if needed
+                        if (!window.excludedSections) {
+                            window.excludedSections = {};
+                        }
+                        
+                        // Toggle excluded state
+                        const isExcluded = window.excludedSections[sectionKey] || false;
+                        window.excludedSections[sectionKey] = !isExcluded;
+                        
+                        // Update UI
+                        if (window.excludedSections[sectionKey]) {
+                            // Exclude: grey out, disable, collapse, hide edit button
+                            $textarea.addClass('excluded').prop('disabled', true);
+                            $textarea.css('height', '32px'); // Match button height
+                            $editButton.hide();
+                            $excludeButton.text('+').attr('title', 'Include section in report');
+                        } else {
+                            // Include: restore normal state, expand, show edit button
+                            $textarea.removeClass('excluded').prop('disabled', false);
+                            $textarea.css('height', ''); // Clear inline height
+                            window.autoResizeTextarea($textarea); // Restore auto-sized height
+                            $editButton.show();
+                            $excludeButton.text('−').attr('title', 'Exclude section from report');
+                        }
+                        
+                        // Update summary to reflect exclusion/inclusion
+                        if (typeof window.updateSummary === 'function') {
+                            window.updateSummary();
+                        }
                     }
                 });
                 
@@ -434,7 +492,12 @@ jQuery(document).ready(function () {
                             if (window.excludedSections && window.excludedSections[currentTriggerSection]) {
                                 window.excludedSections[currentTriggerSection] = false;
                                 $(`.form-row[data-section="${currentTriggerSection}"]`).removeClass('excluded-section');
-                                $(`.exclude-button[data-section="${currentTriggerSection}"]`).text('−');
+                                const $button = $(`.exclude-button[data-section="${currentTriggerSection}"]`);
+                                if ($button.hasClass('reset-trigger-button')) {
+                                    $button.text('×');
+                                } else {
+                                    $button.text('−');
+                                }
                             }
                             
                             // Update the section preview if it exists
@@ -900,7 +963,12 @@ jQuery(document).ready(function () {
                             if (window.excludedSections && window.excludedSections[currentTriggerSection]) {
                                 window.excludedSections[currentTriggerSection] = false;
                                 $(`.form-row[data-section="${currentTriggerSection}"]`).removeClass('excluded-section');
-                                $(`.exclude-button[data-section="${currentTriggerSection}"]`).text('−');
+                                const $button = $(`.exclude-button[data-section="${currentTriggerSection}"]`);
+                                if ($button.hasClass('reset-trigger-button')) {
+                                    $button.text('×');
+                                } else {
+                                    $button.text('−');
+                                }
                             }
                             
                             // Update the section preview if it exists

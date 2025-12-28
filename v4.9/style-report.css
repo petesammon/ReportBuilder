@@ -58,13 +58,21 @@ th {
 .modal.section-modal {
     left: auto;
     right: 0;
-    width: calc(100% - 260px - 1.5rem - 2rem); /* Total width - left column width - gap - container padding */
+    width: calc(100% - 260px - 2rem); /* Cover everything except measurements column + container padding */
     background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* On wide screens, align modal with centered layout */
+@media (min-width: calc(1300px + 2rem)) {
+    .modal.section-modal {
+        right: calc((100% - 1300px + 2rem) / 2); /* Offset from right edge to match centered layout */
+        width: calc(1300px - 260px - 2rem); /* Width of right column in centered layout */
+    }
 }
 
 .modal.section-modal.active {
     align-items: flex-start;
-    justify-content: flex-start;
+    justify-content: center;
     padding: 5vh 1rem 1rem 1rem;
 }
 
@@ -84,10 +92,10 @@ th {
     flex-direction: column;
 }
 
-/* Section modal content uses full width */
+/* Section modal content centered with 1000px max-width */
 .section-modal .modal-content {
-    max-width: none;
-    width: 100%;
+    max-width: 1000px;
+    width: 90%;
 }
 
 .modal-header {
@@ -454,6 +462,8 @@ hr {
     grid-template-columns: 260px 1fr;
     grid-gap: 1.5rem;
     height: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
 }
 
 /* Measurements panel */
@@ -547,6 +557,7 @@ hr {
     flex-direction: column;
     height: 100%;
     overflow-y: auto;
+    max-width: 1000px;
 }
 
 #options-content {
@@ -629,6 +640,22 @@ hr {
     box-shadow: 0 0 0 var(--pico-outline-width) var(--pico-secondary-focus);
 }
 
+/* Reset trigger button - orange style for triggered sections */
+.form-left .reset-trigger-button {
+    background-color: #ff8c00; /* Dark orange */
+    border-color: #ff8c00;
+    color: white;
+}
+
+.form-left .reset-trigger-button:hover {
+    background-color: #ff7700;
+    border-color: #ff7700;
+}
+
+.form-left .reset-trigger-button:focus {
+    box-shadow: 0 0 0 var(--pico-outline-width) rgba(255, 140, 0, 0.3);
+}
+
 .form-right {
     margin: 0;
     padding: 0;
@@ -637,21 +664,16 @@ hr {
 .section-textarea {
     background-color: #f8f9fa;
     border: 1px solid var(--pico-muted-border-color);
-    border-top-width: 0;
     border-radius: 0;
     overflow: hidden;
     resize: none;
     margin: 0;
     padding: 0.4rem 0.6rem;
     display: block;
-    width: 100%;
+    width: 98%;
+    max-width: 1000px;
     min-height: 2.5rem;
     box-sizing: border-box;
-}
-
-/* First textarea gets top border */
-.form-row:first-of-type .section-textarea {
-    border-top-width: 1px;
 }
 
 .section-textarea:focus {

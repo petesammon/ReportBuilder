@@ -177,7 +177,6 @@ Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (ave
 Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}
 Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
 Global Averaged Longitudinal Strain = {{GLS}}`},
-                    { label: "None", title: ""},
                 ],
                 customText: false,
             },
@@ -346,9 +345,10 @@ MR Jet: VC width = {{MRVCD}}, PISAr (Als Vel. of {{MRALSVEL}}) = {{MRPISA}}, VTI
                     { label: "Default", title: `AV Vmax = {{AVVmax}}`, default: true },
                     { label: "BSE set", title: `LVOT Vmax = {{LVOTVmax}}, LVOT MaxPG = {{LVOTMaxPG}}, LVOT MeanPG = {{LVOTMeanPG}}, LVOT VTI = {{LVOTVTI}}
 AV Vmax = {{AVVmax}}, AV MaxPG = {{AVMaxPG}}, AV MeanPG = {{AVMeanPG}}, AV VTI = {{AVVTI}}`},
-                    { label: "AS assessment", title: `LVOT Diameter = {{LVOTd}}, LVOT Vmax = {{LVOTVmax}}, LVOT MeanPG = {{LVOTMeanPG}}, LVOT VTI = {{LVOTVTI}}, LV SV = {{LVSV}} (Indexed = {{LVSVI}})
+                    { label: "AS assessment", title: `LVOT Diameter = {{LVOTd}}, LV SV = {{LVSV}} (Indexed = {{LVSVI}})
+LVOT Vmax = {{LVOTVmax}}, LVOT MeanPG = {{LVOTMeanPG}}, LVOT VTI = {{LVOTVTI}}
 AV Vmax = {{AVVmax}}, AV MaxPG = {{AVMaxPG}}, AV MeanPG = {{AVMeanPG}}, AV VTI = {{AVVTI}}, DVI = {{DVI}}
-AVA = {{AVA}} (AVA Indexed = {{AVAI}})`},
+AVA = {{AVA}} (Indexed = {{AVAI}})`},
                     { label: "AVR assessment", title: `LVOT Vmax = {{LVOTVmax}}, LVOT MeanPG = {{LVOTMeanPG}}, LVOT VTI = {{LVOTVTI}}
 AV Vmax = {{AVVmax}}, AV MaxPG = {{AVMaxPG}}, AV MeanPG = {{AVMeanPG}}, AV VTI = {{AVVTI}}
 DVI = {{DVI}}

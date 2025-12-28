@@ -1,10 +1,9 @@
 // Section templates - define the text structure for each section
 window.sectionTemplates = {
-    sectHeader:
-`US Trans-Thoracic Echocardiogram:`,
-    
     sectStudy: 
-`Performed on: {{paramsMachine}}
+`US Trans-Thoracic Echocardiogram:
+
+Performed on: {{paramsMachine}}
 Operator: {{Operator1}}
 Technical Quality: {{paramsQualilty}}
 ECG: {{paramsRhythm}}, {{HR}}
@@ -38,8 +37,7 @@ TV inflow: Vmax = {{EffTVVmax}}, Vmin = {{EffTVVmin}}; Variation = {{EffTVVar}} 
 
 // Main output template - assembles all sections into the final report
 window.outputTemplate = Handlebars.compile(
-`{{sectHeader}}
-{{sectStudy}}
+`{{sectStudy}}
 
 {{sectPeffFull}}
 
