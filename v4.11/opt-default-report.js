@@ -16,6 +16,8 @@ BP: {{BP}}`,
 `Left Ventricle:
 {{#if RWMAs ~}}{{RWMAs}}
 {{/if~}}
+{{#if LVComments ~}}{{LVComments}}
+{{/if~}}
 {{LVSF}}
 {{LVH}}
 {{LVD}}
