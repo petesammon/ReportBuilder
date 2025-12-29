@@ -24,13 +24,14 @@ Patient symptoms:
 {{paramsSymptoms}}
 
 Reason for stopping:
-{{paramsStopReason}} {{paramsTargetHRAchieved}}
+{{paramsTargetHRAchieved}}
+{{paramsStopReason}}
 
 Exercise Tolerance:
 {{paramsExerciseTolerance}}`,
     
     sectECG: 
-`Electrocardiogram:
+`ELECTROCARDIOGRAM:
 Resting ECG: 
 {{paramsRestingECG}}
 
@@ -41,7 +42,7 @@ Haemodynamic Response:
 {{paramsHaemoResponse}}`,  
     
     sectEcho: 
-`Echocardiogram:
+`ECHOCARDIOGRAM:
 Resting Echo Findings:
 {{{paramsRestingEcho}}}
 
