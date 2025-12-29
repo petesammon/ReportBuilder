@@ -51,6 +51,12 @@ window.parseConfig = [
         label: "Gender",
         unit: ""
     },
+    {
+        handle: "Age",
+        match: "",
+        label: "Age",
+        unit: "years"
+    },
 // LV Dimensions
     {
         handle: "IVSd",

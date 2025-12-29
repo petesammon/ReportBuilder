@@ -7,7 +7,7 @@ window.options = [
             paramsHeader: {
                 title: "Header",
                 options: [
-                    { label: "Default", title: "The report is compiled in accordance to a locally agreed combination of BSE Guidelines 2024 and ASE/EACVI (2016, 2025) guidelines 2016.Unless specified in the report conclusion, it is the sole responsibility of the referring physician to act upon the findings of this study. In specific cases where delay may result in patient harm, sonographers will refer for urgent clinical support.", default: true, },    
+                    { label: "Default", title: "The report is compiled in accordance to a locally agreed combination of BSE Guidelines 2024 and ASE/EACVI guidelines 2016/2025. Unless specified in the report conclusion, it is the sole responsibility of the referring physician to act upon the findings of this study. In specific cases where delay may result in patient harm, sonographers will refer for urgent clinical support.", default: true, },    
                 ],
                 customText: false,
             },

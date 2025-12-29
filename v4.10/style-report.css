@@ -529,6 +529,19 @@ hr {
     flex: 1;
 }
 
+/* Calculated fields (read-only) styling */
+#measurements-table input.measurement-input.calculated-field {
+    background-color: #f0f8ff; /* Light blue background */
+    border-color: rgba(118, 191, 68, 0.3);
+    color: #2c5282;
+    cursor: default;
+}
+
+#measurements-table input.measurement-input.calculated-field:focus {
+    outline: none;
+    box-shadow: none;
+}
+
 #measurements-table .unit-label {
     font-size: 0.75rem;
     color: var(--pico-muted-color);

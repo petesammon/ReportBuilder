@@ -12,6 +12,9 @@ window.measurements = [
     {
         title: "Demographics",
         items: [
+            "DOB",
+            "Age",
+            "Gender",
             "Height", 
             "Weight", 
             "BSA", 
@@ -199,7 +202,7 @@ window.measurements = [
         ]
     },
     {
-        title: "Effusion",
+        title: "Effusion Size",
         highlight: true,
         items: [
             "LVPLAX",
@@ -212,6 +215,12 @@ window.measurements = [
             "RVSC",
             "RAA4C",
             "RASC",
+        ]
+    },
+    {
+        title: "Respiratory Variation",
+        highlight: true,
+        items: [
             "EffMVVmax",
             "EffMVVmin",
             "EffMVVar",

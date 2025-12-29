@@ -63,6 +63,7 @@ jQuery(document).ready(function () {
                 
                 // Regenerate the measurements table and form
                 generateMeasurementsTable();
+                runCalculations(); // Calculate derived values
                 $("#options-content").empty();
                 buildOptionsForm();
                 updateSummary();
@@ -343,16 +344,23 @@ jQuery(document).ready(function () {
                 const details = getMeasurementDetails(handle);
                 let rawValue = results[handle] || "";
                 
+                // Check if this is a calculated field
+                const isCalculated = typeof calculations === 'object' && calculations.hasOwnProperty(handle);
+                
                 // Strip unit from display value if it's already included
                 let displayValue = rawValue;
                 if (details.unit && rawValue.endsWith(details.unit)) {
                     displayValue = rawValue.slice(0, -details.unit.length);
                 }
                 
+                // Add readonly attribute for calculated fields
+                const readonlyAttr = isCalculated ? ' readonly' : '';
+                const calculatedClass = isCalculated ? ' calculated-field' : '';
+                
                 rows += `<tr${sectionClass}>
                     <td class="label">${details.label}<span class="copyable-value" style="opacity: 0; position: absolute; pointer-events: none;">${displayValue ? ' = ' + displayValue + (details.unit || '') : ''}</span></td>
                     <td class="measurement-cell">
-                        <input type="text" class="measurement-input${details.full ? ' full-width' : ''}" data-key="${handle}" value="${displayValue}" />
+                        <input type="text" class="measurement-input${details.full ? ' full-width' : ''}${calculatedClass}" data-key="${handle}" value="${displayValue}"${readonlyAttr} />
                         ${details.unit ? `<span class="unit-label">${details.unit}</span>` : ''}
                     </td>
                 </tr>`;
@@ -375,11 +383,68 @@ jQuery(document).ready(function () {
             const $copyableSpan = $row.find('.copyable-value');
             $copyableSpan.text(value ? ` = ${value}${unit}` : '');
             
+            // Run calculations to update derived values
+            runCalculations();
+            
             // Update summary to reflect the new measurement value
             updateSummary();
             
             // Update section previews with the new measurement value
             updateAllSectionPreviews();
+        });
+    }
+    
+    // Run calculations and update dependent measurement fields
+    function runCalculations() {
+        if (typeof calculations !== 'object') return;
+        
+        // Prepare metrics object with parsed numeric values for calculations
+        const metricsForCalc = {};
+        Object.entries(results).forEach(([key, value]) => {
+            // Strip units to get numeric value
+            const config = parseConfigMap[key];
+            if (config && config.unit && value) {
+                const numStr = value.toString().replace(config.unit, '').trim();
+                const num = parseFloat(numStr);
+                metricsForCalc[key] = isNaN(num) ? value : num;
+            } else {
+                metricsForCalc[key] = value;
+            }
+        });
+        
+        // Run each calculation function
+        Object.entries(calculations).forEach(([calcKey, calcFn]) => {
+            if (typeof calcFn === 'function') {
+                const calculatedValue = calcFn(metricsForCalc);
+                
+                // Update results with calculated value
+                if (calculatedValue !== "N/A" && calculatedValue !== null && calculatedValue !== undefined) {
+                    const config = parseConfigMap[calcKey];
+                    const unit = config?.unit || '';
+                    results[calcKey] = unit ? calculatedValue + unit : calculatedValue;
+                    
+                    // Update the input field display
+                    const $input = $(`.measurement-input[data-key="${calcKey}"]`);
+                    if ($input.length) {
+                        $input.val(calculatedValue);
+                        
+                        // Update the copyable span
+                        const $row = $input.closest('tr');
+                        const $copyableSpan = $row.find('.copyable-value');
+                        $copyableSpan.text(` = ${calculatedValue}${unit}`);
+                    }
+                } else {
+                    // Clear the field if calculation returns N/A
+                    results[calcKey] = "";
+                    const $input = $(`.measurement-input[data-key="${calcKey}"]`);
+                    if ($input.length) {
+                        $input.val("");
+                        const $row = $input.closest('tr');
+                        const $copyableSpan = $row.find('.copyable-value');
+                        $copyableSpan.text('');
+                    }
+                }
+            }
         });
     }
     
@@ -403,10 +468,8 @@ jQuery(document).ready(function () {
             }
         });
         
-        // Run calculations
-        Object.entries(calculations).forEach(([calcKey, calcValue]) => {
-            results[calcKey] = calcValue(results);
-        });
+        // Run calculations to compute derived values
+        runCalculations();
         
         // Close the modal
         $("#import-modal").removeClass("active");
@@ -421,6 +484,7 @@ jQuery(document).ready(function () {
         } else {
             // If already loaded, just regenerate the table and update section previews
             generateMeasurementsTable();
+            runCalculations(); // Ensure calculated values are updated in the new table
             updateAllSectionPreviews();
             updateSummary();  // Update summary to process Handlebars variables like {{EFBP}}
         }
@@ -459,11 +523,23 @@ jQuery(document).ready(function () {
                 const $checkbox = $(`#${key}-summary-modal`);
                 const metricValue = metrics[key];
                 
+                // Determine if checkbox is checked:
+                // - If modal exists (checkbox in DOM), use actual checkbox state
+                // - If modal doesn't exist (lazy loading), use virtual state
+                let isChecked = false;
+                if ($checkbox.length) {
+                    // Checkbox exists in DOM - use its state
+                    isChecked = $checkbox.is(':checked');
+                } else {
+                    // Checkbox doesn't exist yet (modal not created) - use virtual state
+                    isChecked = window.summaryCheckboxStates?.[key] ?? false;
+                }
+                
                 // Include if either:
                 // 1. summaryAlwaysInclude is true (no checkbox required), OR
-                // 2. checkbox exists, is checked, and has value
+                // 2. checkbox is checked (from DOM or virtual state) and has value
                 const shouldInclude = (option.summaryAlwaysInclude === true && metricValue && metricValue.trim()) ||
-                                     ($checkbox.length && $checkbox.is(':checked') && metricValue && metricValue.trim());
+                                     (isChecked && metricValue && metricValue.trim());
                 
                 if (shouldInclude) {
                     // Determine text to use: summarytext if available, otherwise the metric value (which is the title)

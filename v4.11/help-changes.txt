@@ -1,0 +1,5 @@
+Changes from v4.10:
+    1. 'lazy-loading' to avoid processing bottleneck of creating all modals on page initialisation
+    2. refatoring of script-form.js to remove duplication (new combined section/summary creation code)
+    3. change script-form to dot notation instead of bracket notation for summary code
+        x - custom text in pericardial effusion hidden section!
