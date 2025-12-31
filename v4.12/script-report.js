@@ -22,16 +22,24 @@ jQuery(document).ready(function () {
     function autoResizeTextarea($textarea, minHeight) {
         if (!$textarea || !$textarea.length) return;
         
-        // Reset height to auto to get the correct scrollHeight
-        $textarea.css('height', 'auto');
-        
-        // Get the scroll height
-        const scrollHeight = $textarea[0].scrollHeight;
-        
-        // Apply minimum height if specified, otherwise use scrollHeight
-        const finalHeight = minHeight && scrollHeight < minHeight ? minHeight : scrollHeight;
-        
-        $textarea.css('height', finalHeight + 'px');
+        if (minHeight) {
+            // First, set to minimum height
+            $textarea.css('height', minHeight + 'px');
+            
+            // Now check if content overflows at this height
+            const scrollHeight = $textarea[0].scrollHeight;
+            
+            // If scrollHeight exceeds the set height, content has overflowed - expand
+            if (scrollHeight > minHeight) {
+                $textarea.css('height', scrollHeight + 'px');
+            }
+            // Otherwise, stay at minHeight (already set above)
+        } else {
+            // No minHeight - just size to content
+            $textarea.css('height', 'auto');
+            const scrollHeight = $textarea[0].scrollHeight;
+            $textarea.css('height', scrollHeight + 'px');
+        }
     }
 
     // Populate report config dropdown

@@ -799,6 +799,7 @@ jQuery(document).ready(function () {
             });
             
             // Apply initial auto-resize with min-height
+            // The overflow detection in autoResizeTextarea ensures proper expansion
             if (typeof window.autoResizeTextarea === 'function') {
                 const minHeight = parseInt($textarea.data('min-height')) || 32;
                 window.autoResizeTextarea($textarea, minHeight);

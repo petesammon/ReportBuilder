@@ -9,5 +9,6 @@ Changes in v4.11 (from v4.10):
     
 Changes in v4.12:
     1. drop-down-free modal options with autoResizeTextarea (with minimum height set by textareaSize: x)
+    2. fixed issue with custom textarea not resizing as expected
     
         
