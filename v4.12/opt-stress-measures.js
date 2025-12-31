@@ -6,7 +6,6 @@ window.measurements = [
         highlight: true,
         items: [
             "Operator1",
-            "Operator2",
             "Supervisor",
         ]
     },    
@@ -17,8 +16,8 @@ window.measurements = [
             "MaxHR",
             "PercentMaxHR",
             "RestHR",
-            "RestBP",
             "MaxBP",
+            "RestBP",
             "METS",
             "PeakWatts",
         ]

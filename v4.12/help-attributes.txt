@@ -22,6 +22,7 @@ Attributes for entries on opt-form-*.js files
                 default: true, (within the options lines, sepcify the default option)
                 summarytext: "", (within the options lines, specify different statement to be added into the summary)
                 triggerSection: "sectPeff" (triggers the visibility of defaultHidden section on selection of this option)
+                options: 
         
         
 Attributes for entries on opt-report-*.js files

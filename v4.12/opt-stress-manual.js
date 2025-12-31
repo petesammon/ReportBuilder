@@ -14,13 +14,13 @@ window.manualConfig = [
     {
         "handle": "RestHR",
         "match": "",
-        "label": "Resitng HR",
+        "label": "Rest HR",
         "unit": "bpm"
     },
     {
         "handle": "RestBP",
         "match": "",
-        "label": "Resting BP",
+        "label": "Rest BP",
         "unit": "mmHg"
     },
     {
@@ -32,13 +32,13 @@ window.manualConfig = [
     {
         "handle": "METS",
         "match": "",
-        "label": "METS Achieved",
+        "label": "METS",
         "unit": ""
     },
     {
         "handle": "PeakWatts",
         "match": "",
-        "label": "Peak Watts",
+        "label": "Watts",
         "unit": "Watts"
     },
     {

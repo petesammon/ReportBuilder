@@ -4,6 +4,7 @@ window.measurements = [
     {
         title: "Enter Manually",
         highlight: true,
+        sectionPreviewKey: "sectStudy",
         items: [
             "Operator1",
             "HR",
@@ -11,6 +12,7 @@ window.measurements = [
     },    
     {
         title: "Demographics",
+        sectionPreviewKey: "sectStudy",
         items: [
             "DOB",
             "Age",
@@ -23,6 +25,7 @@ window.measurements = [
     },
     {
         title: "LV Dimensions",
+        sectionPreviewKey: ["sectLV", "sectLVMeasurements"],
         items: [
             "IVSd", 
             "LVPWd", 
@@ -36,6 +39,7 @@ window.measurements = [
     },
     {
         title: "LV Systolic Function",
+        sectionPreviewKey: ["sectLV", "sectLVMeasurements"],
         items: [
             "EFBP", 
             "EFAuto", 
@@ -44,6 +48,7 @@ window.measurements = [
     },
     {
         title: "LV Diastolic Function",
+        sectionPreviewKey: ["sectLV", "sectLVMeasurements"],
         items: [
             "EVel", 
             "EDecT",
@@ -61,6 +66,7 @@ window.measurements = [
     },
     {
         title: "Mitral Valve",
+        sectionPreviewKey: "sectMV",
         items: [
             "MVVmax", 
             "MVMeanPG", 
@@ -75,6 +81,7 @@ window.measurements = [
     },
     {
         title: "Left Atrium",
+        sectionPreviewKey: "sectLA",
         items: [
             "LAESV", 
             "LAESVInd"
@@ -82,6 +89,7 @@ window.measurements = [
     },
     {
         title: "LVOT",
+        sectionPreviewKey: "sectAV",
         items: [
             "LVOTVmax", 
             "LVOTMeanPG", 
@@ -93,6 +101,7 @@ window.measurements = [
     },
     {
         title: "Aortic Valve",
+        sectionPreviewKey: "sectAV",
         items: [
             "AVVmax", 
             "AVMeanPG", 
@@ -104,7 +113,18 @@ window.measurements = [
         ]
     },
     {
+        title: "AV Manual",
+        sectionPreviewKey: "sectAV",
+        highlight: true,
+        items: [
+            "AVAccT",
+            "AVEjT",
+            "AVAccEjT",
+        ]
+    },
+    {
         title: "Aorta Dimensions",
+        sectionPreviewKey: "sectAo",
         items: [
             "SoV", 
             "SoVI", 
@@ -115,7 +135,17 @@ window.measurements = [
         ]
     },
     {
+        title: "Ao Manual",
+        sectionPreviewKey: "sectAo",
+        highlight: true,
+        items: [
+            "DescAoVTI",
+            "DescAoEndVmax",
+        ]
+    },
+    {
         title: "RV Dimensions",
+        sectionPreviewKey: "sectRV",
         items: [
             "RVD1", 
             "RVD2", 
@@ -127,6 +157,7 @@ window.measurements = [
     },
     {
         title: "RV Function",
+        sectionPreviewKey: "sectRV",
         items: [
             "TAPSE", 
             "RVS", 
@@ -135,6 +166,7 @@ window.measurements = [
     },
     {
         title: "Right Atrium",
+        sectionPreviewKey: "sectRA",
         items: [
             "RAA", 
             "RAAI"
@@ -142,6 +174,7 @@ window.measurements = [
     },
     {
         title: "Tricuspid Valve",
+        sectionPreviewKey: "sectTV",
         items: [
             "TRVmax", 
             "TRMaxPG",
@@ -156,6 +189,7 @@ window.measurements = [
     },
     {
         title: "RVOT",
+        sectionPreviewKey: "sectPV",
         items: [
             "RVOTVmax", 
             "RVOTMaxPG", 
@@ -165,6 +199,7 @@ window.measurements = [
     },
     {
         title: "Pulmonary",
+        sectionPreviewKey: "sectPV",
         items: [
             "PVVmax",
             "PVMaxPG", 
@@ -178,6 +213,7 @@ window.measurements = [
     },
     {
         title: "Pulmonary Regurgitation",
+        sectionPreviewKey: "sectPV",
         items: [
             "PRVMax", 
             "PRMaxPG",
@@ -186,23 +222,14 @@ window.measurements = [
     },
     {
         title: "Miscellaneous",
+        sectionPreviewKey: "sectMisc",
         items: [
             "IVC"
         ]
-    },
-    {
-        title: "Manual",
-        highlight: true,
-        items: [
-            "AVAccT",
-            "AVEjT",
-            "AVAccEjT",
-            "DescAoVTI",
-            "DescAoEndVmax",
-        ]
-    },
+    },    
     {
         title: "Effusion Size",
+        sectionPreviewKey: "sectPeffFull",
         highlight: true,
         items: [
             "LVPLAX",
@@ -219,6 +246,7 @@ window.measurements = [
     },
     {
         title: "Respiratory Variation",
+        sectionPreviewKey: "sectPeffFull",
         highlight: true,
         items: [
             "EffMVVmax",
