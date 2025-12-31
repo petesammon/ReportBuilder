@@ -1052,6 +1052,11 @@ jQuery(document).ready(function () {
             });
             
             $(`#${modalId}`).addClass('active');
+            
+            // Auto-scroll measurements table to relevant section
+            if (typeof window.scrollToMeasurementSection === 'function') {
+                window.scrollToMeasurementSection(sectionKey);
+            }
         });
         
         // Close button
@@ -1068,10 +1073,56 @@ jQuery(document).ready(function () {
         
         // Done button
         $(`.generate-section-button[data-section="${sectionKey}"]`).on('click', function() {
-            const modalChanged = window.modalChangedInSession && window.modalChangedInSession[sectionKey];
+            // Collect dropdown and textarea values
+            Object.entries(section.params).forEach(([paramKey]) => {
+                const $select = $(`#${paramKey}-select`);
+                const $textarea = $(`#${paramKey}-textarea`);
+                const $customTextarea = $(`#${paramKey}-custom-textarea`);
+                
+                // Check custom textarea first (highest priority)
+                if ($customTextarea.length && $customTextarea.is(':visible')) {
+                    if (window.metrics) {
+                        window.metrics[paramKey] = $customTextarea.val() || "";
+                    }
+                }
+                // Then check regular dropdowns
+                else if ($select.length && window.metrics) {
+                    window.metrics[paramKey] = $select.val() || "";
+                }
+                // Finally check custom textareas
+                else if ($textarea.length && window.metrics) {
+                    window.metrics[paramKey] = $textarea.val() || "";
+                }
+            });
             
-            if (modalChanged && typeof window.updateSectionPreview === 'function') {
+            // Check if we should warn about overwriting manual edits
+            const hasManualEdits = window.sectionPreviewManuallyEdited && window.sectionPreviewManuallyEdited[sectionKey];
+            const hasModalChanges = window.modalChangedInSession && window.modalChangedInSession[sectionKey];
+            
+            if (hasManualEdits && hasModalChanges) {
+                const confirmOverwrite = confirm(
+                    "You have manual edits in this section. Updating from the modal will overwrite them.\n\n" +
+                    "Click OK to overwrite your manual edits, or Cancel to keep them."
+                );
+                
+                if (!confirmOverwrite) {
+                    // User chose to keep manual edits - close modal without updating
+                    $(`#${modalId}`).removeClass('active');
+                    return;
+                }
+            }
+            
+            // Update section preview
+            if (window.sectionPreviewManuallyEdited) {
+                window.sectionPreviewManuallyEdited[sectionKey] = false;
+            }
+            if (typeof window.updateSectionPreview === 'function') {
                 window.updateSectionPreview(sectionKey);
+            }
+            
+            // Update summary
+            if (typeof window.updateSummary === 'function') {
+                window.updateSummary();
             }
             
             $(`#${modalId}`).removeClass('active');
@@ -1113,34 +1164,102 @@ jQuery(document).ready(function () {
                     // Add new modal active class first, then remove old - prevents overlay flash
                     $(`#${prevModalId}`).addClass('active');
                     $(`#${modalId}`).removeClass('active');
+                    
+                    // Auto-scroll measurements table to previous section
+                    if (typeof window.scrollToMeasurementSection === 'function') {
+                        window.scrollToMeasurementSection(prevSectionKey);
+                    }
                 }
             }
         });
         
         // Next button
         $(`.modal-next-button[data-section="${sectionKey}"]`).on('click', function() {
-            const allSections = window.options.filter(section => section.enableSectionPreview && section.sectionPreviewKey);
+            // First, update the current section (same as Done button)
+            Object.entries(section.params).forEach(([paramKey]) => {
+                const $select = $(`#${paramKey}-select`);
+                const $textarea = $(`#${paramKey}-textarea`);
+                const $customTextarea = $(`#${paramKey}-custom-textarea`);
+                
+                if ($customTextarea.length && $customTextarea.is(':visible')) {
+                    if (window.metrics) {
+                        window.metrics[paramKey] = $customTextarea.val() || "";
+                    }
+                }
+                else if ($select.length && window.metrics) {
+                    window.metrics[paramKey] = $select.val() || "";
+                }
+                else if ($textarea.length && window.metrics) {
+                    window.metrics[paramKey] = $textarea.val() || "";
+                }
+            });
+            
+            // Check if we should warn about overwriting manual edits
+            const hasManualEdits = window.sectionPreviewManuallyEdited && window.sectionPreviewManuallyEdited[sectionKey];
+            const hasModalChanges = window.modalChangedInSession && window.modalChangedInSession[sectionKey];
+            
+            if (hasManualEdits && hasModalChanges) {
+                const confirmOverwrite = confirm(
+                    "You have manual edits in this section. Updating from the modal will overwrite them.\n\n" +
+                    "Click OK to overwrite your manual edits, or Cancel to keep them and move to next section."
+                );
+                
+                if (!confirmOverwrite) {
+                    // User chose to keep manual edits - just move to next without updating
+                    $(`#${modalId}`).removeClass('active');
+                    
+                    // Find and open next visible (non-hidden) section modal or Summary modal
+                    const allSections = window.options.filter(s => s.enableSectionPreview && s.sectionPreviewKey);
+                    const currentIndex = allSections.findIndex(s => s.sectionPreviewKey === sectionKey);
+                    
+                    const nextVisible = findNextVisibleSection(allSections, currentIndex);
+                    if (nextVisible) {
+                        const nextSectionKey = nextVisible.section.sectionPreviewKey;
+                        const nextModalId = `${nextSectionKey}-modal`;
+                        $(`#${nextModalId}`).addClass('active');
+                        
+                        // Auto-scroll measurements table to next section
+                        if (typeof window.scrollToMeasurementSection === 'function') {
+                            window.scrollToMeasurementSection(nextSectionKey);
+                        }
+                    } else {
+                        // No more visible sections - open Summary modal
+                        $('#Summary-modal').addClass('active');
+                    }
+                    return;
+                }
+            }
+            
+            if (window.sectionPreviewManuallyEdited) {
+                window.sectionPreviewManuallyEdited[sectionKey] = false;
+            }
+            if (typeof window.updateSectionPreview === 'function') {
+                window.updateSectionPreview(sectionKey);
+            }
+            if (typeof window.updateSummary === 'function') {
+                window.updateSummary();
+            }
+            
+            // Close current modal
+            $(`#${modalId}`).removeClass('active');
+            
+            // Find and open next visible (non-hidden) section modal or Summary modal
+            const allSections = window.options.filter(s => s.enableSectionPreview && s.sectionPreviewKey);
             const currentIndex = allSections.findIndex(s => s.sectionPreviewKey === sectionKey);
             
-            if (currentIndex >= 0 && currentIndex < allSections.length - 1) {
-                const nextSection = findNextVisibleSection(allSections, currentIndex);
+            const nextVisible = findNextVisibleSection(allSections, currentIndex);
+            if (nextVisible) {
+                const nextSectionKey = nextVisible.section.sectionPreviewKey;
+                const nextModalId = `${nextSectionKey}-modal`;
+                $(`#${nextModalId}`).addClass('active');
                 
-                if (nextSection) {
-                    const nextSectionKey = nextSection.section.sectionPreviewKey;
-                    const nextModalId = `${nextSectionKey}-modal`;
-                    
-                    // Add new modal active class first, then remove old - prevents overlay flash
-                    $(`#${nextModalId}`).addClass('active');
-                    $(`#${modalId}`).removeClass('active');
-                } else {
-                    // Add new modal active class first, then remove old - prevents overlay flash
-                    $('#Summary-modal').addClass('active');
-                    $(`#${modalId}`).removeClass('active');
+                // Auto-scroll measurements table to next section
+                if (typeof window.scrollToMeasurementSection === 'function') {
+                    window.scrollToMeasurementSection(nextSectionKey);
                 }
             } else {
-                // Add new modal active class first, then remove old - prevents overlay flash
+                // No more visible sections - open Summary modal
                 $('#Summary-modal').addClass('active');
-                $(`#${modalId}`).removeClass('active');
             }
         });
     }

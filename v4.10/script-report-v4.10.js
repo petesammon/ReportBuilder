@@ -338,17 +338,7 @@ jQuery(document).ready(function () {
         for (const section of measurements) {
             // Add a class for highlighting sections that have highlight: true
             const sectionClass = section.highlight ? ' class="highlight-section"' : '';
-            
-            // Add data-section attribute for auto-scroll matching
-            // Support both string and array formats for sectionPreviewKey
-            let sectionData = '';
-            if (section.sectionPreviewKey) {
-                const keys = Array.isArray(section.sectionPreviewKey) ? section.sectionPreviewKey 
-                    : [section.sectionPreviewKey];
-                sectionData = ` data-section="${keys.join(' ')}"`;
-            }
-            
-            rows += `<tr${sectionClass}${sectionData}><th colspan="2">${section.title}</th></tr>`;
+            rows += `<tr${sectionClass}><th colspan="2">${section.title}</th></tr>`;
             
             for (const handle of section.items) {
                 const details = getMeasurementDetails(handle);
@@ -533,23 +523,11 @@ jQuery(document).ready(function () {
                 const $checkbox = $(`#${key}-summary-modal`);
                 const metricValue = metrics[key];
                 
-                // Determine if checkbox is checked:
-                // - If modal exists (checkbox in DOM), use actual checkbox state
-                // - If modal doesn't exist (lazy loading), use virtual state
-                let isChecked = false;
-                if ($checkbox.length) {
-                    // Checkbox exists in DOM - use its state
-                    isChecked = $checkbox.is(':checked');
-                } else {
-                    // Checkbox doesn't exist yet (modal not created) - use virtual state
-                    isChecked = window.summaryCheckboxStates?.[key] ?? false;
-                }
-                
                 // Include if either:
                 // 1. summaryAlwaysInclude is true (no checkbox required), OR
-                // 2. checkbox is checked (from DOM or virtual state) and has value
+                // 2. checkbox exists, is checked, and has value
                 const shouldInclude = (option.summaryAlwaysInclude === true && metricValue && metricValue.trim()) ||
-                                     (isChecked && metricValue && metricValue.trim());
+                                     ($checkbox.length && $checkbox.is(':checked') && metricValue && metricValue.trim());
                 
                 if (shouldInclude) {
                     // Determine text to use: summarytext if available, otherwise the metric value (which is the title)
@@ -857,39 +835,10 @@ jQuery(document).ready(function () {
         }
     }
     
-    // Auto-scroll measurements table to relevant section for active modal
-    function scrollToMeasurementSection(sectionPreviewKey) {
-        if (!sectionPreviewKey) return;
-        
-        // Find the first measurement section header with matching data-section attribute
-        // Using [data-section~="value"] to match space-separated values
-        const $targetSection = $(`#measurements-table tr[data-section~="${sectionPreviewKey}"]`).first();
-        
-        if ($targetSection.length) {
-            const $measurementsPanel = $('#measurements-panel');
-            if ($measurementsPanel.length) {
-                // Get the position of the target section relative to the measurements table
-                const targetOffset = $targetSection.offset().top;
-                const panelOffset = $measurementsPanel.offset().top;
-                const currentScroll = $measurementsPanel.scrollTop();
-                
-                // Calculate the scroll position with extra offset to show the header clearly
-                // 60px offset ensures the section header is visible with comfortable spacing
-                const scrollPosition = currentScroll + (targetOffset - panelOffset) - 60;
-                
-                // Smooth scroll to the target
-                $measurementsPanel.animate({
-                    scrollTop: scrollPosition
-                }, 300);
-            }
-        }
-    }
-    
     // Expose globally for form.js to call
     window.populateSectionTextareas = populateSectionTextareas;
     window.updateSectionPreview = updateSectionPreview;
     window.updateSummary = updateSummary;
-    window.scrollToMeasurementSection = scrollToMeasurementSection;
     window.metrics = metrics;
     window.selectedOptions = selectedOptions;
     window.sectionPreviewManuallyEdited = sectionPreviewManuallyEdited;
@@ -935,26 +884,14 @@ jQuery(document).ready(function () {
 
         const output = { ...outputResults, ...metrics };
         
-        // Filter out excluded sections AND hidden sections
+        // Filter out excluded sections
         const filteredOutput = { ...output };
-        
-        // Filter out excluded sections (defaultExcluded or manually excluded)
         Object.keys(excludedSections).forEach(sectionKey => {
             if (excludedSections[sectionKey]) {
                 // Set excluded section content to empty string
                 filteredOutput[sectionKey] = '';
             }
         });
-        
-        // Filter out hidden sections (defaultHidden that haven't been triggered)
-        if (window.hiddenSections) {
-            Object.keys(window.hiddenSections).forEach(sectionKey => {
-                if (window.hiddenSections[sectionKey]) {
-                    // Set hidden section content to empty string
-                    filteredOutput[sectionKey] = '';
-                }
-            });
-        }
         
         const finalReport = outputTemplate(filteredOutput);
         
