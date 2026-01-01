@@ -136,20 +136,26 @@ window.options = [
                 title: "Measurement Template",
                 options: [
                     { label: "Default", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
-E/A ratio = {{EARatio}}, E DecT = {{EDecT}}, Peak E velocity = {{EVel}}, Peak A velocity = {{AVel}}
+Peak E velocity = {{EVel}}, E DecT = {{EDecT}}, Peak A velocity = {{AVel}}, E/A ratio = {{EARatio}}
 Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (averaged) = {{EEPrimeAv}}
 Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}
 Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
 Global Averaged Longitudinal Strain = {{GLS}}`, default: true },
                     { label: "Default + Volumes", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
 LVEDV = {{LVEDV}} (Indexed = {{LVEDVInd}}), LVESV = {{LVESV}} (Indexed = {{LVESVInd}})
-E/A ratio = {{EARatio}}, E DecT = {{EDecT}}, Peak E velocity = {{EVel}}, Peak A velocity = {{AVel}}
+Peak E velocity = {{EVel}}, E DecT = {{EDecT}}, Peak A velocity = {{AVel}}, E/A ratio = {{EARatio}}
 Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (averaged) = {{EEPrimeAv}}
 Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}
 Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
 Global Averaged Longitudinal Strain = {{GLS}}`},
+                    { label: "Atrial Fibrillation", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
+Peak E velocity = {{EVel}}, E DecT = {{EDecT}}
+Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (septal) = {{EEPrimeSept}}
+Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}
+Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
+Global Averaged Longitudinal Strain = {{GLS}}`, default: true },
                     { label: "Oncology", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
-E/A ratio = {{EARatio}}, E DecT = {{EDecT}}, Peak E velocity = {{EVel}}, Peak A velocity = {{AVel}}
+Peak E velocity = {{EVel}}, E DecT = {{EDecT}}, Peak A velocity = {{AVel}}, E/A ratio = {{EARatio}}
 Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (averaged) = {{EEPrimeAv}}
 Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}
 
@@ -163,7 +169,7 @@ PSAX Basal: Septal = cm, Anterior = cm, Lateral = cm, Inferior = cm
 PSAX Mid: Septal = cm, Anterior = cm, Lateral = cm, Inferior = cm
 PSAX Apex: Septal = cm, Anterior = cm, Lateral = cm, Inferior = cm
 
-E/A ratio = {{EARatio}}, E DecT = {{EDecT}}, Peak E velocity = {{EVel}}, Peak A velocity = {{AVel}}
+Peak E velocity = {{EVel}}, E DecT = {{EDecT}}, Peak A velocity = {{AVel}}, E/A ratio = {{EARatio}}
 Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (averaged) = {{EEPrimeAv}}
 Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}
 Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
