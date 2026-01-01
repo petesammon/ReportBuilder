@@ -15,4 +15,4 @@ Changes in v4.13
     1. attribute 'title' changed to 'sectionTitle'
     2. removed 'enableSectionPreview' as redundant
     3. changed all parameter titles to p*
-    4. summary:true now used to identify/create summary section (referenced to by {{Summary}} in report)
+    4. summary:true now used to identify/create summary section (referenced to by {{Summary}} in report)        

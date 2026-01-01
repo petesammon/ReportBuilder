@@ -1,0 +1,818 @@
+:root {
+    --pico-font-size: 100%;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
+main {
+    height: calc(100% - 20px);
+}
+
+button {
+    margin: 10px 0;
+    float: right;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+/* Template selector area - override global button styles */
+.template-selector-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+}
+
+.template-selector-row label {
+    margin-bottom: 0;
+}
+
+.template-selector-row select {
+    margin-bottom: 0;
+}
+
+.template-selector-row #reset-selections {
+    margin: 0;
+    padding: 0.29rem 1rem;
+    float: none;
+    font-size: 1rem;
+}
+
+#copy-report {
+    width: 98%;
+    box-sizing: border-box;
+    margin: 0 auto;
+}
+
+section {
+    height: 100%;
+    overflow: hidden;
+    padding: 1rem;
+}
+
+th {
+    font-weight: bold;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal.active {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 5vh;
+}
+
+/* Section modals - only overlay the right column */
+.modal.section-modal {
+    left: auto;
+    right: 0;
+    width: calc(100% - 260px - 2rem); /* Cover everything except measurements column + container padding */
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* On wide screens, align modal with centered layout */
+@media (min-width: calc(1300px + 2rem)) {
+    .modal.section-modal {
+        right: calc((100% - 1300px + 2rem) / 2); /* Offset from right edge to match centered layout */
+        width: calc(1300px - 260px - 2rem); /* Width of right column in centered layout */
+    }
+}
+
+.modal.section-modal.active {
+    align-items: flex-start;
+    justify-content: center;
+    padding: 5vh 1rem 1rem 1rem;
+}
+
+/* Import modal - higher z-index to appear above section modals */
+#import-modal {
+    z-index: 1100;
+}
+
+.modal-content {
+    background-color: var(--pico-background-color);
+    border-radius: var(--pico-border-radius);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Section modal content centered with 1000px max-width */
+.section-modal .modal-content {
+    max-width: 1000px;
+    width: 90%;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: var(--pico-border-width) solid var(--pico-muted-border-color);
+    position: relative;
+}
+
+.modal-header h2 {
+    margin: 0;
+}
+
+.modal-header .close-button {
+    position: absolute;
+    right: 1rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-bottom: var(--pico-border-width) solid var(--pico-muted-border-color);
+    background-color: #f8f9fa;
+}
+
+.modal-body {
+    padding: 0.75rem 1rem 1rem 1rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    float: none;
+    color: var(--pico-muted-color);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--pico-border-radius);
+}
+
+.close-button:hover {
+    background-color: var(--pico-muted-border-color);
+    color: var(--pico-color);
+}
+
+/* Template options table in modal */
+.template-options-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.template-options-table th {
+    color: var(--pico-muted-color);
+    padding: 0.3rem 0.5rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.template-options-table td {
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    vertical-align: middle;
+}
+
+.template-options-table .param-label {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.template-options-table .param-edit {
+    text-align: center;
+    vertical-align: middle;
+}
+
+.template-options-table .param-options select {
+    width: 100%;
+    margin: 0;
+}
+
+.template-options-table .param-options .modal-edit-button,
+.template-options-table .param-edit .modal-edit-button {
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 0.85rem !important;
+    float: none !important;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    background-color: var(--pico-primary-background);
+    border-color: var(--pico-primary-border);
+    color: var(--pico-primary-inverse);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.template-options-table .param-options .modal-edit-button:hover,
+.template-options-table .param-edit .modal-edit-button:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
+}
+
+.template-options-table .param-options .no-options {
+    color: var(--pico-muted-color);
+    font-style: italic;
+}
+
+.template-options-table .param-summary {
+    text-align: center;
+}
+
+.template-options-table .param-summary input[type="checkbox"] {
+    margin: 0;
+}
+
+/* Modal textarea styling for custom fields */
+.template-options-table .modal-textarea {
+    width: 100%;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+    min-height: 2.2rem;
+    height: 2.2rem;
+    line-height: 1.2;
+    margin: 0;
+    resize: none;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+/* DEPRECATED: Use textareaSize attribute instead of .large class */
+/*
+.template-options-table .modal-textarea.large {
+    min-height: 8rem;
+    height: 8rem;
+    resize: vertical;
+}
+*/
+
+/* Generate section button */
+.generate-section-button {
+    margin: 0 !important;
+    padding: 0.45rem 1.35rem !important;
+    font-size: 0.9rem !important;
+    float: none !important;
+}
+
+/* Modal exclude button */
+.modal-exclude-button {
+    margin: 0 !important;
+    padding: 0.45rem 0.9rem !important;
+    font-size: 0.9rem !important;
+    float: none !important;
+    background-color: var(--pico-secondary-background);
+    border-color: var(--pico-secondary-border);
+    color: var(--pico-secondary-inverse);
+}
+
+.modal-exclude-button:hover {
+    background-color: var(--pico-secondary-hover-background);
+    border-color: var(--pico-secondary-hover-border);
+}
+
+/* Modal back button */
+.modal-back-button {
+    margin: 0 !important;
+    padding: 0.45rem 1.35rem !important;
+    font-size: 0.9rem !important;
+    float: none !important;
+    background-color: var(--pico-primary-background);
+    border-color: var(--pico-primary-border);
+    color: var(--pico-primary-inverse);
+}
+
+.modal-back-button:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
+}
+
+/* Modal next button */
+.modal-next-button {
+    margin: 0 !important;
+    padding: 0.45rem 1.35rem !important;
+    font-size: 0.9rem !important;
+    float: none !important;
+    background-color: var(--pico-primary-background);
+    border-color: var(--pico-primary-border);
+    color: var(--pico-primary-inverse);
+}
+
+.modal-next-button:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
+}
+
+/* Modal close button */
+.modal-close-button {
+    margin: 0 !important;
+    padding: 0.45rem 1.35rem !important;
+    font-size: 0.9rem !important;
+    float: none !important;
+    background-color: var(--pico-primary-background);
+    border-color: var(--pico-primary-border);
+    color: var(--pico-primary-inverse);
+}
+
+.modal-close-button:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
+}
+
+/* Excluded modal styling */
+.modal-body.excluded-modal .template-options-table {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.modal-body.excluded-modal select,
+.modal-body.excluded-modal textarea,
+.modal-body.excluded-modal input[type="checkbox"] {
+    cursor: not-allowed;
+}
+
+/* Modal textarea styling */
+#import-modal textarea {
+    height: 400px;
+    font-family: monospace;
+    white-space: pre-wrap;
+    width: 100%;
+}
+
+#import-modal .format-selector {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+#import-modal .format-selector label {
+    margin-bottom: 0;
+    min-width: 100px;
+}
+
+#import-modal .format-selector select {
+    margin-bottom: 0;
+    flex: 1;
+    max-width: 500px;
+    min-width: 300px;
+}
+
+#import-modal .format-selector button {
+    float: none;
+    margin: 0;
+}
+
+#import-modal .format-selector .help-button {
+    min-width: 32px;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: 0.9rem;
+    font-weight: bold;
+    background-color: #6c757d;
+    color: white;
+    cursor: pointer;
+}
+
+#import-modal .format-selector .help-button:hover {
+    background-color: #5a6268;
+}
+
+/* Output textarea styling */
+h2 {
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+}
+
+h3 {
+    font-size: 1.1rem;
+    margin: 0.8rem 0 0.5rem 0;
+}
+
+/* Home button styling */
+.home-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: background-color 0.3s;
+}
+
+.home-button:hover {
+    background-color: var(--bg-tertiary);
+    text-decoration: none;
+}
+
+.home-icon {
+    width: 18px;
+    height: 18px;
+    color: var(--text-primary);
+}
+
+/* Form elements */
+label {
+    margin-bottom: 0.25rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+select {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Default compact textarea */
+textarea {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+    min-height: 0;
+    height: 2.2rem;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+    resize: none;
+    box-sizing: border-box;
+}
+
+/* DEPRECATED: Use textareaSize attribute instead of .large class */
+/*
+textarea.large {
+    min-height: 8rem;
+    height: auto;
+    resize: vertical;
+}
+*/
+
+/* Horizontal rules */
+hr {
+    margin: 1rem 0;
+    opacity: 0.3;
+}
+
+/* Two-column layout for measurements and options */
+.two-column-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    grid-gap: 1.5rem;
+    height: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+/* Measurements panel */
+#measurements-panel {
+    overflow-y: auto;
+    border-right: 2px solid rgba(128, 128, 128, 0.4);
+    padding-right: 1.5rem;
+}
+
+#measurements-panel h2 {
+    position: sticky;
+    top: 0;
+    background: var(--pico-background-color);
+    z-index: 10;
+    padding: 0.5rem 0;
+    margin-top: 0;
+}
+
+#measurements-table {
+    font-size: 0.85rem;
+}
+
+#measurements-table table {
+    width: 100%;
+    margin: 0;
+}
+
+#measurements-table th {
+    text-align: left;
+    padding: 0.25rem 0.25rem;
+    font-size: 0.9rem;
+}
+
+#measurements-table td {
+    padding: 0.1rem 0.25rem;
+}
+
+#measurements-table td.measurement-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+#measurements-table input.measurement-input {
+    width: 70px;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.8rem;
+    margin: 0;
+    min-height: 0;
+    height: 1.6rem;
+    border: 1px solid rgba(128, 128, 128, 0.2);
+    border-radius: 4px;
+    box-sizing: border-box;
+    text-align: right;
+}
+
+#measurements-table input.measurement-input.full-width {
+    width: 100%;
+    flex: 1;
+}
+
+/* Calculated fields (read-only) styling */
+#measurements-table input.measurement-input.calculated-field {
+    background-color: #f0f8ff; /* Light blue background */
+    border-color: rgba(118, 191, 68, 0.3);
+    color: #2c5282;
+    cursor: default;
+}
+
+#measurements-table input.measurement-input.calculated-field:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+#measurements-table .unit-label {
+    font-size: 0.75rem;
+    color: var(--pico-muted-color);
+    white-space: nowrap;
+    min-width: 30px;
+}
+
+/* Highlighted section styling */
+#measurements-table tr.highlight-section {
+    background-color: #e9ecef;
+}
+
+#measurements-table tr.highlight-section th {
+    background-color: var(--pico-secondary-background);
+    font-weight: bold;
+    color: var(--pico-secondary-inverse);
+}
+
+#measurements-table tr.highlight-section td {
+    background-color: #e9ecef;
+}
+
+/* Options panel */
+#options-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    max-width: 1000px;
+}
+
+#options-content {
+    flex: 1;
+    padding-right: 0.5rem;
+}
+
+/* Options panel - 2 column layout: buttons (72px) | textarea (1fr) */
+.form-row {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    column-gap: 0.75rem;
+    row-gap: 0;
+    align-items: start;
+    margin: 0;
+}
+
+/* Visual separation for Summary section */
+.summary-row {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--pico-muted-border-color);
+}
+
+
+.form-left {
+    display: flex;
+    flex-direction: row;
+    gap: 0.4rem;
+    padding-top: 0.4rem;
+}
+
+.form-left h3 {
+    display: none;
+}
+
+.form-left .template-button {
+    margin: 0 !important;
+    padding: 0.3rem !important;
+    font-size: 1rem !important;
+    float: none !important;
+    white-space: nowrap;
+    width: 32px;
+    height: 32px;
+    line-height: 1;
+    background-color: var(--pico-primary-background);
+    border-color: var(--pico-primary-border);
+    color: var(--pico-primary-inverse);
+}
+
+.form-left .template-button:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
+}
+
+.form-left .template-button:focus {
+    box-shadow: 0 0 0 var(--pico-outline-width) var(--pico-primary-focus);
+}
+
+.form-left .exclude-button {
+    margin: 0 !important;
+    padding: 0.3rem !important;
+    font-size: 1rem !important;
+    float: none !important;
+    white-space: nowrap;
+    width: 32px;
+    height: 32px;
+    line-height: 1;
+    background-color: var(--pico-secondary-background);
+    border-color: var(--pico-secondary-border);
+    color: var(--pico-secondary-inverse);
+}
+
+.form-left .exclude-button:hover {
+    background-color: var(--pico-secondary-hover-background);
+    border-color: var(--pico-secondary-hover-border);
+}
+
+.form-left .exclude-button:focus {
+    box-shadow: 0 0 0 var(--pico-outline-width) var(--pico-secondary-focus);
+}
+
+/* Reset trigger button - orange style for triggered sections */
+.form-left .reset-trigger-button {
+    background-color: #ff8c00; /* Dark orange */
+    border-color: #ff8c00;
+    color: white;
+}
+
+.form-left .reset-trigger-button:hover {
+    background-color: #ff7700;
+    border-color: #ff7700;
+}
+
+.form-left .reset-trigger-button:focus {
+    box-shadow: 0 0 0 var(--pico-outline-width) rgba(255, 140, 0, 0.3);
+}
+
+.form-right {
+    margin: 0;
+    padding: 0;
+}
+
+.section-textarea {
+    background-color: #f8f9fa;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: 0;
+    overflow: hidden;
+    resize: none;
+    margin: 0;
+    padding: 0.4rem 0.6rem;
+    display: block;
+    width: 98%;
+    max-width: 1000px;
+    min-height: 2.5rem;
+    box-sizing: border-box;
+}
+
+.section-textarea:focus {
+    background-color: var(--pico-form-element-active-background-color);
+    outline: none;
+}
+
+/* Excluded section styling */
+.section-textarea.excluded {
+    background-color: #e9ecef;
+    color: #6c757d;
+    opacity: 0.7;
+    cursor: not-allowed;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-height: 2.5rem;
+}
+
+.section-preview {
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    column-gap: 0.75rem;
+    row-gap: 0;
+    align-items: start;
+    margin: 0;
+}
+
+.section-preview .section-preview-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-top: 0.4rem;
+}
+
+.section-preview .section-preview-header h3 {
+    display: none;
+}
+
+.section-preview .options-button {
+    margin: 0 !important;
+    padding: 0.4rem !important;
+    font-size: 1.2rem !important;
+    float: none !important;
+    white-space: nowrap;
+    width: 40px;
+    height: 40px;
+    line-height: 1;
+    background-color: var(--pico-primary-background);
+    border-color: var(--pico-primary-border);
+    color: var(--pico-primary-inverse);
+}
+
+.section-preview .options-button:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
+}
+
+.section-preview .options-button:focus {
+    box-shadow: 0 0 0 var(--pico-outline-width) var(--pico-primary-focus);
+}
+
+.section-preview .textarea-container {
+    grid-column: 2;
+    margin: 0;
+    padding: 0;
+}
+
+.section-preview textarea {
+    font-family: monospace;
+    background-color: #f8f9fa;
+    border: 2px solid var(--pico-primary-border);
+    border-top-width: 0;
+    overflow: hidden;
+    resize: none;
+    margin: 0;
+    padding: 0.4rem 0.6rem;
+    display: block;
+}
+
+.section-preview:first-of-type textarea {
+    border-top-width: 2px;
+}
+
+.section-preview textarea:focus {
+    background-color: var(--pico-form-element-active-background-color);
+}
+
+/* Checkbox styling */
+.summary-checkbox-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem;
+    border-radius: 4px;
+    height: fit-content;
+    grid-column: 4;
+}
+
+.summary-checkbox-container input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--pico-primary);
+}
