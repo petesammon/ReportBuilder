@@ -15,4 +15,10 @@ Changes in v4.13
     1. attribute 'title' changed to 'sectionTitle'
     2. removed 'enableSectionPreview' as redundant
     3. changed all parameter titles to p*
-    4. summary:true now used to identify/create summary section (referenced to by {{Summary}} in report)        
+    4. summary:true now used to identify/create summary section (referenced to by {{Summary}} in report)
+    5. form selections now persist across template changes
+    6. reset button added next to template dropdown (clears form selections)
+    7. import modal clear button now clears cache of save measurments
+    8. page refresh now completely clears all saved data
+    9. updated all valve sections to include prosthetic valve statements
+    
