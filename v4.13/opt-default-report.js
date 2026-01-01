@@ -7,7 +7,7 @@ window.sectionTemplates = {
     sectStudy: 
 `Performed on: {{pMachine}}
 Operator: {{Operator1}}
-Technical Quality: {{pQualilty}}
+Technical Quality: {{pQuality}}
 ECG: {{pRhythm}}, {{HR}}
 Height: {{Height}}, Weight: {{Weight}}, BSA: {{BSA}}
 BP: {{BP}}`,
