@@ -11,14 +11,17 @@ Changes in v4.12:
     1. drop-down-free modal options with autoResizeTextarea (with minimum height set by textareaSize: x)
     2. fixed issue with custom textarea not resizing as expected
     
-Changes in v4.13
-    1. attribute 'title' changed to 'sectionTitle'
-    2. removed 'enableSectionPreview' as redundant
-    3. changed all parameter titles to p*
-    4. summary:true now used to identify/create summary section (referenced to by {{Summary}} in report)
-    5. form selections now persist across template changes
-    6. reset button added next to template dropdown (clears form selections)
-    7. import modal clear button now clears cache of save measurments
-    8. page refresh now completely clears all saved data
-    9. updated all valve sections to include prosthetic valve statements
+Changes in v4.13:
+    1.  update - attribute 'title' changed to 'sectionTitle'
+    2.  update - removed 'enableSectionPreview' as redundant
+    3.  update - changed all parameter titles to p*
+    4.  update - summary:true now used to identify/create summary section (referenced to by {{Summary}} in report)
+    5.  update - form selections now persist across template changes
+    6.  update - reset button added next to template dropdown (clears form selections)
+    7.  update - import modal clear button now clears cache of save measurments
+    8.  update - page refresh now completely clears all saved data
+    9.  updated - all valve sections to include prosthetic valve statements
+    10. fixed - form issue with normal valves summary statement ordering (from 29 to 39 - Ao is at 30, MV is at 40)
+    11. fixed - issue where auto-add-to-summary valve selections are manually unticked, but the 'Normal valves' statement is not restored to summary. 
+    12. added - Oncology EF summary statement, but this will need some further thought/totally new form/report templates
     

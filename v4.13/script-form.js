@@ -475,8 +475,17 @@ jQuery(document).ready(function () {
                             otherParamOption.summaryExclude.includes(excludeKey)) {
                             
                             // Check if this parameter's checkbox is checked
+                            // IMPORTANT: Check both DOM and virtual state
                             const $otherCheckbox = $(`#${otherParamKey}-summary-modal`);
-                            if ($otherCheckbox.length && $otherCheckbox.is(':checked')) {
+                            let isOtherChecked = false;
+                            
+                            if ($otherCheckbox.length) {
+                                isOtherChecked = $otherCheckbox.is(':checked');
+                            } else if (window.summaryCheckboxStates && window.summaryCheckboxStates[otherParamKey] !== undefined) {
+                                isOtherChecked = window.summaryCheckboxStates[otherParamKey];
+                            }
+                            
+                            if (isOtherChecked) {
                                 otherExcludersChecked = true;
                             }
                         }
@@ -779,6 +788,31 @@ jQuery(document).ready(function () {
         }
     }
     
+    // Handle manual checkbox changes
+    // This is the KEY FIX for the reported issue
+    function handleManualCheckboxChange(paramKey, paramOption, isChecked) {
+        // Update virtual state
+        if (window.summaryCheckboxStates) {
+            window.summaryCheckboxStates[paramKey] = isChecked;
+        }
+        
+        // Mark as manually edited
+        if (window.summaryCheckboxManuallyEdited) {
+            window.summaryCheckboxManuallyEdited[paramKey] = true;
+        }
+        
+        // If checkbox was checked, handle exclusions
+        if (isChecked) {
+            handleSummaryExclude(paramKey, paramOption);
+        } else {
+            // If checkbox was unchecked, handle restoration of excluded items
+            handleSummaryRestore(paramKey, paramOption);
+        }
+        
+        // Update summary
+        updateSummaryNow();
+    }
+    
     // Attach event handlers for a single parameter
     function attachParameterEventHandlers($modal, paramKey, paramOption, sectionKey) {
         const $textarea = $modal.find(`#${paramKey}-textarea`);
@@ -820,6 +854,14 @@ jQuery(document).ready(function () {
         if ($customTextarea.length) {
             $customTextarea.on('input', function() {
                 handleCustomTextareaInput($(this).val(), paramKey, paramOption, $checkbox, sectionKey, $(this));
+            });
+        }
+        
+        // CRITICAL FIX: Manual checkbox change handler
+        if ($checkbox.length && paramOption.enableSummary) {
+            $checkbox.on('change', function() {
+                const isChecked = $(this).is(':checked');
+                handleManualCheckboxChange(paramKey, paramOption, isChecked);
             });
         }
         

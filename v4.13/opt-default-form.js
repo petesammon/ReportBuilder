@@ -710,10 +710,10 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
             pPEff: {
                 title: "Pericardial Effusion",
                 options: [
+                    { label: "** Full Assessment (creates new section) **", title: "", triggerSection: "sectPeffFull" },
                     { label: "No pericardial effusion", title: "No pericardial effusion.", default: true },
                     { label: "Trivial global effusion, no haemodynamic compromise", title: "Trivial global pericardial effusion - no evidence of haemodynamic compromise."},
                     { label: "Small global effusion, no haemodynamic compromise", title: "Small global pericardial effusion - no evidence of haemodynamic compromise."},
-                    { label: "Full Assessment (enable new section)", title: "", triggerSection: "sectPeffFull" },
                 ],
                 textareaSize: 15,
                 enableSummary: true,
@@ -824,6 +824,21 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
                     { label: "Biplane + GLS", title: "Estimated ejection fraction {{EFBP}}, GLS {{GLS}}"},
                     { label: "Auto EF", title: "Estimated ejection fraction {{EFAuto}}"},
                     { label: "Auto EF + GLS", title: "Estimated ejection fraction {{EFAuto}}, GLS {{GLS}}"},
+                    { label: "Oncology", title: `
+Estimated 2D EF = {{EFBP}}
+Estimated 3D EF = {{EF3D}}
+GLS = {{GLS}}
+        
+Previous Study (date):
+Estimated 2D EF = %
+Estimated 3D EF = %
+GLS = -%
+
+Baseline Study (date):
+Estimated 2D EF = %
+Estimated 3D EF = %
+GLS = -%
+`},
                 ],
                 enableSummary: true,
                 summaryDefault: true,
@@ -836,7 +851,7 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
                 ],
                 enableSummary: true,
                 summaryDefault: true,
-                summaryOrder: 29,
+                summaryOrder: 39,
             },
         },
     },

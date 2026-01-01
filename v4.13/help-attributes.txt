@@ -15,6 +15,7 @@ Attributes for entries on opt-form-*.js files
                 summaryThreshold: ["xxx", "yyy"] (specify the options that DO trigger auto-add to summary)
                 summaryNotThreshold: ["xxx", "yyy"] (specify the options that DO NOT trigger auto-add to summary)
                 summaryAlwaysInclude: true, (to be included in summary but not show at all on modal)
+                summaryExclude: ["spValves"] (specifies statements to be excluded from the summary when the summary checkbox for this parameter is activated)
                 textareaSize: 3, (specify the size of the conditional textarea in the modal)
                 summaryOrder: 1, (specify the summary line to be added to - will stack statements with the same number in the same row)
 
