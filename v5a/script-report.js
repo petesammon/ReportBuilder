@@ -1370,12 +1370,10 @@ jQuery(document).ready(function () {
                 const excludeClass = isExcluded ? 'inline-exclude-button excluded' : 'inline-exclude-button';
                 
                 if (isExcluded) {
-                    // When excluded, show placeholder + include [+] button to maintain spacing
-                    // Placeholder has same size as edit button but is invisible
-                    buttonHTML = `<span class="button-placeholder"></span><button type="button" class="${excludeClass}" data-modal="${modalKey}" title="${excludeTitle}">${excludeText}</button>`;
+                    // When excluded, only show the include [+] button (left-aligned)
+                    buttonHTML = `<button type="button" class="${excludeClass}" data-modal="${modalKey}" title="${excludeTitle}">${excludeText}</button>`;
                 } else {
-                    // When included, show both edit and exclude buttons
-                    // HTML order: edit first, then exclude (displays as [✎][−] with text-align:right)
+                    // When included, show both edit and exclude buttons (left-aligned)
                     buttonHTML = `<button type="button" class="inline-edit-button" data-modal="${modalKey}" title="Edit ${modalGroup.sectionTitle}">✎</button><button type="button" class="${excludeClass}" data-modal="${modalKey}" title="${excludeTitle}">${excludeText}</button>`;
                 }
             }
