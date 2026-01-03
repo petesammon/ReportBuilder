@@ -1,0 +1,210 @@
+window.options = [
+    {
+        sectionPreviewKey: "sectProtocol",
+        sectionTitle: "Protocol",
+        params: {
+            pQuality: {
+                title: "Technical quality:",
+                options: [
+                    { label: "Excellent", title: "This was a technically excellent study."},
+                    { label: "Good", title: "This was a technically good study."},
+                    { label: "Adequate", title: "This was a technically adequate study.", default: true, },
+                    { label: "Difficult with suboptimal views", title: "This was a technically difficult with suboptimal study."},
+                    { label: "Inconclusive, inadequate views", title: "This was an inconclusive study due to inadequate views.", summarytext: "1. Inconclusive study due to inadequate views."},
+                ],
+                enableSummary: true,
+                summaryDefault: false,
+                summaryOnChange: true,
+                summaryThreshold: ["Inconclusive, inadequate views"],
+                summaryOrder: 1,
+            },
+            pProtocol: {
+                title: "Stress Protocol:",
+                options: [
+                    { label: "Supine bike", title: `The patient exercised for {{ExMinutes}} and {{ExSeconds}} (peak {{PeakWatts}}) according to a supine bicycle protocol, reaching a peak heart rate of {{MaxHR}} ({{PercentMaxHR}} of predicted max) and a peak blood pressure of {{MaxBP}}.`, default: true,},
+                    { label: "Low dose DSE", title: `The patient received intravenous dobutamine in 3 minute stages (low dose 5mcg/kg/min) and to a maximum of {{MaxDobutamineDose}} plus {{AtropineDose}} atropine. `},
+                ],
+                textareaSize: 4,
+            },
+            pContrast: {
+                title: "Contrast Used:",
+                options: [
+                    { label: "No contrast", title: "No contrast used", default: true,},
+                    { label: "Luminity", title: `Luminity contrast used: {{mlsLuminity}} diluted in {{mlsNaCl}} of 0.9% NaCl - total of {{ContrastAdministered}} administered. LOT No. {{ContrastLOT}}, Exp. {{ContrastEXP}}`},
+                    { label: "Sonovue", title: `Luminity contrast used - total of {{ContrastAdministered}} administered. LOT No. {{ContrastLOT}}, Exp. {{ContrastEXP}}`},
+                ],
+                textareaSize: 3,
+            },
+        },
+    },
+    {
+        sectionPreviewKey: "sectOutcomes",
+        sectionTitle: "Outcomes",
+        params: {
+            pSymptoms: {
+                title: "Symptoms",
+                options: [
+                    { label: "Fatigue", title: "Fatigue.", default: true, summarytext: "3. No symptoms (fatigue only)."},
+                    { label: "Shortness of breath", title: "Shortness of breath.", summarytext: "3. Shortness of breath with stress."},
+                    { label: "Chest pain", title: "Chest pain.", summarytext: "3. Chest pain with stress."},
+                    { label: "Anginal chest pain", title: "Anginal chest pain.", summarytext: "3. Anginal chest pain with stress."},
+                    { label: "Atypical chest pain", title: "Atypical chest pain.", summarytext: "3. Atypical chest pain with stress."},
+                    { label: "Leg fatigue", title: "Leg fatigue.", summarytext: "3. Leg fatigue with stress."},
+                    { label: "Claudication", title: "Claudication.", summarytext: "3. Leg claudication with stress."},
+                ],
+                enableSummary: true,
+                summaryDefault: true,
+                summaryOrder: 5,
+            },
+            pTargetHRAchieved: {
+                title: "Target HR Achieved",
+                options: [
+                    { label: "Yes", title: "Target heart rate was achieved.", default: true},
+                    { label: "No", title: "Target heart rate was not achieved - inconclusive test.", summarytext: "1. Inconclusive study due to target heart rate not being achieved."},
+                ],
+                enableSummary: true,
+                summaryDefault: false,
+                summaryOnChange: true,
+                summaryOrder: 1,
+            },
+            pStopReason: {
+                title: "Reason for stopping:",
+                options: [
+                    { label: "Target heart rate achieved", title: ""},
+                    { label: "Fatigue", title: "The test was stopped because of fatigue.", default: true,},
+                    { label: "Shortness of breath", title: "The test was stopped because of shortness of breath."},
+                    { label: "Chest pain", title: "The test was stopped because of chest pain."},
+                    { label: "Anginal chest pain", title: "The test was stopped because of anginal chest pain."},
+                    { label: "Atypical chest pain", title: "The test was stopped because of atypical chest pain."},
+                    { label: "Leg fatigue", title: "The test was stopped because of leg fatigue."},
+                    { label: "Claudication", title: "The test was stopped because of claudication."},
+                    { label: "Patient request", title: "The test was stopped at the patient's request."},
+                    { label: "Hypotensive response", title: "The test was stopped because of hypotensive response."},
+                    { label: "Hypertensive response", title: "The test was stopped because of hypertensive response."},
+                    { label: "Ischaemic ECG changes", title: "The test was stopped because of ischaemic ECG changes."},
+                    { label: "Arrhythmia", title: "The test was stopped because of arrhythmia."},
+                ],
+            },
+            pExerciseTolerance: {
+                title: "Exercise tolerance:",
+                options: [
+                    { label: "No exercise (DSE)", title: "The patient did not exercise."},
+                    { label: "Outstanding", title: "This level of exercise represents an outstanding exercise tolerance for age."},
+                    { label: "Excellent", title: "This level of exercise represents an excellent exercise tolerance for age."},
+                    { label: "Very good", title: "This level of exercise represents a very good exercise tolerance for age."},
+                    { label: "Good", title: "This level of exercise represents a good exercise tolerance for age."},
+                    { label: "Fair", title: "This level of exercise represents a fair exercise tolerance for age.", default: true,},
+                    { label: "Average", title: "This level of exercise represents an average exercise tolerance for age."},
+                    { label: "Limited", title: "This level of exercise represents a limited exercise tolerance for age."},
+                    { label: "Poor", title: "This level of exercise represents a poor exercise tolerance for age."},
+                ],
+            },
+        },
+    },
+    {
+        sectionPreviewKey: "sectECG",
+        sectionTitle: "ECG and BP",
+        params: {
+            pRestingECG: {
+                title: "Resting ECG:",
+                options: [
+                    { label: "Normal sinus rhythm", title: "Normal sinus rhythm.", default: true,},
+                    { label: "Sinus rhythm with extra systolic beats", title: "Sinus rhythm with extra systolic beats."},
+                    { label: "Atrial fibrillation", title: "Atrial fibrillation."},
+                    { label: "Paced rhythm", title: "Paced rhythm."},
+                    { label: "Undeterminate rhythm", title: "Undeterminate rhythm."},
+                    { label: "RBBB", title: "Right bundle branch block."},
+                    { label: "LBBB", title: "Left bundle branch block."},
+                    { label: "Resting bradycardia", title: "Resting bradycardia."},
+                    { label: "Resting tachycardia", title: "Resting tachycardia."},
+                    { label: "Frequent PACs", title: "Frequent premature atrial beats."},
+                    { label: "Frequent PVCs", title: "Frequent premature ventricular beats."},
+                ],
+            },
+            pStressECG: {
+                title: "Post-exercise ECG:",
+                options: [
+                    { label: "No ECG changes", title: "In response to stress, the ECG showed no ST-T wave changes.", default: true, summarytext: "4. No ECG changes."},
+                    { label: "No diagnostic ST-T wave changes", title: "In response to stress, the ECG showed no diagnostic ST-T wave changes.", summarytext: "4. No diagnostic ECG changes."},
+                    { label: "Equivocal ST-T wave changes", title: "In response to stress, the ECG showed equivocal/borderline ST-T wave changes.", summarytext: "4. Equivocal ECG changes with stress."},
+                    { label: "Ischaemic ST-T wave changes", title: "In response to stress, the ECG showed ischaemic ST-T wave changes.", summarytext: "4. Ischaemic ECG changes with stress."},
+                ],
+                enableSummary: true,
+                summaryDefault: true,
+                summaryOrder: 6,
+            },
+            pHaemoResponse: {
+                title: "Haemodynamic response:",
+                options: [
+                    { label: "Normal response", title: "There were normal blood pressure and heart rate responses to stress.", default: true,},
+                    { label: "Blunted BP response (<30mmHg increase)", title: "There was blunted blood pressure responses to stress."},
+                    { label: "Mild hypertensive response (>70mmHg increase)", title: "There was mild hypertensive blood pressure responses to stress."},
+                    { label: "Hypertensive response (>240mmHg)", title: "There was hypertensive blood pressure responses to stress."},
+                    { label: "Hypotensive response (drop)", title: "There was hypotensive blood pressure responses to stress."},
+                    { label: "Abnormal heart rate response", title: "There was abnormal heart rate responses to stress."},
+                ],
+            },
+        },
+    },
+    {
+        sectionPreviewKey: "sectEcho",
+        sectionTitle: "Echo Findings",
+        params: {
+            pRestingEcho: {
+                title: "Resting Echo Findings:",
+                options: [
+                    { label: "Normal LV", title: "Normal left ventricular size, wall thickness and systolic function (EF >55%).", default: true, summarytext: "1. Normal resting LV size, wall thickness and function (EF >55%)."},
+                    { label: "Full scan", title: `Normal left ventricular size, wall thickness and systolic function (EF >55%)
+Normal right ventricular size and function.
+No significant valvular abnormalities.
+Normal aorta dimensions.`, summarytext: "1. Normal resting LV size, wall thickness and function (EF >55%) - (full resting echo findings above)."},
+                ],
+                textareaSize: 6,
+                enableSummary: true,
+                summaryDefault: true,
+                summaryOrder: 2,
+            },
+            pStressEcho: {
+                title: "Peak Stress Echo Findings:",
+                options: [
+                    { label: "Appropriate augmentation", title: "Echo images were acquired at peak stress which demonstrated appropriate augmentation of all left ventricular segments.", default: true, summarytext: "2. No echocardiographic evidence of inducible ischaemia to achieved stress."},
+                    { label: "Appropriate augmentation, cavity decrease", title: "Echo images were acquired at peak stress which demonstrated appropriate augmentation of all left ventricular segments with slight decrease in cavity size.", summarytext: "2. No echocardiographic evidence of inducible ischaemia to achieved stress."},
+                    { label: "New RWMAS", title: "Echo images were acquired at peak stress which demonstrated new regional wall motion abnormalities.", summarytext: "2. Echocardiographic evidence of inducible ischaemia to achieved stress."},
+                    { label: "New global LVSD", title: "Echo images were acquired at peak stress which demonstrated global left ventricular systolic dysfunction.", summarytext: "2. Echocardiographic evidence of inducible global dysfunction to achieved stress."},
+                    { label: "Baseline abnormalities persist.", title: "Baseline abnormalities persist.", summarytext: "3. No echocardiographic evidence of inducible ischaemia to achieved stress, baseline abnormalities persist."},
+                ],
+                textareaSize: 3,
+                enableSummary: true,
+                summaryDefault: true,
+                summaryOrder: 4,
+            },
+        },
+    },
+    {
+        summary: true, 
+        title: "Summary",
+        params: {
+            spHeader: {
+                title: "Header",
+                options: [
+                    { label: "Conclusions", title: "Conclusions:", default: true },
+                ],
+                enableSummary: true,
+                summaryAlwaysInclude: true,
+                summaryOrder: 0,
+            },
+            spOperators: {
+                title: "Operator style",
+                options: [
+                    { label: "Operator and Supervisor", title: "\nPerformed by: {{Operator1}}\nSupervised by: {{Supervisor}}", default: true },
+                    { label: "Single operator", title: "\nPerformed by: {{Operator1}}" },
+                    { label: "Two operators", title: "\nPerformed by: {{Operator1}} and {{Operator2}}"},
+                ],
+                textareaSize: 2,
+                enableSummary: true,
+                summaryDefault: true,
+                summaryOrder: 7,
+            },
+        },
+    },
+];

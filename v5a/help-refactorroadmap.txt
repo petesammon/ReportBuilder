@@ -1,0 +1,938 @@
+# EchoTools v4.13 → v5.0 Refactoring Roadmap
+
+## Overview
+Migrate from section-based to parameter-based architecture with single ContentEditable textarea.
+
+**Critical Constraints:**
+- ✅ Preserve ALL measurements functionality
+- ✅ Preserve ALL styling (only right form pane changes visually)
+- ✅ Preserve ALL summary auto-generation logic
+- ✅ Mark deprecated code as TODO (don't delete)
+- ✅ Maintain modal appearance and functionality
+
+---
+
+## Phase 1: Data Loading & Structure
+
+### 1.1 Update script-report.js - Parameter Loading
+**Current:**
+```javascript
+// options loaded from opt-default-form.js contains sections with embedded params
+options = window.options // sections with params inside
+```
+
+**New:**
+```javascript
+// Load parameters separately from params file
+let parameters = {}; // Will be loaded from opt-default-params.js
+let options = []; // Will be loaded from opt-default-form.js (now just modal groupings)
+```
+
+**Changes needed:**
+- Add `parameters` variable to store loaded params
+- Modify `loadReportConfig()` to load parameters file
+- Create `loadParametersConfig()` function similar to existing script loaders
+- Build `parameterMap` for quick lookup: `{ pHeader: { title: "Header", options: [...] }, ... }`
+
+**Files to modify:**
+- `script-report.js` lines ~118-176 (config loading section)
+
+---
+
+## Phase 2: Remove Section-Based Architecture
+
+### 2.1 Deprecate Section Textareas in script-form.js
+**Current:** `buildForm()` creates section rows with textareas
+```javascript
+const $sectionRow = $(`
+    <div class="form-row" data-section="${sectionKey}">
+        <div class="form-left">...</div>
+        <div class="form-right">
+            <textarea id="${sectionKey}-textarea" class="section-textarea"></textarea>
+        </div>
+    </div>
+`);
+```
+
+**New:** Single ContentEditable textarea
+```javascript
+// Create single report textarea (ContentEditable)
+const $reportContainer = $(`
+    <div id="report-container" class="form-row">
+        <div id="button-container"></div>
+        <div class="form-right">
+            <div id="report-textarea" contenteditable="true" class="section-textarea"></div>
+        </div>
+    </div>
+`);
+```
+
+**Changes needed:**
+- Remove section row loop
+- Create single ContentEditable div
+- Create `#button-container` for dynamic button positioning
+- TODO: Mark old `buildForm()` section loop code for future reference
+
+**Files to modify:**
+- `script-form.js` lines ~67-180 (buildForm function)
+
+---
+
+## Phase 3: Modal System Refactoring
+
+### 3.1 Modal Creation - Work with Independent Parameters
+**Current:** `createSectionModal()` iterates through `section.params` object
+```javascript
+Object.entries(section.params).forEach(([paramKey, paramOption]) => {
+    // paramOption contains full config
+});
+```
+
+**New:** `createSectionModal()` looks up params from global parameters
+```javascript
+section.params.forEach(paramKey => {
+    const paramOption = parameters[paramKey]; // Look up from global parameters
+    if (!paramOption) {
+        console.warn(`Parameter ${paramKey} not found in parameters config`);
+        return;
+    }
+    // Continue with existing modal row creation logic
+});
+```
+
+**Changes needed:**
+- Modify `createSectionModal()` to lookup params instead of iterating object
+- Keep all existing modal HTML structure
+- Keep all existing modal button handlers (Back, Next, Done, Exclude)
+- Preserve all summary checkbox logic
+
+**Files to modify:**
+- `script-form.js` lines ~184-1388 (createSectionModal function)
+
+---
+
+## Phase 4: ContentEditable with Span Wrapping
+
+### 4.1 Create updateReportTextarea() Function
+**New function to replace updateSectionPreview():**
+```javascript
+function updateReportTextarea() {
+    // 1. Prepare data with units
+    const outputResults = {};
+    Object.entries(results).forEach(([key, value]) => {
+        const config = parseConfigMap[key];
+        if (value && config?.unit) {
+            const unit = config.unit;
+            outputResults[key] = value.toString().endsWith(unit) ? value : value + unit;
+        } else {
+            outputResults[key] = value;
+        }
+    });
+    
+    // 2. Pre-process metrics with Handlebars
+    const processedMetrics = {};
+    const baseData = { ...outputResults };
+    
+    Object.entries(metrics).forEach(([key, value]) => {
+        if (typeof value === 'string' && value.includes('{{')) {
+            try {
+                const template = Handlebars.compile(value);
+                processedMetrics[key] = template(baseData);
+            } catch (e) {
+                console.warn(`Failed to process metric ${key}:`, e);
+                processedMetrics[key] = value;
+            }
+        } else {
+            processedMetrics[key] = value;
+        }
+    });
+    
+    // 3. Generate report with outputTemplate
+    const data = { ...outputResults, ...processedMetrics };
+    
+    // 4. Filter excluded/hidden parameters
+    // TODO: Implement parameter exclusion logic
+    
+    const rawReport = outputTemplate(data);
+    
+    // 5. Wrap parameters in spans
+    const wrappedReport = wrapParametersInSpans(rawReport, data);
+    
+    // 6. Update ContentEditable (preserve manual edits)
+    updateContentEditableWithSpans(wrappedReport);
+}
+```
+
+**Changes needed:**
+- Create new function
+- Call from all parameter change handlers
+- Replace calls to `updateSectionPreview()`
+
+**Files to modify:**
+- `script-report.js` - add new function
+
+---
+
+### 4.2 Implement wrapParametersInSpans()
+```javascript
+function wrapParametersInSpans(reportText, data) {
+    // Identify all parameters used in template
+    // For each parameter value in the report:
+    //   - Find its text position
+    //   - Wrap in <span data-param="paramKey" class="param-span">...</span>
+    
+    let wrappedText = reportText;
+    
+    // Get all parameter keys from outputTemplate
+    const paramKeys = Object.keys(data).filter(key => {
+        // Only wrap actual parameters (pHeader, pLVSF, etc.), not measurements
+        return key.startsWith('p') || key.startsWith('sp');
+    });
+    
+    paramKeys.forEach(paramKey => {
+        const value = data[paramKey];
+        if (!value || value === '') return;
+        
+        // Escape special regex characters
+        const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        
+        // Replace first occurrence only (to avoid wrapping same text multiple times)
+        const regex = new RegExp(escapedValue);
+        wrappedText = wrappedText.replace(regex, 
+            `<span data-param="${paramKey}" class="param-span">${value}</span>`
+        );
+    });
+    
+    return wrappedText;
+}
+```
+
+**Challenges:**
+- Parameter values may appear multiple times in report
+- Need to track which spans already exist
+- Handle Handlebars conditionals properly
+
+**Alternative approach:** Track parameter insertion points during template rendering
+- Register Handlebars helper to wrap outputs
+- More reliable than post-processing
+
+---
+
+### 4.3 Implement updateContentEditableWithSpans()
+```javascript
+function updateContentEditableWithSpans(wrappedHTML) {
+    const $textarea = $('#report-textarea');
+    
+    // 1. Extract existing manual edits
+    const manualEdits = [];
+    $textarea.find('.manual-edit').each(function() {
+        manualEdits.push({
+            text: $(this).text(),
+            position: /* calculate position */
+        });
+    });
+    
+    // 2. Update parameter spans only
+    Object.keys(parameters).forEach(paramKey => {
+        const $existingSpan = $textarea.find(`[data-param="${paramKey}"]`);
+        const newValue = metrics[paramKey];
+        
+        if ($existingSpan.length && newValue !== undefined) {
+            $existingSpan.html(newValue);
+        }
+    });
+    
+    // 3. If full rebuild needed, preserve cursor position
+    // TODO: Implement smart diffing to minimize disruption
+}
+```
+
+**Challenges:**
+- Preserving cursor position during updates
+- Detecting user edits vs. programmatic changes
+- Merging manual edits back in
+
+---
+
+### 4.4 ContentEditable Event Handlers
+```javascript
+$('#report-textarea').on('input', function() {
+    // Detect what changed
+    // If change is inside <span data-param="X">, update metrics.X
+    // If change is outside spans, wrap in <span class="manual-edit">
+    detectAndWrapManualEdits();
+});
+
+function detectAndWrapManualEdits() {
+    const $textarea = $('#report-textarea');
+    
+    // Get current selection/cursor
+    const selection = window.getSelection();
+    
+    // Check if cursor is inside a param span
+    let $parentSpan = $(selection.anchorNode).closest('[data-param]');
+    
+    if ($parentSpan.length) {
+        // User edited inside a parameter span
+        const paramKey = $parentSpan.data('param');
+        const newValue = $parentSpan.text();
+        
+        // Update stored value
+        metrics[paramKey] = newValue;
+        
+        // Mark as manually edited
+        if (!window.manuallyEditedParams) {
+            window.manuallyEditedParams = {};
+        }
+        window.manuallyEditedParams[paramKey] = true;
+        
+    } else {
+        // User typed outside any param span
+        // Wrap new text in manual-edit span
+        // TODO: Implement text node wrapping logic
+    }
+}
+```
+
+---
+
+## Phase 5: Dynamic Button Positioning
+
+### 5.1 Position Buttons Adjacent to First Parameter
+**Logic:**
+```javascript
+function updateButtonPositions() {
+    const $buttonContainer = $('#button-container');
+    $buttonContainer.empty();
+    
+    // For each modal group (from options)
+    options.forEach(modalGroup => {
+        const modalKey = modalGroup.sectionPreviewKey; // TODO: rename to modalKey
+        const firstParam = modalGroup.params[0]; // First parameter in modal
+        
+        // Find span for first parameter in ContentEditable
+        const $paramSpan = $(`#report-textarea [data-param="${firstParam}"]`);
+        
+        if ($paramSpan.length) {
+            // Calculate position
+            const spanTop = $paramSpan.position().top;
+            
+            // Create button group
+            const $buttonGroup = $(`
+                <div class="button-group" style="position: absolute; top: ${spanTop}px;">
+                    <button class="template-button" data-modal="${modalKey}">✎</button>
+                    <button class="exclude-button" data-modal="${modalKey}">−</button>
+                </div>
+            `);
+            
+            $buttonContainer.append($buttonGroup);
+        }
+    });
+}
+```
+
+**Challenges:**
+- Buttons must reposition when content changes
+- Need to handle scrolling
+- Excluded modals need different button appearance
+
+**Call when:**
+- Report updates
+- Window resizes
+- User scrolls
+
+---
+
+## Phase 6: Exclude Functionality
+
+### 6.1 Update Exclude Button Behavior
+**Current:** Excludes entire section
+**New:** Hides all parameters in modal group
+
+```javascript
+// When exclude button clicked
+$buttonContainer.on('click', '.exclude-button', function() {
+    const modalKey = $(this).data('modal');
+    const modalGroup = options.find(o => o.sectionPreviewKey === modalKey);
+    
+    if (!modalGroup) return;
+    
+    // Toggle exclusion state
+    if (!window.excludedModals) {
+        window.excludedModals = {};
+    }
+    
+    const isExcluded = window.excludedModals[modalKey];
+    window.excludedModals[modalKey] = !isExcluded;
+    
+    // Hide/show all parameters in this modal group
+    modalGroup.params.forEach(paramKey => {
+        if (window.excludedModals[modalKey]) {
+            // Hide parameter
+            metrics[paramKey] = ''; // Empty value
+        } else {
+            // Restore parameter to default or last value
+            // TODO: Implement value restoration
+        }
+    });
+    
+    // Update button appearance
+    if (window.excludedModals[modalKey]) {
+        $(this).text('+').attr('title', 'Include parameters in report');
+    } else {
+        $(this).text('−').attr('title', 'Exclude parameters from report');
+    }
+    
+    // Update report
+    updateReportTextarea();
+});
+```
+
+---
+
+## Phase 7: Copy to Clipboard
+
+### 7.1 Strip Spans Before Copying
+```javascript
+$("#copy-report").on("click", function () {
+    const $textarea = $('#report-textarea');
+    
+    // Clone the textarea to avoid modifying the live version
+    const $clone = $textarea.clone();
+    
+    // Remove all span wrappers, keep only text content
+    $clone.find('span').each(function() {
+        $(this).replaceWith($(this).text());
+    });
+    
+    // Get clean text
+    const cleanText = $clone.text();
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(cleanText).then(() => {
+        const originalText = $(this).html();
+        $(this).html("Copied!");
+        setTimeout(() => $(this).html(originalText), 2000);
+    }).catch(err => {
+        console.error('Failed to copy to clipboard:', err);
+        alert('Failed to copy to clipboard. Please try again.');
+    });
+});
+```
+
+---
+
+## Phase 8: Summary Preservation
+
+### 8.1 Keep Existing Summary Logic
+**No changes to:**
+- `updateSummary()` function
+- Summary checkbox handling
+- `summaryOnChange` logic
+- `summaryThreshold` / `summaryNotThreshold` / `summaryExclude`
+- Summary modal creation
+
+**Changes:**
+- Summary content goes into `metrics.Summary` as before
+- Summary is wrapped in `<span data-param="Summary" class="param-span">` in ContentEditable
+- Summary modal works same way (edits update metrics.Summary)
+
+---
+
+## Phase 9: Deprecated Code Handling
+
+### 9.1 Mark for Future Review
+Add TODO comments to:
+```javascript
+// TODO [v5.0 REFACTOR]: triggerSection functionality deprecated
+// This code is preserved for reference but no longer used
+// triggerSection was used to show/hide sections based on dropdown selection
+// In new architecture, consider showing/hiding entire modal groups instead
+if (option.triggerSection) {
+    // ... existing code ...
+}
+```
+
+**Functions to mark:**
+- `triggerSection` logic
+- Section-specific code in modal handlers
+- Old `updateSectionPreview()` (if not fully removed)
+- Section textarea creation code
+
+---
+
+## Testing Checklist
+
+After implementation, verify:
+
+- [ ] Measurements table unchanged
+- [ ] Measurements import works
+- [ ] Manual measurement entry works
+- [ ] Modal appearance unchanged
+- [ ] All dropdowns work in modals
+- [ ] Custom textareas work in modals
+- [ ] Back/Next navigation works
+- [ ] Summary checkboxes work
+- [ ] Summary auto-generation works
+- [ ] Exclude button hides parameters
+- [ ] Edit button opens modal
+- [ ] Parameter changes update ContentEditable immediately
+- [ ] Manual edits in ContentEditable update stored values
+- [ ] Manual edits outside params are preserved
+- [ ] Copy to clipboard strips spans
+- [ ] Button positioning updates correctly
+- [ ] Scrolling doesn't break button positions
+- [ ] Template switching preserves state
+
+---
+
+## File Modification Summary
+
+**Major changes:**
+- `script-report.js` - Add parameter loading, updateReportTextarea()
+- `script-form.js` - Replace buildForm(), modify createSectionModal()
+- `style-report.css` - Add ContentEditable styling, button positioning
+
+**Minor changes:**
+- `config-report.js` - Already updated
+- `opt-default-params.js` - New file (already created)
+- `opt-default-form.js` - Already updated
+- `opt-default-report.js` - Already updated
+
+**Unchanged:**
+- `script-calcs.js`
+- `opt-default-input.js`
+- `opt-default-measures.js`
+- `opt-default-manual.js`
+- `report.html` (HTML structure)
+- `style-pico.css`
+
+---
+
+## Implementation Order
+
+1. **Phase 1** - Parameter loading infrastructure
+2. **Phase 2** - Single ContentEditable creation
+3. **Phase 3** - Modal refactoring for independent params
+4. **Phase 4.1** - Basic updateReportTextarea() without spans
+5. **Phase 5** - Button positioning (using temporary approach)
+6. **Phase 4.2-4.4** - Span wrapping implementation
+7. **Phase 6** - Exclude functionality
+8. **Phase 7** - Copy to clipboard
+9. **Phase 8** - Verify summary logic
+10. **Phase 9** - Mark deprecated code
+11. **Testing** - Full regression testing
+
+---
+
+## Risk Areas
+
+⚠️ **High Risk:**
+- ContentEditable cursor management
+- Span wrapping without breaking Handlebars
+- Manual edit preservation during updates
+- Button positioning performance
+
+⚠️ **Medium Risk:**
+- Parameter exclusion state management
+- Summary logic migration
+- Modal state preservation
+
+✅ **Low Risk:**
+- Parameter loading
+- Single textarea creation
+- Modal appearance preservation
+
+---
+
+## Questions for User
+
+Before implementation:
+
+1. Should we implement span wrapping via Handlebars helper or post-processing?
+2. How should manual edits outside params be indicated visually (if at all)?
+3. Should buttons update position on scroll, or only on content change?
+4. For excluded modals, should we restore previous values or defaults when un-excluding?
+
+______________________________________________________________________________________________________________________________________________________________________________________________________
+
+# EchoTools v5.0 Implementation Progress
+
+## Date: January 2, 2026
+## Status: Phases 1-4 Core Functionality Complete
+
+---
+
+## ✅ Completed Phases
+
+### Phase 1: Parameter Loading Infrastructure ✅
+**File:** `script-report.js`
+
+**Changes made:**
+- Added `parameters` variable to store independent parameter definitions
+- Added `parametersLoaded` flag to loading sequence
+- Created parameter loader that extracts `window.options[0].params` from params file
+- Updated `checkAllLoaded()` to include parameters in ready check
+- Exposed `parameters` globally for access by other modules
+
+**Result:** System can now load parameter definitions from `opt-default-params.js`
+
+---
+
+### Phase 2: Single ContentEditable Textarea ✅
+**Files:** `script-form.js`, `style-report.css`
+
+**Changes made:**
+
+**script-form.js:**
+- Replaced `buildForm()` section loop with single ContentEditable div creation
+- Created `#report-container` with `#button-container` and `#report-textarea`
+- Added `setupContentEditableHandlers()` function
+- Added `detectAndUpdateParameters()` for bidirectional editing
+- Marked old section-based code as TODO for reference
+
+**style-report.css:**
+- Added `.report-contenteditable` styling (min-height: 400px, auto-resize)
+- Added `.param-span` styling (subtle green background: rgba(118, 191, 68, 0.08))
+- Added `.param-span:hover` for visibility feedback
+- Added `.manual-edit` class (intentionally no styling)
+- Added `#button-container` and `.button-group` positioning styles
+
+**Result:** Single ContentEditable textarea replaces multiple section textareas, with visual distinction between parameters and manual text
+
+---
+
+### Phase 3: Modal Refactoring for Independent Parameters ✅
+**File:** `script-form.js`
+
+**Changes made:**
+- Updated `createSectionModal()` to work with param arrays instead of param objects
+- Added compatibility layer: handles both array format (new) and object format (old)
+- Parameters now looked up from global `window.parameters` object
+- Event handler setup updated to use param list iteration
+- Preserves all existing modal functionality (Back, Next, Done, Exclude buttons)
+
+**Result:** Modals work with independent parameters while maintaining full backward compatibility
+
+---
+
+### Phase 4: Core Report Update Function ✅
+**File:** `script-report.js`
+
+**Changes made:**
+- Registered Handlebars helper `param` for wrapping (though post-processing used instead)
+- Created `updateReportTextarea()` function:
+  - Prepares data with units
+  - Pre-processes metrics through Handlebars
+  - Filters excluded/hidden parameters
+  - Generates raw report via `outputTemplate`
+  - Wraps parameters in spans
+  - Updates ContentEditable
+- Created `wrapParametersInSpans()` for post-processing
+- Created `updateContentEditableHTML()` with cursor preservation (basic)
+- Exposed `updateReportTextarea` globally
+
+**Result:** Core engine for generating and updating the single ContentEditable report with span-wrapped parameters
+
+---
+
+## 🚧 Phases Still Needed
+
+### Phase 5: Dynamic Button Positioning 
+**Not yet implemented**
+
+**Needed:**
+- `updateButtonPositions()` function to position buttons adjacent to first parameter in each modal
+- Button position calculation based on parameter span positions in ContentEditable
+- Event handlers for modal edit buttons in button container
+- Scroll event handling to keep buttons positioned correctly
+- Exclude button functionality for hiding parameters
+
+**Impact:** Buttons won't appear next to parameters yet - need this for full UI
+
+---
+
+### Phase 6: Exclude Functionality Update
+**Not yet implemented**
+
+**Needed:**
+- Exclude button click handler in button container
+- Parameter-level hiding instead of section-level
+- Restoration of previous values when un-excluding
+- Button appearance toggling (+/−)
+
+**Impact:** Exclude buttons in modals still reference old section-based logic
+
+---
+
+### Phase 7: Copy to Clipboard with Span Stripping
+**Not yet implemented**
+
+**Needed:**
+- Update `#copy-report` button handler in script-report.js
+- Clone ContentEditable, strip all `<span>` tags
+- Extract clean text content
+- Copy to clipboard
+
+**Impact:** Copy button will include HTML span tags in copied text
+
+---
+
+### Phase 8: Summary Logic Preservation
+**Partially complete**
+
+**Status:**
+- Summary parameter definitions exist in params file
+- Summary checkboxes should work (existing code preserved)
+- Summary auto-generation logic intact
+- **NOT TESTED** - needs verification
+
+**Needed:**
+- Test summary functionality end-to-end
+- Ensure Summary param is wrapped in spans correctly
+- Verify summary modal works with new architecture
+
+---
+
+### Phase 9: Deprecated Code Marking
+**Partially complete**
+
+**Completed:**
+- Marked section-based textarea code in `buildForm()` as TODO
+- Added [v5.0] tags to new code
+
+**Still needed:**
+- Mark `triggerSection` logic throughout codebase
+- Mark old `updateSectionPreview()` calls
+- Add comprehensive TODO comments explaining what was deprecated and why
+
+---
+
+## 🔧 Integration Points Still Needed
+
+### Modal Parameter Change Handlers
+**Issue:** When parameters change in modals, need to call `updateReportTextarea()` immediately
+
+**Locations to update:**
+- Dropdown change handlers
+- Textarea input handlers  
+- Custom textarea updates
+- Done button handler
+- All parameter modification points
+
+**Search for:** Calls to `updateSectionPreview()` - replace with `updateReportTextarea()`
+
+---
+
+### Initialize Default State Function
+**Issue:** `initializeDefaultState()` in script-form.js still references old object-based params
+
+**Needed:**
+- Update to work with array-based params
+- Look up defaults from global `parameters` object
+- Initialize `metrics` with default values
+- Initialize summary checkbox states
+
+---
+
+### Build Options Form Function
+**Issue:** `buildOptionsForm()` likely still has section-based logic
+
+**Needed:**
+- Review and update for parameter-based architecture
+- Ensure it calls new initialization correctly
+
+---
+
+## 📋 Testing Checklist
+
+Once remaining phases complete, test:
+
+**Basic Functionality:**
+- [ ] Page loads without errors
+- [ ] Parameters file loads successfully
+- [ ] Single ContentEditable appears
+- [ ] Report template renders
+
+**Parameters:**
+- [ ] Parameters wrapped in spans with `data-param` attribute
+- [ ] Param spans have subtle background color
+- [ ] Manual text outside params has no background
+
+**Modals:**
+- [ ] All modals open correctly
+- [ ] Parameters display in modals
+- [ ] Dropdowns populate correctly
+- [ ] Textareas work
+- [ ] Summary checkboxes appear
+
+**Editing:**
+- [ ] Dropdown changes update ContentEditable immediately
+- [ ] Textarea changes update Content Editable immediately
+- [ ] Manual editing inside param span updates stored value
+- [ ] Manual editing outside spans creates manual-edit span
+- [ ] Back/Next navigation works
+- [ ] Done button works
+
+**Buttons:**
+- [ ] Edit buttons appear next to parameters
+- [ ] Buttons scroll with content
+- [ ] Edit buttons open correct modals
+- [ ] Exclude buttons hide parameters
+- [ ] Exclude button toggle works (+/−)
+
+**Other:**
+- [ ] Measurements table unchanged
+- [ ] Measurements import works
+- [ ] Copy to clipboard strips HTML
+- [ ] Summary auto-generation works
+- [ ] Template switching works
+
+---
+
+## 🚨 Known Issues / Technical Debt
+
+### 1. Cursor Position Restoration
+**Location:** `updateContentEditableHTML()` in script-report.js
+
+**Issue:** Currently just places cursor at end after updates
+
+**Impact:** User loses cursor position when report updates
+
+**Fix needed:** Implement smart cursor restoration based on content anchoring
+
+---
+
+### 2. Manual Edit Wrapping
+**Location:** `detectAndUpdateParameters()` in script-form.js
+
+**Issue:** Manual edits outside param spans logged but not wrapped in `<span class="manual-edit">`
+
+**Impact:** Manual text not distinguished from parameters in DOM
+
+**Fix needed:** Implement text node wrapping logic
+
+---
+
+### 3. Handlebars Helper Unused
+**Location:** Line ~24 in script-report.js
+
+**Issue:** Registered `param` Handlebars helper but using post-processing instead
+
+**Decision:** Keep for now as backup approach, or remove?
+
+---
+
+### 4. Performance Concerns
+**Issue:** Full report regeneration on every parameter change could be slow for long reports
+
+**Mitigation options:**
+- Debounce update calls
+- Only update changed parameter spans
+- Diff-based updates
+
+---
+
+### 5. Backward Compatibility Layer
+**Location:** `createSectionModal()` in script-form.js
+
+**Issue:** Still supports old object-based params for compatibility
+
+**Decision:** When to remove? Keep for transition period?
+
+---
+
+## 📁 Modified Files Summary
+
+| File | Status | Lines Changed | Complexity |
+|------|--------|---------------|------------|
+| `script-report.js` | Major changes | ~200 | High |
+| `script-form.js` | Major changes | ~150 | High |
+| `style-report.css` | Minor additions | ~40 | Low |
+| `config-report.js` | Updated (user provided) | Minimal | Low |
+| `opt-default-params.js` | New file (user provided) | N/A | Medium |
+| `opt-default-form.js` | Updated (user provided) | Minimal | Low |
+| `opt-default-report.js` | Updated (user provided) | Minimal | Medium |
+
+**Unchanged files:**
+- `report.html` - No changes needed yet
+- `opt-default-input.js`
+- `opt-default-measures.js`
+- `opt-default-manual.js`
+- `script-calcs.js`
+- `style-pico.css`
+
+---
+
+## 🎯 Next Steps (Priority Order)
+
+### Immediate (Critical Path):
+1. **Fix modal parameter handlers** - Update to call `updateReportTextarea()` instead of `updateSectionPreview()`
+2. **Implement button positioning** - `updateButtonPositions()` function
+3. **Test basic flow** - Can we load, view, and edit a report?
+
+### Short-term (Core Features):
+4. **Implement exclude button** - Parameter hiding functionality
+5. **Fix copy to clipboard** - Strip span tags
+6. **Test summary functionality** - Verify auto-generation works
+
+### Medium-term (Polish):
+7. **Improve cursor restoration** - Better UX during updates
+8. **Implement manual edit wrapping** - Complete bidirectional editing
+9. **Performance optimization** - Debouncing, smart updates
+
+### Long-term (Cleanup):
+10. **Remove deprecated code** - Clean up TODOs
+11. **Remove backward compatibility** - Once confirmed working
+12. **Documentation** - Update developer docs
+
+---
+
+## 💡 Recommendations
+
+### Before Full Testing:
+1. Complete Phase 5 (button positioning) - needed for basic UI interaction
+2. Update modal handlers to call `updateReportTextarea()` 
+3. Fix `initializeDefaultState()` for new param structure
+
+### Testing Strategy:
+1. Start with simple single-parameter modal
+2. Test edit → update → display flow
+3. Gradually add complexity (multiple params, summary, etc.)
+4. Keep browser console open for errors
+
+### Rollback Plan:
+- All original files preserved in `/mnt/user-data/uploads`
+- Git history has original implementations in TODO comments
+- Can revert individual functions if needed
+
+---
+
+## 📝 Notes
+
+**Architecture Decision Rationale:**
+- Post-processing for span wrapping chosen over Handlebars helper to avoid template modifications
+- Backward compatibility layer added to ease transition
+- Subtle parameter highlighting chosen per user preference
+- Button positioning dynamically calculated for flexibility
+
+**Key Design Patterns:**
+- Parameters as first-class citizens (not owned by sections)
+- Spans for bidirectional DOM-metric synchronization
+- Immediate updates for responsive UX
+- Preservation of manual edits during regeneration
+
+**User Decisions Implemented:**
+- ✅ Span wrapping via post-processing (cleaner templates)
+- ✅ Subtle colored background for params (rgba(118, 191, 68, 0.08))
+- ✅ Buttons scroll with content (relative positioning)
+- ✅ Restore previous values on un-exclude (keep params stored)
+
+---
+
+**Implementation by:** Claude (Anthropic)  
+**Date:** January 2, 2026  
+**Version:** v5.0 (In Progress)  
+**Roadmap Status:** 4/9 phases complete
+
+______________________________________________________________________________________________________________________________________________________________________________________________________
