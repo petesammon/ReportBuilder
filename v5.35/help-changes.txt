@@ -32,7 +32,6 @@ Issues with v5.a:
     X button placement - finally solved!
     X modals don't update contenteditable yet
     X section markers on report to define section to be hidden in full when excluded, and to define button location at section start
-    - change sectionPreviewKey to modalKey
     X unify modal creation code
     X fix modal navigation flow
     X special rules for summary modal to hide [next] and [-] buttons
@@ -40,7 +39,43 @@ Issues with v5.a:
     X not pulling EF into summary
     X copy to clipboard needs to remove utton placement markers
     X summary not updating with drop-down changes
-    - orphaned code for hide triggered section button
-    - copy to clipboard button needs to span both columns (and/or remove the 2-column structure entirely!)
-    - copy to clipboard not excluding sections
     
+Update to v5.1:
+    Issues:
+    X modals don't update report    
+    X hidden sections collapse the text area too much, buttons overlap
+    X backspace next to buttons, removes buttons...
+    X copy to clipboard not excluding sections
+
+Updates in v5.2:
+    X reinstate triggersection code
+        X seems that this is currently enabled by 'triggerSection' in selection rather than 'defaultHidden' status
+        X orphaned code for hide triggered section button
+
+Updated in v5.3:
+    X changed to 'modal' instead of 'section' nomeclature (see Changes_v5.2.md for full details)
+        X change sectionPreviewKey to modalKey
+    X parameter spans now include 'data-modal' (<span data-param="pAorta" data-modal="modalAo" class="param-span">...</span>)
+    X sort out green highlighting (multiple applications - should only apply once on textarea rendering: green = variable, yellow = fixed text, orange = manual text)
+    X completely new data-flow architecture with central registry created on page load from existing options files
+    X hidden groups not re-hiding on [x] button click
+    X manual text edits within parameter spans not being stored
+    X ? manual text-edits outside of parameter spans - how are they handled and stored?
+    
+Updated in v5.35:
+    X seperate out LV Measurement and EF options
+    X add visual EF measurment
+
+Updated in v5.4:
+    - significant refactor...
+        - remove vestigial lazy-loading functionality which is not being used
+        - move to 'never re-render html' model to preserve manual edits in text-area
+
+Wider To Do list:
+    - copy to clipboard button needs to span both columns (and/or remove the 2-column structure entirely!)
+    - hidden sections need some greyed out text identifier...
+    - consider template builder to hide/show sections?
+    - move to drag-drop/clickable wrapped strings (single click = focus/cursor position; options-click = select multiple strings; shift-click = select multiple contiguous strings; drag = move string(s) as a whole, double-click = open specific modal?)
+    - LV Other Comments - automatically adding to summary despite 'summaryOnChange: false'
+
+

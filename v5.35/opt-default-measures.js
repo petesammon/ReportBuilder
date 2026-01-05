@@ -2,17 +2,17 @@
 // Defines which measurements to show and in what order
 window.measurements = [
     {
-        sectionTitle: "Enter Manually",
+        modalTitle: "Enter Manually",
         highlight: true,
-        sectionPreviewKey: "sectStudy",
+        modalKey: "mStudy",
         items: [
             "Operator1",
             "HR",
         ]
     },    
     {
-        sectionTitle: "Demographics",
-        sectionPreviewKey: "sectStudy",
+        modalTitle: "Demographics",
+        modalKey: "mStudy",
         items: [
             "DOB",
             "Age",
@@ -24,8 +24,8 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "LV Dimensions",
-        sectionPreviewKey: ["sectLV", "sectLVMeasurements"],
+        modalTitle: "LV Dimensions",
+        modalKey: ["mLV", "mLVMeasurements"],
         items: [
             "IVSd", 
             "LVPWd", 
@@ -38,17 +38,18 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "LV Systolic Function",
-        sectionPreviewKey: ["sectLV", "sectLVMeasurements"],
+        modalTitle: "LV Systolic Function",
+        modalKey: ["mLV", "mLVMeasurements"],
         items: [
+            "EFVisual",
             "EFBP", 
             "EFAuto", 
             "GLS"
         ]
     },
     {
-        sectionTitle: "LV Diastolic Function",
-        sectionPreviewKey: ["sectLV", "sectLVMeasurements"],
+        modalTitle: "LV Diastolic Function",
+        modalKey: ["mLV", "mLVMeasurements"],
         items: [
             "EVel", 
             "EDecT",
@@ -65,8 +66,8 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "Mitral Valve",
-        sectionPreviewKey: "sectMV",
+        modalTitle: "Mitral Valve",
+        modalKey: "mMV",
         items: [
             "MVVmax", 
             "MVMeanPG", 
@@ -80,16 +81,16 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "Left Atrium",
-        sectionPreviewKey: "sectLA",
+        modalTitle: "Left Atrium",
+        modalKey: "mLA",
         items: [
             "LAESV", 
             "LAESVInd"
         ]
     },
     {
-        sectionTitle: "LVOT",
-        sectionPreviewKey: "sectAV",
+        modalTitle: "LVOT",
+        modalKey: "mAV",
         items: [
             "LVOTVmax", 
             "LVOTMeanPG", 
@@ -100,8 +101,8 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "Aortic Valve",
-        sectionPreviewKey: "sectAV",
+        modalTitle: "Aortic Valve",
+        modalKey: "mAV",
         items: [
             "AVVmax", 
             "AVMeanPG", 
@@ -113,8 +114,8 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "AV Manual",
-        sectionPreviewKey: "sectAV",
+        modalTitle: "AV Manual",
+        modalKey: "mAV",
         highlight: true,
         items: [
             "AVAccT",
@@ -123,8 +124,8 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "Aorta Dimensions",
-        sectionPreviewKey: "sectAo",
+        modalTitle: "Aorta Dimensions",
+        modalKey: "mAo",
         items: [
             "SoV", 
             "SoVI", 
@@ -135,8 +136,8 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "Ao Manual",
-        sectionPreviewKey: "sectAo",
+        modalTitle: "Ao Manual",
+        modalKey: "mAo",
         highlight: true,
         items: [
             "DescAoVTI",
@@ -144,8 +145,8 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "RV Dimensions",
-        sectionPreviewKey: "sectRV",
+        modalTitle: "RV Dimensions",
+        modalKey: "mRV",
         items: [
             "RVD1", 
             "RVD2", 
@@ -156,8 +157,8 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "RV Function",
-        sectionPreviewKey: "sectRV",
+        modalTitle: "RV Function",
+        modalKey: "mRV",
         items: [
             "TAPSE", 
             "RVS", 
@@ -165,16 +166,16 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "Right Atrium",
-        sectionPreviewKey: "sectRA",
+        modalTitle: "Right Atrium",
+        modalKey: "mRA",
         items: [
             "RAA", 
             "RAAI"
         ]
     },
     {
-        sectionTitle: "Tricuspid Valve",
-        sectionPreviewKey: "sectTV",
+        modalTitle: "Tricuspid Valve",
+        modalKey: "mTV",
         items: [
             "TRVmax", 
             "TRMaxPG",
@@ -188,8 +189,8 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "RVOT",
-        sectionPreviewKey: "sectPV",
+        modalTitle: "RVOT",
+        modalKey: "mPV",
         items: [
             "RVOTVmax", 
             "RVOTMaxPG", 
@@ -198,8 +199,8 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "Pulmonary",
-        sectionPreviewKey: "sectPV",
+        modalTitle: "Pulmonary",
+        modalKey: "mPV",
         items: [
             "PVVmax",
             "PVMaxPG", 
@@ -212,24 +213,24 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "Pulmonary Regurgitation",
-        sectionPreviewKey: "sectPV",
+        modalTitle: "Pulmonary Regurgitation",
+        modalKey: "mPV",
         items: [
             "PRVMax", 
             "PRMaxPG",
-            "PREndVmax"
+            "PREndVMax"
         ]
     },
     {
-        sectionTitle: "Miscellaneous",
-        sectionPreviewKey: "sectMisc",
+        modalTitle: "Miscellaneous",
+        modalKey: "mMisc",
         items: [
             "IVC"
         ]
     },    
     {
-        sectionTitle: "Effusion Size",
-        sectionPreviewKey: "sectPeffFull",
+        modalTitle: "Effusion Size",
+        modalKey: "mPeffFull",
         highlight: true,
         items: [
             "LVPLAX",
@@ -245,8 +246,8 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "Respiratory Variation",
-        sectionPreviewKey: "sectPeffFull",
+        modalTitle: "Respiratory Variation",
+        modalKey: "mPeffFull",
         highlight: true,
         items: [
             "EffMVVmax",

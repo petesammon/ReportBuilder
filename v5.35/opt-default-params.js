@@ -32,6 +32,18 @@ window.parameters = {
                     { label: "Paced", title: "Paced rhyhtm" },
                 ],
             },
+            pDemo: {
+                title: "Patient Details",
+                options: [
+                    { label: "Default (Height, Weight, BSA, BP)", title: `Height: {{Height}}, Weight: {{Weight}}, BSA: {{BSA}}
+BP: {{BP}}`, default: true },
+                    { label: "Height, Weight, BSA (no BP)", title: `Height: {{Height}}, Weight: {{Weight}}, BSA: {{BSA}}
+BP: (not available)` },
+                    { label: "BP only (Height and Weight not available)", title: `Height and Weight: (not available)
+BP: {{BP}}`, default: true },
+                    { label: "(none)", title: "" },
+                ],
+            },
             pRWMA: {
                 title: "RWMAs",
                 options: "customtext", 
@@ -44,8 +56,8 @@ window.parameters = {
             pLVComments: {
                 title: "Other comments",
                 options: "customtext",
-                summarytext: false,
                 enableSummary: true,
+                summaryOnChange: false,
                 summaryOrder: 2,
             },
             pLVSF: {
@@ -89,8 +101,8 @@ window.parameters = {
                 title: "Diastolic function",
                 options: [
                     { label: "Normal diastolic function", title: "Normal diastolic function for age", default: true },
-                    { label: "Impaired diastolic function", title: "Impaired diastolic function" },
                     { label: "Indeterminate diastolic function", title: "Indeterminate diastolic function" },
+                    { label: "Impaired diastolic function", title: "Impaired diastolic function" },
                 ],
                 enableSummary: true,
                 summaryDefault: false,
@@ -116,32 +128,22 @@ window.parameters = {
                     { label: "Default", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
 Peak E velocity = {{EVel}}, E DecT = {{EDecT}}, Peak A velocity = {{AVel}}, E/A ratio = {{EARatio}}
 Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (averaged) = {{EEPrimeAv}}
-Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}
-Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
-Global Averaged Longitudinal Strain = {{GLS}}`, default: true },
+Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}`, default: true },
                     { label: "Default + Volumes", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
 LVEDV = {{LVEDV}} (Indexed = {{LVEDVInd}}), LVESV = {{LVESV}} (Indexed = {{LVESVInd}})
 Peak E velocity = {{EVel}}, E DecT = {{EDecT}}, Peak A velocity = {{AVel}}, E/A ratio = {{EARatio}}
 Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (averaged) = {{EEPrimeAv}}
-Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}
-Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
-Global Averaged Longitudinal Strain = {{GLS}}`},
+Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}`},
                     { label: "Atrial Fibrillation", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
 Peak E velocity = {{EVel}}, E DecT = {{EDecT}}
 Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (septal) = {{EEPrimeSept}}
-Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}
-Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
-Global Averaged Longitudinal Strain = {{GLS}}`, default: true },
+Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}`},
                     { label: "Oncology", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
 Peak E velocity = {{EVel}}, E DecT = {{EDecT}}, Peak A velocity = {{AVel}}, E/A ratio = {{EARatio}}
 Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (averaged) = {{EEPrimeAv}}
 Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}
 
-LVEDV = {{LVEDV}} (Indexed = {{LVEDVInd}}), LVESV = {{LVESV}} (Indexed = {{LVESVInd}})
-Simpsons Biplane LVEF = {{EFBP}}
-Auto EF = {{EFAuto}}
-3D EF = %
-Global Averaged Longitudinal Strain = {{GLS}}`},
+LVEDV = {{LVEDV}} (Indexed = {{LVEDVInd}}), LVESV = {{LVESV}} (Indexed = {{LVESVInd}})`},
                     { label: "HCM", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
 PSAX Basal: Septal = cm, Anterior = cm, Lateral = cm, Inferior = cm
 PSAX Mid: Septal = cm, Anterior = cm, Lateral = cm, Inferior = cm
@@ -149,8 +151,19 @@ PSAX Apex: Septal = cm, Anterior = cm, Lateral = cm, Inferior = cm
 
 Peak E velocity = {{EVel}}, E DecT = {{EDecT}}, Peak A velocity = {{AVel}}, E/A ratio = {{EARatio}}
 Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (averaged) = {{EEPrimeAv}}
-Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}
-Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
+Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}`},
+                ],
+            },
+            pLVEF: {
+                title: "EF Template",
+                options: [
+                    { label: "Default (BP + Auto + GLS)", title: `Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
+Global Averaged Longitudinal Strain = {{GLS}}`, default: true },
+                    { label: "BP + Visual", title: `Simpsons Biplane LVEF = {{EFBP}}, Visual EF = {{EFVisual}}`},
+                    { label: "Visual only", title: `Visual EF = {{EFVisual}}`},
+                    { label: "Oncology", title: `Simpsons Biplane LVEF = {{EFBP}}
+Auto EF = {{EFAuto}}
+3D EF = %
 Global Averaged Longitudinal Strain = {{GLS}}`},
                 ],
             },
@@ -630,7 +643,7 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
             pPEff: {
                 title: "Pericardial Effusion",
                 options: [
-                    { label: "** Full Assessment (creates new section) **", title: "", triggerSection: "sectPeffFull" },
+                    { label: "** Full Assessment (creates new section) **", title: "", triggerModal: "mPeffFull" },
                     { label: "No pericardial effusion", title: "No pericardial effusion.", default: true },
                     { label: "Trivial global effusion, no haemodynamic compromise", title: "Trivial global pericardial effusion - no evidence of haemodynamic compromise."},
                     { label: "Small global effusion, no haemodynamic compromise", title: "Small global pericardial effusion - no evidence of haemodynamic compromise."},
@@ -660,6 +673,17 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
                 enableSummary: true,
                 summaryDefault: false,
                 summaryOrder: 90,
+            },
+            pEffMeasures: {
+                title: "Measurements",
+                options: [
+                    { label: "Default", title: `Measures maximally at end-diastole:
+- LV:   {{#if LVPLAX}}{{LVPLAX}} (PLAX), {{/if}}{{#if LVPSAX}}{{LVPSAX}} (PSAX), {{/if}}{{#if LVA4C}}{{LVA4C}} (A4C), {{/if}}{{#if LVSC}}{{LVSC}} (Subcostal){{/if}}
+- RV:   {{#if RVPLAX}}{{RVPLAX}} (PLAX), {{/if}}{{#if RVPSAX}}{{RVPSAX}} (PSAX), {{/if}}{{#if RVA4C}}{{RVA4C}} (A4C), {{/if}}{{#if RVSC}}{{RVSC}} (Subcostal){{/if}}
+
+And at end-systole:
+- RA:   {{#if RAA4C}}{{RAA4C}} (A4C), {{/if}}{{#if RASC}}{{RASC}} (Subcostal){{/if}}`, default: true, },
+                ],
             },
             pEffCompromise: {
                 title: "Haemodynamic Compromise",
@@ -694,7 +718,7 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
                     { label: "Not seen", title: "RA was not adequately seen for assessment."},
                 ],
             },
-            pIVC: {
+            pEffIVC: {
                 title: "IVC",
                 options: [
                     { label: "Normal size, collapse >50%", title: "Normal IVC size, collapses >50%.", default: true },
@@ -711,6 +735,13 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
                     { label: "No significant respiratory variation.", title: "No significant respiratory variation.", default: true },
                     { label: "Significant respiratory variation.", title: "Significant respiratory variation."},
                     { label: "AF, unable to assess.", title: "Unable to assess respiratory variation due to atrial fibrillation with significant beat-to-beat variability."},
+                ],
+            },
+            pEffInflow: {
+                title: "MV/TV Inflow",
+                options: [
+                    { label: "Default", title: `MV inflow: Vmax = {{EffMVVmax}}, Vmin = {{EffMVVmin}}; Variation = {{EffMVVar}} (normal range <25%)
+TV inflow: Vmax = {{EffTVVmax}}, Vmin = {{EffTVVmin}}; Variation = {{EffTVVar}} (normal range <40%)`, default: true },
                 ],
             },
             spTitle: {

@@ -78,7 +78,7 @@ th {
 }
 
 /* Section modals - only overlay the right column */
-.modal.section-modal {
+.modal.group-modal {
     left: auto;
     right: 0;
     width: calc(100% - 260px - 2rem); /* Cover everything except measurements column + container padding */
@@ -87,13 +87,13 @@ th {
 
 /* On wide screens, align modal with centered layout */
 @media (min-width: calc(1300px + 2rem)) {
-    .modal.section-modal {
+    .modal.group-modal {
         right: calc((100% - 1300px + 2rem) / 2); /* Offset from right edge to match centered layout */
         width: calc(1300px - 260px - 2rem); /* Width of right column in centered layout */
     }
 }
 
-.modal.section-modal.active {
+.modal.group-modal.active {
     align-items: flex-start;
     justify-content: center;
     padding: 5vh 1rem 1rem 1rem;
@@ -116,7 +116,7 @@ th {
 }
 
 /* Section modal content centered with 1000px max-width */
-.section-modal .modal-content {
+.group-modal .modal-content {
     max-width: 1000px;
     width: 90%;
 }
@@ -643,8 +643,8 @@ hr {
 }
 
 /* [v5.0] Hide exclude and next buttons in Summary modal (backup - buttons shouldn't be created) */
-#sectSummary-modal .modal-exclude-button,
-#sectSummary-modal .modal-next-button {
+#Summary-modal .modal-exclude-button,
+#Summary-modal .modal-next-button {
     display: none !important;
 }
 
@@ -657,7 +657,7 @@ hr {
     padding: 0;
 }
 
-.section-textarea {
+.group-textarea {
     background-color: #f8f9fa;
     border: 1px solid var(--pico-muted-border-color);
     border-radius: 0;
@@ -672,13 +672,13 @@ hr {
     box-sizing: border-box;
 }
 
-.section-textarea:focus {
+.group-textarea:focus {
     background-color: var(--pico-form-element-active-background-color);
     outline: none;
 }
 
 /* Excluded section styling */
-.section-textarea.excluded {
+.group-textarea.excluded {
     background-color: #e9ecef;
     color: #6c757d;
     opacity: 0.7;
@@ -702,7 +702,7 @@ hr {
 }
 
 /* [v5.0] Section wrapper spans - wraps entire sections */
-.section-wrapper {
+.group-wrapper {
     display: contents; /* Allows section content to flow naturally */
 }
 
@@ -766,6 +766,18 @@ hr {
 .inline-exclude-button.excluded:hover {
     background-color: #5a6268;
     border-color: #545b62;
+}
+
+/* Inline reset-trigger-button - orange style for triggered sections */
+.inline-exclude-button.reset-trigger-button {
+    background-color: #ff8c00; /* Dark orange */
+    border-color: #ff8c00;
+    color: white;
+}
+
+.inline-exclude-button.reset-trigger-button:hover {
+    background-color: #ff7700;
+    border-color: #ff7700;
 }
 
 .report-contenteditable:focus {
@@ -877,3 +889,16 @@ hr {
     cursor: pointer;
     accent-color: var(--pico-primary);
 }
+
+/* [v5.1] Field wrapper - groups fixed text with variables for exclude/include */
+.field-wrapper {
+    /* Display inline to not affect layout */
+    display: inline;
+}
+
+/* Optional: subtle highlight on hover for debugging */
+/*
+.field-wrapper:hover {
+    background-color: rgba(118, 191, 68, 0.05);
+}
+*/

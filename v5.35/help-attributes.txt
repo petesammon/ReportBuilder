@@ -1,9 +1,8 @@
 Attributes for entries on opt-form-*.js files
 
-        Section attributes:
-                title: "Report Header", (the visible title on the modal)
-                enableSectionPreview: true, (activates the section textarea on the form)
+        Modal (form) attributes:
                 sectionPreviewKey: "sectHeader", (needs to match with the section titles on the report page)
+                sectionTitle: "Report Header", (the visible title on the modal)
                 defaultExcluded: true, (section loads onto form, but is hidden by default)
                 defaultHidden: "sectPeff", (section is completely hidden until triggered by drop=down option with triggerSection: "sectPeff")
 
@@ -18,6 +17,8 @@ Attributes for entries on opt-form-*.js files
                 summaryExclude: ["spValves"] (specifies statements to be excluded from the summary when the summary checkbox for this parameter is activated)
                 textareaSize: 3, (specify the size of the conditional textarea in the modal)
                 summaryOrder: 1, (specify the summary line to be added to - will stack statements with the same number in the same row)
+                options: "customtext" (enables blank text-area input field in the modal - no drop-down)
+                summarytext: "..." (for use with the above to specify summary text for text-entry-only options)
 
         Individual option attributes:
                 default: true, (within the options lines, sepcify the default option)

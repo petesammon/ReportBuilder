@@ -1,5 +1,6 @@
 // form.js - Clean rebuild of form builder with auto-summary
-// REFACTORED VERSION - Shared utilities eliminate duplication
+// REFACTORED VERSION - Modal-centric architecture with robust parameter tracking
+// v5.2 - Uses unified toggleModalExclusion from script-report.js
 
 jQuery(document).ready(function () {
     
@@ -117,13 +118,18 @@ jQuery(document).ready(function () {
                 window.metrics[paramKey] = newValue;
             }
             
+            // [v5.2] Update variable registry with manual state
+            if (typeof window.updateRegistryValue === 'function') {
+                window.updateRegistryValue(paramKey, newValue, 'manual');
+            }
+            
             // Mark as manually edited
             if (!window.manuallyEditedParams) {
                 window.manuallyEditedParams = {};
             }
             window.manuallyEditedParams[paramKey] = true;
             
-            console.log(`Parameter ${paramKey} manually edited to: ${newValue}`);
+            console.log(`[Manual Edit] Parameter ${paramKey} edited to: "${newValue.substring(0, 50)}..."`);
         } else {
             // User typed outside param spans - wrap in manual-edit span
             const anchorNode = selection.anchorNode;
@@ -179,13 +185,13 @@ jQuery(document).ready(function () {
         $('.modal:not(#import-modal)').remove();
         
         // Reset hidden sections for new template (prevents state from previous template persisting)
-        window.hiddenSections = {};
+        window.hiddenModals = {};
         
         // [v5.0] Create single ContentEditable report textarea with button container
         const $reportContainer = $(`
             <div id="report-container" class="form-row">
                 <div class="form-right" style="width: 100%;">
-                    <div id="report-textarea" contenteditable="true" class="section-textarea report-contenteditable"></div>
+                    <div id="report-textarea" contenteditable="true" class="group-textarea report-contenteditable"></div>
                 </div>
             </div>
         `);
@@ -194,21 +200,21 @@ jQuery(document).ready(function () {
         
         // [v5.0] Create modals for all sections (unified function handles both Section and Summary)
         window.options.forEach(section => {
-            if (section.sectionPreviewKey || section.summary === true) {
-                const sectionKey = section.sectionPreviewKey || 'Summary';
+            if (section.modalKey || section.summary === true) {
+                const modalKey = section.modalKey || 'Summary';
                 
                 // Initialize excluded sections if defaultExcluded is set
-                if (section.defaultExcluded && !window.excludedSections) {
-                    window.excludedSections = {};
+                if (section.defaultExcluded && !window.excludedModals) {
+                    window.excludedModals = {};
                 }
-                if (section.defaultExcluded && window.excludedSections[sectionKey] === undefined) {
-                    window.excludedSections[sectionKey] = true;
+                if (section.defaultExcluded && window.excludedModals[modalKey] === undefined) {
+                    window.excludedModals[modalKey] = true;
                 }
                 
                 // Set hidden state if defaultHidden is true
                 const isDefaultHidden = section.defaultHidden === true;
                 if (isDefaultHidden) {
-                    window.hiddenSections[sectionKey] = true;
+                    window.hiddenModals[modalKey] = true;
                 }
                 
                 // Create modal using unified function
@@ -448,7 +454,7 @@ jQuery(document).ready(function () {
     }
     
     // Handle textarea input event
-    function handleTextareaInput(value, paramKey, paramOption, $checkbox, sectionKey, $textarea) {
+    function handleTextareaInput(value, paramKey, paramOption, $checkbox, modalKey, $textarea) {
         // Update metrics
         if (window.metrics) {
             window.metrics[paramKey] = value;
@@ -484,12 +490,17 @@ jQuery(document).ready(function () {
         }
         
         // Update section preview
-        if (sectionKey && typeof window.updateSectionPreview === 'function') {
-            window.updateSectionPreview(sectionKey);
+        if (modalKey && typeof window.updateModalPreview === 'function') {
+            window.updateModalPreview(modalKey);
         }
         
-        // Update only the changed parameter (granular update for performance)
-        if (typeof window.updateChangedParameters === 'function') {
+        // [v5.2] When value becomes empty, do a full report update to trigger Handlebars {{#if}} logic
+        // This properly removes the line instead of leaving empty whitespace
+        const isEmpty = !value || value.trim() === '';
+        if (isEmpty && typeof window.updateReportTextarea === 'function') {
+            window.updateReportTextarea();
+        } else if (typeof window.updateChangedParameters === 'function') {
+            // Granular update for non-empty values (performance optimization)
             window.updateChangedParameters([paramKey]);
         }
         
@@ -497,7 +508,7 @@ jQuery(document).ready(function () {
     }
     
     // Handle custom textarea input event
-    function handleCustomTextareaInput(value, paramKey, paramOption, $checkbox, sectionKey, $customTextarea) {
+    function handleCustomTextareaInput(value, paramKey, paramOption, $checkbox, modalKey, $customTextarea) {
         // Update metrics with custom text
         if (window.metrics) {
             window.metrics[paramKey] = value;
@@ -529,12 +540,15 @@ jQuery(document).ready(function () {
         }
         
         // Update section preview
-        if (sectionKey && typeof window.updateSectionPreview === 'function') {
-            window.updateSectionPreview(sectionKey);
+        if (modalKey && typeof window.updateModalPreview === 'function') {
+            window.updateModalPreview(modalKey);
         }
         
-        // Update only the changed parameter (granular update for performance)
-        if (typeof window.updateChangedParameters === 'function') {
+        // [v5.2] When value becomes empty, do a full report update to trigger Handlebars {{#if}} logic
+        const isEmpty = !value || value.trim() === '';
+        if (isEmpty && typeof window.updateReportTextarea === 'function') {
+            window.updateReportTextarea();
+        } else if (typeof window.updateChangedParameters === 'function') {
             window.updateChangedParameters([paramKey]);
         }
         
@@ -542,7 +556,7 @@ jQuery(document).ready(function () {
     }
     
     // Handle dropdown change event
-    function handleDropdownChange(selectedValue, selectedIndex, paramKey, paramOption, $checkbox, $customTextarea, sectionKey) {
+    function handleDropdownChange(selectedValue, selectedIndex, paramKey, paramOption, $checkbox, $customTextarea, modalKey) {
         // Find the selected option object using selectedIndex
         let selectedOption = null;
         let selectedLabel = null;
@@ -555,16 +569,27 @@ jQuery(document).ready(function () {
             }
         }
         
+        // Determine state: default, selected, or manual
+        let state = 'selected';
+        if (selectedOption && selectedOption.default === true) {
+            state = 'default';
+        }
+        
         // Update metrics
         if (window.metrics) {
             window.metrics[paramKey] = selectedValue || "";
         }
         
+        // [v5.2] Update variable registry
+        if (typeof window.updateRegistryValue === 'function') {
+            window.updateRegistryValue(paramKey, selectedValue || "", state);
+        }
+        
         // Mark that this modal session had changes
-        if (window.modalChangedInSession && window.modalInitialState && sectionKey && window.modalInitialState[sectionKey]) {
-            const initialValue = window.modalInitialState[sectionKey][paramKey];
+        if (window.modalChangedInSession && window.modalInitialState && modalKey && window.modalInitialState[modalKey]) {
+            const initialValue = window.modalInitialState[modalKey][paramKey];
             if (initialValue !== selectedValue) {
-                window.modalChangedInSession[sectionKey] = true;
+                window.modalChangedInSession[modalKey] = true;
             }
         }
         
@@ -573,53 +598,52 @@ jQuery(document).ready(function () {
             window.selectedOptions[paramKey] = selectedOption;
         }
         
-        // Handle triggerSection - show/hide sections based on selection
-        const currentTriggerSection = selectedOption && selectedOption.triggerSection ? selectedOption.triggerSection : null;
+        // Handle triggerModal - show/hide sections based on selection
+        const currentTriggerSection = selectedOption && selectedOption.triggerModal ? selectedOption.triggerModal : null;
         
-        // Check if ANY option in this parameter has a triggerSection
+        // Check if ANY option in this parameter has a triggerModal
         let paramTriggersSections = [];
         if (paramOption.options && Array.isArray(paramOption.options)) {
             paramOption.options.forEach(opt => {
-                if (typeof opt !== 'string' && opt.triggerSection) {
-                    paramTriggersSections.push(opt.triggerSection);
+                if (typeof opt !== 'string' && opt.triggerModal) {
+                    paramTriggersSections.push(opt.triggerModal);
                 }
             });
         }
         
+        // Track if any sections need to be hidden (need full report update)
+        let sectionsWereHidden = false;
+        
         // Hide any sections that were triggered by this parameter but are not currently selected
         paramTriggersSections.forEach(triggeredSectionKey => {
             if (triggeredSectionKey !== currentTriggerSection) {
-                if (window.hiddenSections) {
-                    window.hiddenSections[triggeredSectionKey] = true;
-                    $(`.form-row[data-section="${triggeredSectionKey}"]`).hide();
-                    
-                    if (window.excludedSections) {
-                        window.excludedSections[triggeredSectionKey] = true;
-                    }
+                // Check if this section is currently visible (not hidden)
+                const wasVisible = !window.hiddenModals || !window.hiddenModals[triggeredSectionKey];
+                
+                // Hide this section regardless of its current triggered state
+                if (window.hiddenModals) {
+                    window.hiddenModals[triggeredSectionKey] = true;
+                }
+                if (window.excludedModals) {
+                    window.excludedModals[triggeredSectionKey] = true;
+                }
+                // Clear triggered state if it was set
+                if (window.triggeredModals) {
+                    window.triggeredModals[triggeredSectionKey] = false;
+                }
+                
+                // [v5.2] Mark as hidden if it was previously visible
+                if (wasVisible) {
+                    sectionsWereHidden = true;
+                    console.log(`[handleDropdownChange] Section ${triggeredSectionKey} hidden after parameter change`);
                 }
             }
         });
         
-        // Now show the currently selected trigger section (if any)
+        // Now trigger the currently selected section (if any)
         if (currentTriggerSection) {
-            if (window.hiddenSections && window.hiddenSections[currentTriggerSection]) {
-                window.hiddenSections[currentTriggerSection] = false;
-                $(`.form-row[data-section="${currentTriggerSection}"]`).show();
-                
-                if (window.excludedSections && window.excludedSections[currentTriggerSection]) {
-                    window.excludedSections[currentTriggerSection] = false;
-                    $(`.form-row[data-section="${currentTriggerSection}"]`).removeClass('excluded-section');
-                    const $button = $(`.exclude-button[data-section="${currentTriggerSection}"]`);
-                    if ($button.hasClass('reset-trigger-button')) {
-                        $button.text('×');
-                    } else {
-                        $button.text('−');
-                    }
-                }
-                
-                if (typeof window.updateSectionPreview === 'function') {
-                    window.updateSectionPreview(currentTriggerSection);
-                }
+            if (typeof window.triggerModal === 'function') {
+                window.triggerModal(currentTriggerSection);
             }
         }
         
@@ -642,12 +666,15 @@ jQuery(document).ready(function () {
         }
         
         // Update section preview
-        if (sectionKey && typeof window.updateSectionPreview === 'function') {
-            window.updateSectionPreview(sectionKey);
+        if (modalKey && typeof window.updateModalPreview === 'function') {
+            window.updateModalPreview(modalKey);
         }
         
-        // Update only the changed parameter (granular update for performance)
-        if (typeof window.updateChangedParameters === 'function') {
+        // [v5.2] If sections were hidden, do a full report update (not just parameter update)
+        // Otherwise, just update the changed parameter for performance
+        if (sectionsWereHidden && typeof window.updateReportTextarea === 'function') {
+            window.updateReportTextarea();
+        } else if (typeof window.updateChangedParameters === 'function') {
             window.updateChangedParameters([paramKey]);
         }
         
@@ -655,7 +682,7 @@ jQuery(document).ready(function () {
     }
     
     // Toggle custom textarea visibility
-    function toggleCustomTextarea($modal, paramKey, $select, $customTextarea, paramOption, $checkbox, sectionKey) {
+    function toggleCustomTextarea($modal, paramKey, $select, $customTextarea, paramOption, $checkbox, modalKey) {
         const $customRow = $modal.find(`#${paramKey}-custom-row`);
         if ($customRow.length) {
             if ($customRow.is(':visible')) {
@@ -714,8 +741,8 @@ jQuery(document).ready(function () {
                 }
                 
                 // Update section preview
-                if (sectionKey && typeof window.updateSectionPreview === 'function') {
-                    window.updateSectionPreview(sectionKey);
+                if (modalKey && typeof window.updateModalPreview === 'function') {
+                    window.updateModalPreview(modalKey);
                 }
                 
                 // Update summary
@@ -761,7 +788,7 @@ jQuery(document).ready(function () {
     }
     
     // Attach event handlers for a single parameter
-    function attachParameterEventHandlers($modal, paramKey, paramOption, sectionKey) {
+    function attachParameterEventHandlers($modal, paramKey, paramOption, modalKey) {
         const $textarea = $modal.find(`#${paramKey}-textarea`);
         const $select = $modal.find(`#${paramKey}-select`);
         const $checkbox = $modal.find(`#${paramKey}-summary-modal`);
@@ -771,7 +798,7 @@ jQuery(document).ready(function () {
         // Textarea input handler (for custom: true or options: "customtext")
         if ($textarea.length) {
             $textarea.on('input', function() {
-                handleTextareaInput($(this).val(), paramKey, paramOption, $checkbox, sectionKey, $(this));
+                handleTextareaInput($(this).val(), paramKey, paramOption, $checkbox, modalKey, $(this));
             });
             
             // Apply initial auto-resize with min-height
@@ -792,7 +819,7 @@ jQuery(document).ready(function () {
                     paramOption,
                     $checkbox,
                     $customTextarea,
-                    sectionKey
+                    modalKey
                 );
             });
         }
@@ -800,7 +827,7 @@ jQuery(document).ready(function () {
         // Custom textarea input handler (for dropdown + custom text)
         if ($customTextarea.length) {
             $customTextarea.on('input', function() {
-                handleCustomTextareaInput($(this).val(), paramKey, paramOption, $checkbox, sectionKey, $(this));
+                handleCustomTextareaInput($(this).val(), paramKey, paramOption, $checkbox, modalKey, $(this));
             });
         }
         
@@ -843,8 +870,8 @@ jQuery(document).ready(function () {
                     }
                     
                     // Update section preview
-                    if (sectionKey && typeof window.updateSectionPreview === 'function') {
-                        window.updateSectionPreview(sectionKey);
+                    if (modalKey && typeof window.updateModalPreview === 'function') {
+                        window.updateModalPreview(modalKey);
                     }
                     
                     // Update summary
@@ -860,7 +887,7 @@ jQuery(document).ready(function () {
             // For regular dropdowns with custom text, toggle custom textarea row
             else if ($select.length && $customTextarea.length) {
                 $editButton.on('click', function() {
-                    toggleCustomTextarea($modal, paramKey, $select, $customTextarea, paramOption, $checkbox, sectionKey);
+                    toggleCustomTextarea($modal, paramKey, $select, $customTextarea, paramOption, $checkbox, modalKey);
                 });
             }
         }
@@ -873,9 +900,9 @@ jQuery(document).ready(function () {
     // Create modal for Summary section (REFACTORED - uses shared utilities)
     // [v5.0] Unified modal creation - handles both Summary and Section modals
     function createModal(section) {
-        const isSummarySection = section.summary === true || section.sectionPreviewKey === "sectSummary";
-        const sectionKey = section.sectionPreviewKey || "Summary";
-        const modalId = `${sectionKey}-modal`;
+        const isSummarySection = section.summary === true || section.modalKey === "Summary";
+        const modalKey = section.modalKey || "Summary";
+        const modalId = `${modalKey}-modal`;
         
         // Build parameter rows
         let paramRows = '';
@@ -932,20 +959,20 @@ jQuery(document).ready(function () {
         
         // Build buttons based on section type
         const modalButtons = isSummarySection ? `
-            <button type="button" class="modal-back-button" data-section="${sectionKey}">← Back</button>
-            <button type="button" class="modal-close-button" data-section="${sectionKey}">Close</button>
+            <button type="button" class="modal-back-button" data-modal="${modalKey}">← Back</button>
+            <button type="button" class="modal-close-button" data-modal="${modalKey}">Close</button>
         ` : `
-            <button type="button" class="modal-back-button" data-section="${sectionKey}">← Back</button>
-            <button type="button" class="modal-exclude-button" data-section="${sectionKey}" title="Exclude section from report">−</button>
-            <button type="button" class="generate-section-button" data-section="${sectionKey}">Done</button>
-            <button type="button" class="modal-next-button" data-section="${sectionKey}">Next →</button>
+            <button type="button" class="modal-back-button" data-modal="${modalKey}">← Back</button>
+            <button type="button" class="modal-exclude-button" data-modal="${modalKey}" title="Exclude section from report">−</button>
+            <button type="button" class="generate-section-button" data-modal="${modalKey}">Done</button>
+            <button type="button" class="modal-next-button" data-modal="${modalKey}">Next →</button>
         `;
         
         const $modal = $(`
-            <div id="${modalId}" class="modal section-modal">
+            <div id="${modalId}" class="modal group-modal">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h2>${section.sectionTitle}</h2>
+                        <h2>${section.modalTitle}</h2>
                         <button class="close-button" data-modal="${modalId}">&times;</button>
                     </div>
                     <div class="modal-actions">
@@ -979,7 +1006,7 @@ jQuery(document).ready(function () {
                 if (isSummarySection && (paramKey === 'Summary' || !paramOption.enableSummary || paramOption.summaryAlwaysInclude)) {
                     return;
                 }
-                attachParameterEventHandlers($modal, paramKey, paramOption, sectionKey);
+                attachParameterEventHandlers($modal, paramKey, paramOption, modalKey);
             }
         });
         
@@ -995,7 +1022,7 @@ jQuery(document).ready(function () {
         });
         
         if (isSummarySection) {
-            $(`.modal-close-button[data-section="${sectionKey}"]`).on('click', function() {
+            $(`.modal-close-button[data-modal="${modalKey}"]`).on('click', function() {
                 // Save all dropdown selections before closing and track changes
                 const changedParams = [];
                 
@@ -1044,11 +1071,11 @@ jQuery(document).ready(function () {
             });
         }
         
-        $(`.modal-back-button[data-section="${sectionKey}"]`).on('click', function() {
+        $(`.modal-back-button[data-modal="${modalKey}"]`).on('click', function() {
             // Get all sections except Summary
             const allSections = window.options.filter(section => 
-                section.sectionPreviewKey && 
-                section.sectionPreviewKey !== "sectSummary" &&
+                section.modalKey && 
+                section.modalKey !== "Summary" &&
                 section.summary !== true
             );
             
@@ -1059,19 +1086,19 @@ jQuery(document).ready(function () {
                 prevSection = findLastVisibleSection(allSections);
             } else {
                 // Regular section → go to previous visible section
-                const currentIndex = allSections.findIndex(s => s.sectionPreviewKey === sectionKey);
+                const currentIndex = allSections.findIndex(s => s.modalKey === modalKey);
                 prevSection = findPreviousVisibleSection(allSections, currentIndex);
             }
             
             if (prevSection) {
-                const prevSectionKey = prevSection.section.sectionPreviewKey;
+                const prevSectionKey = prevSection.section.modalKey;
                 const prevModalId = `${prevSectionKey}-modal`;
                 
                 $(`#${prevModalId}`).addClass('active');
                 $(`#${modalId}`).removeClass('active');
                 
-                if (!isSummarySection && typeof window.scrollToMeasurementSection === 'function') {
-                    window.scrollToMeasurementSection(prevSectionKey);
+                if (!isSummarySection && typeof window.scrollToMeasurementModal === 'function') {
+                    window.scrollToMeasurementModal(prevSectionKey);
                 }
             } else {
                 // No previous section - just close
@@ -1081,32 +1108,58 @@ jQuery(document).ready(function () {
         
         // Section-specific handlers
         if (!isSummarySection) {
-            $(`.template-button[data-section="${sectionKey}"]`).on('click', function() {
+            $(`.template-button[data-modal="${modalKey}"]`).on('click', function() {
                 if (!window.modalChangedInSession) window.modalChangedInSession = {};
                 if (!window.modalInitialState) window.modalInitialState = {};
+                if (!window.modalDropdownState) window.modalDropdownState = {};
                 
-                window.modalChangedInSession[sectionKey] = false;
-                window.modalInitialState[sectionKey] = {};
+                window.modalChangedInSession[modalKey] = false;
+                window.modalInitialState[modalKey] = {};
+                window.modalDropdownState[modalKey] = {};
                 
                 paramList.forEach(paramKey => {
-                    window.modalInitialState[sectionKey][paramKey] = window.metrics?.[paramKey] || '';
+                    // Store the current metrics value (may include manual edits)
+                    window.modalInitialState[modalKey][paramKey] = window.metrics?.[paramKey] || '';
                     
                     const $select = $modal.find(`#${paramKey}-select`);
                     const $textarea = $modal.find(`#${paramKey}-textarea`);
-                    const currentValue = window.metrics?.[paramKey] || '';
+                    const $customRow = $modal.find(`#${paramKey}-custom-row`);
+                    const $customTextarea = $modal.find(`#${paramKey}-custom-textarea`);
                     
-                    if ($select.length) $select.val(currentValue);
-                    if ($textarea.length) $textarea.val(currentValue);
+                    // [v5.2] Store the DROPDOWN's initial selected value separately
+                    // This lets us detect if user changed the dropdown vs just closing modal
+                    if ($select.length) {
+                        window.modalDropdownState[modalKey][paramKey] = $select.val() || '';
+                        
+                        // [v5.2] If this param was manually edited, show the custom textarea
+                        if (window.manuallyEditedParams && window.manuallyEditedParams[paramKey]) {
+                            if ($customRow.length && $customTextarea.length) {
+                                $customRow.show();
+                                $customTextarea.val(window.metrics?.[paramKey] || '');
+                                $select.css({
+                                    'opacity': '0.5',
+                                    'background-color': '#f0f0f0'
+                                });
+                                console.log(`[v5.2] Showing custom textarea for manually edited param: ${paramKey}`);
+                            }
+                        }
+                    }
+                    
+                    // Sync textarea to current metrics value (for custom: true params)
+                    if ($textarea.length) {
+                        $textarea.val(window.metrics?.[paramKey] || '');
+                    }
+                    // Note: We don't sync dropdown to metrics - it stays on last selected option
                 });
                 
                 $(`#${modalId}`).addClass('active');
                 
-                if (typeof window.scrollToMeasurementSection === 'function') {
-                    window.scrollToMeasurementSection(sectionKey);
+                if (typeof window.scrollToMeasurementModal === 'function') {
+                    window.scrollToMeasurementModal(modalKey);
                 }
             });
             
-            $(`.generate-section-button[data-section="${sectionKey}"]`).on('click', function() {
+            $(`.generate-section-button[data-modal="${modalKey}"]`).on('click', function() {
                 const changedParams = [];
                 
                 paramList.forEach(paramKey => {
@@ -1114,24 +1167,41 @@ jQuery(document).ready(function () {
                     const $textarea = $modal.find(`#${paramKey}-textarea`);
                     const $customTextarea = $modal.find(`#${paramKey}-custom-textarea`);
                     
-                    const oldValue = window.metrics?.[paramKey] || "";
-                    let newValue = "";
+                    const currentMetricsValue = window.metrics?.[paramKey] || "";
+                    let newValue = currentMetricsValue; // Default: preserve current value
+                    let shouldUpdate = false;
                     
                     if ($customTextarea.length && $customTextarea.is(':visible')) {
+                        // Custom textarea is visible - use its value
                         newValue = $customTextarea.val() || "";
-                        if (window.metrics) window.metrics[paramKey] = newValue;
+                        shouldUpdate = true;
                     }
-                    else if ($select.length && window.metrics) {
-                        newValue = $select.val() || "";
-                        window.metrics[paramKey] = newValue;
+                    else if ($select.length) {
+                        // [v5.2] Check if dropdown actually changed during this modal session
+                        const initialDropdownValue = window.modalDropdownState?.[modalKey]?.[paramKey] || '';
+                        const currentDropdownValue = $select.val() || '';
+                        
+                        if (currentDropdownValue !== initialDropdownValue) {
+                            // User changed the dropdown - use dropdown value
+                            newValue = currentDropdownValue;
+                            shouldUpdate = true;
+                            
+                            // Clear manual edit flag since user made a dropdown selection
+                            if (window.manuallyEditedParams) {
+                                delete window.manuallyEditedParams[paramKey];
+                            }
+                        }
+                        // If dropdown didn't change, preserve the current metrics value
+                        // (which may include manual edits)
                     }
-                    else if ($textarea.length && window.metrics) {
+                    else if ($textarea.length) {
                         newValue = $textarea.val() || "";
-                        window.metrics[paramKey] = newValue;
+                        shouldUpdate = true;
                     }
                     
-                    // Track if this parameter changed
-                    if (oldValue !== newValue) {
+                    // Only update metrics if the value actually changed
+                    if (shouldUpdate && newValue !== currentMetricsValue) {
+                        if (window.metrics) window.metrics[paramKey] = newValue;
                         changedParams.push(paramKey);
                     }
                 });
@@ -1149,7 +1219,7 @@ jQuery(document).ready(function () {
                 $(`#${modalId}`).removeClass('active');
             });
             
-            $(`.modal-next-button[data-section="${sectionKey}"]`).on('click', function() {
+            $(`.modal-next-button[data-modal="${modalKey}"]`).on('click', function() {
                 const changedParams = [];
                 
                 paramList.forEach(paramKey => {
@@ -1157,24 +1227,34 @@ jQuery(document).ready(function () {
                     const $textarea = $modal.find(`#${paramKey}-textarea`);
                     const $customTextarea = $modal.find(`#${paramKey}-custom-textarea`);
                     
-                    const oldValue = window.metrics?.[paramKey] || "";
-                    let newValue = "";
+                    const currentMetricsValue = window.metrics?.[paramKey] || "";
+                    let newValue = currentMetricsValue;
+                    let shouldUpdate = false;
                     
                     if ($customTextarea.length && $customTextarea.is(':visible')) {
                         newValue = $customTextarea.val() || "";
-                        if (window.metrics) window.metrics[paramKey] = newValue;
+                        shouldUpdate = true;
                     }
-                    else if ($select.length && window.metrics) {
-                        newValue = $select.val() || "";
-                        window.metrics[paramKey] = newValue;
+                    else if ($select.length) {
+                        // [v5.2] Check if dropdown actually changed during this modal session
+                        const initialDropdownValue = window.modalDropdownState?.[modalKey]?.[paramKey] || '';
+                        const currentDropdownValue = $select.val() || '';
+                        
+                        if (currentDropdownValue !== initialDropdownValue) {
+                            newValue = currentDropdownValue;
+                            shouldUpdate = true;
+                            if (window.manuallyEditedParams) {
+                                delete window.manuallyEditedParams[paramKey];
+                            }
+                        }
                     }
-                    else if ($textarea.length && window.metrics) {
+                    else if ($textarea.length) {
                         newValue = $textarea.val() || "";
-                        window.metrics[paramKey] = newValue;
+                        shouldUpdate = true;
                     }
                     
-                    // Track if this parameter changed
-                    if (oldValue !== newValue) {
+                    if (shouldUpdate && newValue !== currentMetricsValue) {
+                        if (window.metrics) window.metrics[paramKey] = newValue;
                         changedParams.push(paramKey);
                     }
                 });
@@ -1191,50 +1271,48 @@ jQuery(document).ready(function () {
                 
                 $(`#${modalId}`).removeClass('active');
                 
-                const allSections = window.options.filter(s => s.sectionPreviewKey);
-                const currentIndex = allSections.findIndex(s => s.sectionPreviewKey === sectionKey);
+                const allSections = window.options.filter(s => s.modalKey);
+                const currentIndex = allSections.findIndex(s => s.modalKey === modalKey);
                 const nextVisible = findNextVisibleSection(allSections, currentIndex);
                 
                 if (nextVisible) {
-                    const nextSectionKey = nextVisible.section.sectionPreviewKey;
+                    const nextSectionKey = nextVisible.section.modalKey;
                     const nextModalId = `${nextSectionKey}-modal`;
                     $(`#${nextModalId}`).addClass('active');
                     
-                    if (typeof window.scrollToMeasurementSection === 'function') {
-                        window.scrollToMeasurementSection(nextSectionKey);
+                    if (typeof window.scrollToMeasurementModal === 'function') {
+                        window.scrollToMeasurementModal(nextSectionKey);
                     }
                 } else {
-                    const summaryModal = $('#sectSummary-modal');
+                    const summaryModal = $('#Summary-modal');
                     if (summaryModal.length) summaryModal.addClass('active');
                 }
             });
             
-            $(`.modal-exclude-button[data-section="${sectionKey}"]`).on('click', function() {
-                if (!window.excludedSections) window.excludedSections = {};
+            $(`.modal-exclude-button[data-modal="${modalKey}"]`).on('click', function() {
+                // Use unified toggle function from script-report.js
+                const isNowExcluded = typeof window.toggleModalExclusion === 'function' 
+                    ? window.toggleModalExclusion(modalKey)
+                    : false;
                 
-                const isExcluded = window.excludedSections[sectionKey] || false;
-                window.excludedSections[sectionKey] = !isExcluded;
-                
-                if (window.excludedSections[sectionKey]) {
+                // Update button text in modal
+                if (isNowExcluded) {
                     $(this).text('+').attr('title', 'Include section in report');
                 } else {
                     $(this).text('−').attr('title', 'Exclude section from report');
                 }
-                
-                if (typeof window.updateReportTextarea === 'function') window.updateReportTextarea();
-                if (typeof window.updateSummary === 'function') window.updateSummary();
             });
         }
     }
     function findNextVisibleSection(allSections, currentIndex) {
         for (let i = currentIndex + 1; i < allSections.length; i++) {
             const section = allSections[i];
-            const sectionKey = section.sectionPreviewKey;
+            const modalKey = section.modalKey;
             // Check if section is hidden or excluded
-            if (window.hiddenSections && window.hiddenSections[sectionKey]) {
+            if (window.hiddenModals && window.hiddenModals[modalKey]) {
                 continue; // Skip hidden sections
             }
-            if (window.excludedSections && window.excludedSections[sectionKey]) {
+            if (window.excludedModals && window.excludedModals[modalKey]) {
                 continue; // Skip excluded sections
             }
             return { section, index: i };
@@ -1246,12 +1324,12 @@ jQuery(document).ready(function () {
     function findPreviousVisibleSection(allSections, currentIndex) {
         for (let i = currentIndex - 1; i >= 0; i--) {
             const section = allSections[i];
-            const sectionKey = section.sectionPreviewKey;
+            const modalKey = section.modalKey;
             // Check if section is hidden or excluded
-            if (window.hiddenSections && window.hiddenSections[sectionKey]) {
+            if (window.hiddenModals && window.hiddenModals[modalKey]) {
                 continue; // Skip hidden sections
             }
-            if (window.excludedSections && window.excludedSections[sectionKey]) {
+            if (window.excludedModals && window.excludedModals[modalKey]) {
                 continue; // Skip excluded sections
             }
             return { section, index: i };
@@ -1263,12 +1341,12 @@ jQuery(document).ready(function () {
     function findLastVisibleSection(allSections) {
         for (let i = allSections.length - 1; i >= 0; i--) {
             const section = allSections[i];
-            const sectionKey = section.sectionPreviewKey;
+            const modalKey = section.modalKey;
             // Check if section is hidden or excluded
-            if (window.hiddenSections && window.hiddenSections[sectionKey]) {
+            if (window.hiddenModals && window.hiddenModals[modalKey]) {
                 continue; // Skip hidden sections
             }
-            if (window.excludedSections && window.excludedSections[sectionKey]) {
+            if (window.excludedModals && window.excludedModals[modalKey]) {
                 continue; // Skip excluded sections
             }
             return { section, index: i };

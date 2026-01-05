@@ -1,23 +1,24 @@
 window.options = [
     {
-        sectionPreviewKey: "sectHeader",
-        sectionTitle: "Report Header",
+        modalKey: "mHeader",
+        modalTitle: "Report Header",
         params: [
             "pHeader"
         ],
     },
     {
-        sectionPreviewKey: "sectStudy",
-        sectionTitle: "Study details",
+        modalKey: "mStudy",
+        modalTitle: "Study details",
         params: [
             "pQuality",
             "pMachine",
             "pRhythm",
+            "pDemo",
         ],
     },
     {
-        sectionPreviewKey: "sectLV",
-        sectionTitle: "Left Ventricle",
+        modalKey: "mLV",
+        modalTitle: "Left Ventricle",
         params: [
             "pRWMA",
             "pLVComments",
@@ -29,15 +30,16 @@ window.options = [
         ],
     },
     {
-        sectionPreviewKey: "sectLVMeasurements",
-        sectionTitle: "LV Measurements",
+        modalKey: "mLVMeasurements",
+        modalTitle: "LV Measurements",
         params: [
             "pLVMeasurements",
+            "pLVEF",
         ],
     },
     {
-        sectionPreviewKey: "sectMV",
-        sectionTitle: "Mitral Valve",
+        modalKey: "mMV",
+        modalTitle: "Mitral Valve",
         params: [
             "pMV",
             "pMS",
@@ -46,15 +48,15 @@ window.options = [
         ],
     },
     {
-        sectionPreviewKey: "sectLA",
-        sectionTitle: "Left Atrium",
+        modalKey: "mLA",
+        modalTitle: "Left Atrium",
         params: [
             "pLA",
         ],
     },
     {
-        sectionPreviewKey: "sectAV",
-        sectionTitle: "Aortic Valve",
+        modalKey: "mAV",
+        modalTitle: "Aortic Valve",
         params: [
             "pAV",
             "pAS",
@@ -63,8 +65,8 @@ window.options = [
         ],
     },
     {
-        sectionPreviewKey: "sectAo",
-        sectionTitle: "Aorta",
+        modalKey: "mAo",
+        modalTitle: "Aorta",
         params: [
             "pAorta",
             "pAoMeasurements",
@@ -72,8 +74,8 @@ window.options = [
         ],
     },
     {
-        sectionPreviewKey: "sectRV",
-        sectionTitle: "Right Ventricle",
+        modalKey: "mRV",
+        modalTitle: "Right Ventricle",
         params: [
             "pRVF",
             "pRVD",
@@ -82,15 +84,15 @@ window.options = [
         ],
     },
     {
-        sectionPreviewKey: "sectRA",
-        sectionTitle: "Right Atrium",
+        modalKey: "mRA",
+        modalTitle: "Right Atrium",
         params: [
             "pRA",
         ],
     },
     {
-        sectionPreviewKey: "sectTV",
-        sectionTitle: "Tricuspid Valve",
+        modalKey: "mTV",
+        modalTitle: "Tricuspid Valve",
         params: [
             "pTV",
             "pTS",
@@ -100,8 +102,8 @@ window.options = [
         ],
     },
     {
-        sectionPreviewKey: "sectPV",
-        sectionTitle: "Pulmonary Valve",
+        modalKey: "mPV",
+        modalTitle: "Pulmonary Valve",
         params: [
             "pPV",
             "pPS",
@@ -109,11 +111,10 @@ window.options = [
             "pPVN",
             "pPVMeasurements",
         ],
-    },
-        
+    },    
     {
-        sectionPreviewKey: "sectMisc",
-        sectionTitle: "Miscellaneous",
+        modalKey: "mMisc",
+        modalTitle: "Miscellaneous",
         params: [
             "pIVCD",
             "pPASP",
@@ -124,8 +125,26 @@ window.options = [
         ],
     },
     {
-        sectionPreviewKey: "sectSummary",
-        sectionTitle: "Summary",
+        modalKey: "mPeffFull",
+        modalTitle: "Pericardial Effusion",
+        defaultHidden: true,
+        defaultExcluded: false,
+        params: [
+            "pEffSize",
+            "pEffOther",
+            "pEffMeasures",
+            "pEffCompromise",
+            "pSeptMotion",
+            "pRVCollapse",
+            "pRACollapse",
+            "pEffIVC",
+            "pEffVariation",
+            "pEffInflow",
+        ],
+    },
+    {
+        modalKey: "Summary",
+        modalTitle: "Summary",
         params: [
             "spTitle",
             "spLV",
