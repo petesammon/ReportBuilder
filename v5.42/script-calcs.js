@@ -30,5 +30,5 @@ const calculations = {
         if (!metrics.AVAccT || !metrics.AVEjT) return "N/A";
         const ratio = metrics.AVAccT / metrics.AVEjT;
         return parseFloat(ratio.toFixed(2));
-    }
+    },
 };

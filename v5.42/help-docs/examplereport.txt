@@ -1,0 +1,24 @@
+Desired template string:
+<!--button:mLV--><!--@mLV-->Left Ventricle:<!--/@mLV-->
+<!--if:pRWMA-->{{pRWMA}}<!--/if-->
+<!--if:pLVComments-->{{pLVComments}}<!--/if-->
+{{pLVSF}}
+
+Desired output (if pRWMAs and pLVComments both empty):
+Left Ventricle:
+Normal left ventricular systolic function.
+
+Desired output (if pRWMAs has value 'RWMAs' and pLVComments is empty):
+Left Ventricle:
+RWMAs
+Normal left ventricular systolic function.
+
+Desired output (if pRWMAs has value 'RWMAs' and pLVComments has vallue 'LV Comments'):
+Left Ventricle:
+RWMAs
+LV Comments
+Normal left ventricular systolic function.
+
+So logic is: 
+1. if parameter is empty: negative line break (as if the template handle did not exist at all on the report)
+2. if parameter has value, display value

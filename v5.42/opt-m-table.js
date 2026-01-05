@@ -44,6 +44,7 @@ window.measurements = [
             "EFVisual",
             "EFBP", 
             "EFAuto", 
+            "EF3D",
             "GLS"
         ]
     },

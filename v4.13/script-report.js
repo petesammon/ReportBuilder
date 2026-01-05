@@ -1,4 +1,5 @@
 /* jshint loopfunc: true, esversion: 11 */
+/* EchoTools v5.4 - Never re-render model for manual edit preservation */
 
 jQuery(document).ready(function () {
     // Show the options section
@@ -10,15 +11,723 @@ jQuery(document).ready(function () {
     const metrics = {};
     const results = {}; // For parsed measurement data
     const selectedOptions = {}; // Track which option was selected for each parameter
-    const excludedSections = {}; // Track which sections are excluded from the report
+    const excludedModals = {}; // Track which sections are excluded from the report
+    const hiddenModals = {}; // Track which sections are hidden (triggered sections)
+    const triggeredModals = {}; // Track which sections were triggered (to show [x] button)
     let summaryManuallyEdited = false;
     const summaryCheckboxManuallyEdited = {}; // Track which checkboxes were manually changed
-    const sectionPreviewManuallyEdited = {}; // Track which section previews were manually edited
-    const sectionTemplates = {}; // Store compiled section templates
+    const modalPreviewManuallyEdited = {}; // Track which section previews were manually edited
+    const modalTemplates = {}; // Store compiled section templates
     let parseConfig = []; // Will be loaded dynamically
     let parseConfigMap = {}; // Will be populated after loading
     let measurements = []; // Will be loaded dynamically
-    let options = []; // Will be loaded dynamically
+    let parameters = {}; // [v5.0] Parameter definitions loaded from params file
+    let options = []; // Will be loaded dynamically - modal groupings
+    
+    // [v5.1] Button protection state
+    let buttonProtectionObserver = null;
+    let expectedButtonCount = 0;
+    let isRestoringButtons = false;
+    let isFixingCursor = false;
+
+    // ============================================================================
+    // VARIABLE REGISTRY (v5.2)
+    // Central data store for all parameters and measurements with metadata
+    // ============================================================================
+    
+    /**
+     * Variable Registry - stores value, modalKey, type, and state for every variable
+     * 
+     * Structure:
+     * {
+     *   'pLVSize': { 
+     *     value: 'Normal LV size',
+     *     modalKey: 'modalLV',
+     *     type: 'param',
+     *     state: 'default' | 'selected' | 'manual'
+     *   },
+     *   'LVEF': {
+     *     value: '55%',
+     *     modalKey: 'modalLV', 
+     *     type: 'measurement',
+     *     state: 'imported' | 'manual',
+     *     unit: '%'
+     *   }
+     * }
+     */
+    const variableRegistry = {};
+    
+    /**
+     * Initialize variable registry from config files
+     * Called once after all configs are loaded
+     */
+    function initializeVariableRegistry() {
+        // Clear existing registry
+        Object.keys(variableRegistry).forEach(key => delete variableRegistry[key]);
+        
+        // Clear preprocessed template so it gets rebuilt with new registry
+        clearPreprocessedTemplate();
+        
+        // 1. Register all parameters with their modalKeys (from options/form config)
+        if (window.options && Array.isArray(window.options)) {
+            window.options.forEach(group => {
+                if (!group.modalKey || !group.params) return;
+                const modalKey = group.modalKey;
+                const paramList = Array.isArray(group.params) ? group.params : Object.keys(group.params);
+                
+                paramList.forEach(paramKey => {
+                    variableRegistry[paramKey] = {
+                        value: '',
+                        modalKey: modalKey,
+                        type: 'param',
+                        state: 'default'
+                    };
+                });
+            });
+        }
+        
+        // 2. Register all measurements with their modalKeys (from measurements config)
+        if (measurements && Array.isArray(measurements)) {
+            measurements.forEach(group => {
+                if (!group.items) return;
+                const modalKeys = Array.isArray(group.modalKey) ? group.modalKey : [group.modalKey];
+                const primaryModalKey = modalKeys[0] || null;
+                
+                group.items.forEach(measurementKey => {
+                    // Get unit from parseConfigMap if available
+                    const config = parseConfigMap[measurementKey];
+                    const unit = config?.unit || '';
+                    
+                    variableRegistry[measurementKey] = {
+                        value: '',
+                        modalKey: primaryModalKey,
+                        type: 'measurement',
+                        state: 'imported',
+                        unit: unit
+                    };
+                });
+            });
+        }
+        
+        // 3. Set default parameter values from parameters config
+        if (window.parameters && typeof window.parameters === 'object') {
+            Object.keys(window.parameters).forEach(paramKey => {
+                const param = window.parameters[paramKey];
+                // Check that options exists AND is an array before using .find()
+                if (param.options && Array.isArray(param.options) && variableRegistry[paramKey]) {
+                    const defaultOpt = param.options.find(o => typeof o !== 'string' && o.default);
+                    if (defaultOpt) {
+                        variableRegistry[paramKey].value = defaultOpt.title || '';
+                        variableRegistry[paramKey].state = 'default';
+                    }
+                }
+            });
+        }
+        
+        // 4. Register Summary (special case - belongs to Summary modal)
+        variableRegistry['Summary'] = {
+            value: '',
+            modalKey: 'Summary',
+            type: 'param',
+            state: 'default'
+        };
+        
+        console.log('[VariableRegistry] Initialized with', Object.keys(variableRegistry).length, 'variables');
+        
+        // Expose globally
+        window.variableRegistry = variableRegistry;
+    }
+    
+    /**
+     * Update a value in the registry
+     * @param {string} key - Variable name
+     * @param {string} value - New value (for measurements, should include unit)
+     * @param {string} state - Optional state override ('default', 'selected', 'manual', 'imported')
+     */
+    function updateRegistryValue(key, value, state) {
+        if (variableRegistry[key]) {
+            variableRegistry[key].value = value;
+            if (state) {
+                variableRegistry[key].state = state;
+            }
+        } else {
+            // Auto-register unknown variables (edge case)
+            console.warn(`[VariableRegistry] Auto-registering unknown variable: ${key}`);
+            variableRegistry[key] = {
+                value: value,
+                modalKey: null,
+                type: 'unknown',
+                state: state || 'manual'
+            };
+        }
+    }
+    
+    /**
+     * Update measurement value with unit handling
+     * @param {string} key - Measurement variable name
+     * @param {string} rawValue - Value without unit
+     * @param {string} state - 'imported' or 'manual'
+     */
+    function updateRegistryMeasurement(key, rawValue, state) {
+        if (!variableRegistry[key]) {
+            // Try to get unit from parseConfigMap
+            const config = parseConfigMap[key];
+            variableRegistry[key] = {
+                value: '',
+                modalKey: null,
+                type: 'measurement',
+                state: state || 'imported',
+                unit: config?.unit || ''
+            };
+        }
+        
+        const entry = variableRegistry[key];
+        const unit = entry.unit || '';
+        
+        // Store value with unit appended
+        if (rawValue && unit && !rawValue.toString().endsWith(unit)) {
+            entry.value = rawValue + unit;
+        } else {
+            entry.value = rawValue || '';
+        }
+        
+        if (state) {
+            entry.state = state;
+        }
+    }
+    
+    /**
+     * Get value and metadata for a variable
+     * @param {string} key - Variable name
+     * @returns {object|null} - Registry entry or null
+     */
+    function getRegistryEntry(key) {
+        return variableRegistry[key] || null;
+    }
+    
+    /**
+     * Get all values from registry as a flat object (for Handlebars)
+     * @returns {object} - { key: value, ... }
+     */
+    function getRegistryValues() {
+        const values = {};
+        Object.keys(variableRegistry).forEach(key => {
+            values[key] = variableRegistry[key].value;
+        });
+        return values;
+    }
+    
+    /**
+     * Preprocess template to wrap {{variables}} in spans with full metadata
+     * Called before Handlebars compilation
+     * 
+     * This ensures spans are created with correct identity at point of creation,
+     * rather than reverse-engineering after the fact.
+     * 
+     * @param {string} templateHTML - Raw Handlebars template
+     * @returns {string} - Template with variables wrapped in spans
+     */
+    function preprocessTemplate(templateHTML) {
+        // Match {{variableName}} or {{~variableName}} or {{variableName~}} but NOT:
+        // - {{#helper}} or {{/helper}} - block helpers
+        // - {{> partial}} - partials
+        // - {{! comment }} - comments
+        // - {{else}} - else clause
+        // 
+        // Pattern captures optional ~ for whitespace control
+        const variableRegex = /\{\{(~?)([a-zA-Z_][a-zA-Z0-9_]*)(~?)\}\}/g;
+        
+        return templateHTML.replace(variableRegex, (match, leadingTilde, varName, trailingTilde) => {
+            // Skip Handlebars keywords and block helpers
+            if (varName === 'else' || varName === 'this' || varName === 'if' || varName === 'unless' || varName === 'each' || varName === 'with') {
+                return match;
+            }
+            
+            const entry = variableRegistry[varName];
+            
+            if (entry && entry.modalKey) {
+                // Wrap in span with full metadata
+                // Preserve whitespace control characters (~)
+                // The {{varName}} stays inside so Handlebars will fill in the value
+                return `<span data-param="${varName}" data-modal="${entry.modalKey}" class="param-span">{{${leadingTilde}${varName}${trailingTilde}}}</span>`;
+            } else if (entry) {
+                // Has entry but no modalKey (edge case)
+                return `<span data-param="${varName}" class="param-span">{{${leadingTilde}${varName}${trailingTilde}}}</span>`;
+            }
+            
+            // Not in registry - leave as-is for Handlebars to handle
+            // This covers things like helper arguments, etc.
+            return match;
+        });
+    }
+    
+    /**
+     * Store for preprocessed and compiled template
+     * Recompiled when registry changes
+     */
+    let preprocessedOutputTemplate = null;
+    
+    /**
+     * Get or create the preprocessed output template
+     * @returns {function} - Compiled Handlebars template with spans pre-wrapped
+     */
+    function getPreprocessedTemplate() {
+        if (!preprocessedOutputTemplate && window.outputTemplateString) {
+            const preprocessed = preprocessTemplate(window.outputTemplateString);
+            preprocessedOutputTemplate = Handlebars.compile(preprocessed, { noEscape: true });
+            console.log('[Template] Preprocessed and compiled output template');
+        }
+        return preprocessedOutputTemplate || window.outputTemplate;
+    }
+    
+    /**
+     * Clear preprocessed template (call when registry changes)
+     */
+    function clearPreprocessedTemplate() {
+        preprocessedOutputTemplate = null;
+    }
+
+    // ============================================================================
+    // SHARED UTILITIES (v5.1 REFACTORED)
+    // ============================================================================
+    
+    /**
+     * Extract all variables belonging to a section from config
+     * [v5.1] Now uses config lookup (options + measurements) instead of template parsing
+     * @param {string} modalKey - The modal identifier (e.g., 'modalLV')
+     * @returns {string[]} - Array of unique variable names in the section
+     */
+    function extractModalVariables(modalKey) {
+        const variables = [];
+        
+        // 1. Get parameters from options config
+        if (options && Array.isArray(options)) {
+            options.forEach(section => {
+                if (section.modalKey === modalKey && section.params) {
+                    const paramList = Array.isArray(section.params) ? section.params : Object.keys(section.params);
+                    variables.push(...paramList);
+                }
+            });
+        }
+        
+        // 2. Get measurements from measurements config
+        if (measurements && Array.isArray(measurements)) {
+            measurements.forEach(section => {
+                // modalKey can be string or array
+                const modalKeys = Array.isArray(section.modalKey) 
+                    ? section.modalKey 
+                    : [section.modalKey];
+                
+                if (modalKeys.includes(modalKey) && section.items) {
+                    variables.push(...section.items);
+                }
+            });
+        }
+        
+        return [...new Set(variables)]; // Remove duplicates
+    }
+    
+    /**
+     * Prepare output data with units appended to measurements
+     * @returns {object} - Results object with units appended to values
+     */
+    function prepareResultsWithUnits() {
+        const outputResults = {};
+        Object.entries(results).forEach(([key, value]) => {
+            const config = parseConfigMap[key];
+            if (value && config?.unit) {
+                const unit = config.unit;
+                outputResults[key] = value.toString().endsWith(unit) ? value : value + unit;
+            } else {
+                outputResults[key] = value;
+            }
+        });
+        return outputResults;
+    }
+    
+    /**
+     * Process metrics through Handlebars to resolve {{}} syntax
+     * @param {object} baseData - Base data for Handlebars processing
+     * @returns {object} - Processed metrics with Handlebars variables resolved
+     */
+    function processMetricsThroughHandlebars(baseData) {
+        const processedMetrics = {};
+        
+        Object.entries(metrics).forEach(([key, value]) => {
+            if (typeof value === 'string' && value.includes('{{')) {
+                try {
+                    const template = Handlebars.compile(value);
+                    processedMetrics[key] = template(baseData);
+                } catch (e) {
+                    console.warn(`Failed to process metric ${key}:`, e);
+                    processedMetrics[key] = value;
+                }
+            } else {
+                processedMetrics[key] = value;
+            }
+        });
+        
+        return processedMetrics;
+    }
+    
+    /**
+     * Prepare complete output data (results with units + processed metrics)
+     * @returns {object} - Combined data ready for template rendering
+     */
+    function prepareOutputData() {
+        const outputResults = prepareResultsWithUnits();
+        const processedMetrics = processMetricsThroughHandlebars(outputResults);
+        return { ...outputResults, ...processedMetrics };
+    }
+    
+    /**
+     * Filter data by clearing variables in excluded/hidden sections
+     * Also tracks which variables were excluded (for field marker logic)
+     * @param {object} data - The data object to filter
+     * @returns {object} - Filtered data with excluded section variables cleared
+     *                     Includes _excludedVariables Set for field marker processing
+     */
+    function filterExcludedModalData(data) {
+        const filteredData = { ...data };
+        const excludedVariables = new Set();
+        
+        // Clear variables in excluded sections
+        Object.keys(excludedModals).forEach(modalKey => {
+            if (excludedModals[modalKey]) {
+                // Add the section key itself (for field markers using section key as name)
+                excludedVariables.add(modalKey);
+                
+                const sectionVariables = extractModalVariables(modalKey);
+                sectionVariables.forEach(varName => {
+                    filteredData[varName] = '';
+                    excludedVariables.add(varName);
+                });
+            }
+        });
+        
+        // Clear variables in hidden sections
+        if (window.hiddenModals) {
+            Object.keys(window.hiddenModals).forEach(modalKey => {
+                if (window.hiddenModals[modalKey]) {
+                    // Add the section key itself (for field markers using section key as name)
+                    excludedVariables.add(modalKey);
+                    
+                    const sectionVariables = extractModalVariables(modalKey);
+                    sectionVariables.forEach(varName => {
+                        filteredData[varName] = '';
+                        excludedVariables.add(varName);
+                    });
+                }
+            });
+        }
+        
+        // Attach excluded variables set for field marker processing
+        filteredData._excludedVariables = excludedVariables;
+        
+        return filteredData;
+    }
+    
+    /**
+     * Initialize section visibility states based on config
+     * Called when report config is loaded
+     */
+    function initializeModalVisibility() {
+        if (!window.options || !Array.isArray(window.options)) return;
+        
+        window.options.forEach(section => {
+            if (!section.modalKey) return;
+            
+            const modalKey = section.modalKey;
+            
+            // Initialize defaultHidden sections (note: check for both spellings)
+            if (section.defaultHidden === true || section.defaulHidden === true) {
+                hiddenModals[modalKey] = true;
+                excludedModals[modalKey] = true; // Hidden sections are also excluded
+            }
+            // Initialize defaultExcluded sections
+            else if (section.defaultExcluded === true) {
+                excludedModals[modalKey] = true;
+            }
+        });
+        
+        // Sync to window for access from other modules
+        window.hiddenModals = hiddenModals;
+        window.excludedModals = excludedModals;
+        window.triggeredModals = triggeredModals;
+    }
+    
+    /**
+     * Trigger a hidden section to become visible
+     * Called when a parameter option with triggerModal is selected
+     * @param {string} modalKey - The section to trigger
+     */
+    function triggerModal(modalKey) {
+        // IMPORTANT: Check window state, not local state!
+        // handleDropdownChange in script-form.js modifies window.hiddenModals directly,
+        // so the local variable can get out of sync after a reset-and-retrigger cycle.
+        // By checking window state, we ensure we have the latest state.
+        const isHidden = window.hiddenModals && window.hiddenModals[modalKey];
+        
+        if (isHidden) {
+            // Update both local and window state
+            hiddenModals[modalKey] = false;
+            excludedModals[modalKey] = false;
+            triggeredModals[modalKey] = true;
+            
+            // Sync to window
+            window.hiddenModals = hiddenModals;
+            window.excludedModals = excludedModals;
+            window.triggeredModals = triggeredModals;
+            
+            // Also ensure window state is updated for this specific key
+            // (in case local object was not fully synced)
+            window.hiddenModals[modalKey] = false;
+            window.excludedModals[modalKey] = false;
+            window.triggeredModals[modalKey] = true;
+            
+            // Update button count
+            updateExpectedButtonCount();
+            
+            // Regenerate report
+            if (typeof window.updateReportTextarea === 'function') {
+                window.updateReportTextarea();
+            }
+        }
+    }
+    
+    /**
+     * Reset a triggered section back to hidden state
+     * Called when the [x] button is clicked
+     * @param {string} modalKey - The section to reset
+     */
+    function resetTriggeredModal(modalKey) {
+        console.log(`[resetTriggeredModal] Attempting to reset: ${modalKey}`);
+        console.log(`[resetTriggeredModal] triggeredModals:`, window.triggeredModals);
+        
+        // Check window state for consistency with triggerModal
+        const isTriggered = (window.triggeredModals && window.triggeredModals[modalKey]) || 
+                            triggeredModals[modalKey];
+        
+        console.log(`[resetTriggeredModal] isTriggered: ${isTriggered}`);
+        
+        if (isTriggered) {
+            // Clear triggered state in both local and window
+            triggeredModals[modalKey] = false;
+            window.triggeredModals = triggeredModals;
+            if (window.triggeredModals) {
+                window.triggeredModals[modalKey] = false;
+            }
+            
+            console.log(`[resetTriggeredModal] Cleared triggered state, calling resetTriggerParameter`);
+            
+            // Reset the parameter that triggered this section to its default value
+            // This triggers the dropdown change event which will:
+            // - Update hiddenModals and excludedModals (since default has no triggerModal)
+            // - Update metrics and selectedOptions
+            // - Update checkbox state
+            // - Update summary
+            // - Call updateChangedParameters() or updateReportTextarea()
+            resetTriggerParameter(modalKey);
+            
+            // Update button count after parameter reset completes
+            setTimeout(() => {
+                updateExpectedButtonCount();
+            }, 0);
+            
+            return true; // Return true to indicate section was reset
+        } else {
+            console.log(`[resetTriggeredModal] Section ${modalKey} is not triggered, nothing to reset`);
+        }
+        return false;
+    }
+    
+    /**
+     * Find and reset the parameter that triggered a section
+     * @param {string} modalKey - The section that was triggered
+     */
+    function resetTriggerParameter(modalKey) {
+        if (!window.parameters) {
+            console.warn('[resetTriggerParameter] No parameters found');
+            return;
+        }
+        
+        console.log(`[resetTriggerParameter] Looking for parameter with triggerModal: ${modalKey}`);
+        
+        // Find parameter with option that has triggerModal matching modalKey
+        let foundParam = false;
+        Object.keys(window.parameters).forEach(paramKey => {
+            const param = window.parameters[paramKey];
+            if (!param.options || !Array.isArray(param.options)) return;
+            
+            // Check if any option has triggerModal matching this section
+            const hasTrigger = param.options.some(opt => 
+                typeof opt !== 'string' && opt.triggerModal === modalKey
+            );
+            
+            if (hasTrigger) {
+                foundParam = true;
+                console.log(`[resetTriggerParameter] Found parameter: ${paramKey}`);
+                
+                // Find the default option
+                const defaultOption = param.options.find(opt => 
+                    typeof opt !== 'string' && opt.default === true
+                );
+                
+                if (defaultOption) {
+                    console.log(`[resetTriggerParameter] Default option: "${defaultOption.title}"`);
+                    
+                    // Find the dropdown
+                    const $select = $(`#${paramKey}-select`);
+                    console.log(`[resetTriggerParameter] Dropdown found: ${$select.length > 0}, current value: "${$select.val()}"`);
+                    
+                    if ($select.length) {
+                        // Set value and trigger change
+                        $select.val(defaultOption.title).trigger('change');
+                        console.log(`[resetTriggerParameter] Set dropdown to: "${defaultOption.title}", now: "${$select.val()}"`);
+                        
+                        // Verify the selection was successful
+                        if ($select.val() !== defaultOption.title) {
+                            console.warn(`[resetTriggerParameter] Failed to reset dropdown ${paramKey}. Expected: "${defaultOption.title}", Got: "${$select.val()}"`);
+                        }
+                    } else {
+                        console.warn(`[resetTriggerParameter] Dropdown not found for ${paramKey}`);
+                    }
+                } else {
+                    console.warn(`[resetTriggerParameter] No default option found for ${paramKey}`);
+                }
+            }
+        });
+        
+        if (!foundParam) {
+            console.warn(`[resetTriggerParameter] No parameter found with triggerModal: ${modalKey}`);
+        }
+    }
+    
+    /**
+     * Toggle section exclusion state and update UI
+     * Unified handler for both inline and modal exclude buttons
+     * @param {string} modalKey - The section to toggle
+     * @returns {boolean} - New exclusion state (true = excluded)
+     */
+    /**
+     * [v5.4] Toggle section exclusion with granular DOM updates
+     * Instead of full re-render, we show/hide section content in the DOM
+     */
+    function toggleModalExclusion(modalKey) {
+        // Initialize excludedModals if needed
+        if (!window.excludedModals) {
+            window.excludedModals = {};
+        }
+        
+        // Toggle state
+        const wasExcluded = window.excludedModals[modalKey] || false;
+        window.excludedModals[modalKey] = !wasExcluded;
+        
+        // Also update local reference
+        excludedModals[modalKey] = window.excludedModals[modalKey];
+        
+        const isNowExcluded = window.excludedModals[modalKey];
+        
+        // [v5.4] Granular DOM update instead of full re-render
+        const $textarea = $('#report-textarea');
+        const $buttonGroup = $textarea.find(`.inline-button-group[data-modal="${modalKey}"]`);
+        
+        if ($buttonGroup.length) {
+            // Get the section config
+            const section = window.options.find(s => s.modalKey === modalKey);
+            const modalTitle = section ? section.modalTitle : modalKey;
+            
+            if (isNowExcluded) {
+                // Update button to show + only
+                $buttonGroup.html(`<button type="button" class="inline-exclude-button excluded" data-modal="${modalKey}" title="Include section in report">+</button>`);
+            } else {
+                // Update button to show edit + exclude
+                $buttonGroup.html(`<button type="button" class="inline-edit-button" data-modal="${modalKey}" title="Edit ${modalTitle}">✎</button><button type="button" class="inline-exclude-button" data-modal="${modalKey}" title="Exclude section from report">−</button>`);
+            }
+            
+            // Hide/show field wrappers for this section
+            const sectionVariables = extractModalVariables(modalKey);
+            sectionVariables.forEach(varName => {
+                const $fieldWrapper = $textarea.find(`.field-wrapper[data-field="${varName}"]`);
+                if ($fieldWrapper.length) {
+                    if (isNowExcluded) {
+                        $fieldWrapper.hide();
+                    } else {
+                        $fieldWrapper.show();
+                    }
+                }
+                
+                // Also clear/restore param spans
+                const $paramSpan = $textarea.find(`[data-param="${varName}"][data-modal="${modalKey}"]`);
+                if ($paramSpan.length) {
+                    if (isNowExcluded) {
+                        $paramSpan.data('savedValue', $paramSpan.text());
+                        $paramSpan.text('');
+                    } else {
+                        // Restore from saved value or metrics
+                        const savedValue = $paramSpan.data('savedValue');
+                        const metricsValue = window.metrics ? window.metrics[varName] : '';
+                        $paramSpan.text(savedValue || metricsValue || '');
+                    }
+                }
+            });
+            
+            // Also handle the section heading field wrapper (uses modalKey as field name)
+            const $sectionFieldWrapper = $textarea.find(`.field-wrapper[data-field="${modalKey}"]`);
+            if ($sectionFieldWrapper.length) {
+                if (isNowExcluded) {
+                    $sectionFieldWrapper.hide();
+                } else {
+                    $sectionFieldWrapper.show();
+                }
+            }
+        } else {
+            // Fallback: if button not found, do full regenerate
+            console.warn(`[toggleModalExclusion] Button group not found for ${modalKey}, falling back to full re-render`);
+            if (typeof updateReportTextarea === 'function') {
+                updateReportTextarea();
+            }
+        }
+        
+        // Update summary (excluded sections shouldn't contribute)
+        if (typeof window.updateSummary === 'function') {
+            window.updateSummary();
+        }
+        
+        return window.excludedModals[modalKey];
+    }
+    
+    // Expose toggle function globally for form.js
+    window.toggleModalExclusion = toggleModalExclusion;
+
+    // ============================================================================
+    // END SHARED UTILITIES
+    // ============================================================================
+
+    // [v5.0] Register Handlebars helper to wrap parameter outputs in spans
+    // [v5.2] DEPRECATED: preprocessTemplate now handles span wrapping at template level
+    // This helper is kept for backwards compatibility but should not be used in new templates
+    Handlebars.registerHelper('param', function(paramKey, options) {
+        // Get the value - either from context or options.fn(this)
+        const value = options.fn ? options.fn(this) : this[paramKey];
+        
+        if (!value || value === '') {
+            return '';
+        }
+        
+        // Check if this is actually a parameter (starts with 'p' or 'sp') or a measurement
+        const isParameter = paramKey && (paramKey.startsWith('p') || paramKey.startsWith('sp'));
+        
+        if (isParameter) {
+            // Wrap in parameter span
+            return new Handlebars.SafeString(
+                `<span data-param="${paramKey}" class="param-span">${value}</span>`
+            );
+        } else {
+            // Not a parameter - return unwrapped
+            return value;
+        }
+    });
 
     // Auto-resize textarea to fit content
     // Supports optional minHeight parameter for minimum textarea size
@@ -62,23 +771,32 @@ jQuery(document).ready(function () {
         if (!config) return;
 
         // Remove any previously loaded scripts
-        document.querySelectorAll('script[data-measurements-config], script[data-options-config], script[data-report-template], script[data-manual-config]').forEach(s => s.remove());
+        document.querySelectorAll('script[data-measurements-config], script[data-parameters-config], script[data-options-config], script[data-report-template], script[data-manual-config]').forEach(s => s.remove());
 
         let measurementsLoaded = false;
+        let parametersLoaded = false;
         let optionsLoaded = false;
         let reportTemplateLoaded = false;
         let manualConfigLoaded = false;
 
         function checkAllLoaded() {
-            if (measurementsLoaded && optionsLoaded && reportTemplateLoaded && manualConfigLoaded) {
+            if (measurementsLoaded && parametersLoaded && optionsLoaded && reportTemplateLoaded && manualConfigLoaded) {
                 console.log(`Loaded report config: ${config.name}`);
                 
                 // DON'T clear metrics - preserve all form selections across template switches
                 // Only clear tracking flags from previous config
-                Object.keys(sectionPreviewManuallyEdited).forEach(key => delete sectionPreviewManuallyEdited[key]);
+                Object.keys(modalPreviewManuallyEdited).forEach(key => delete modalPreviewManuallyEdited[key]);
                 Object.keys(summaryCheckboxManuallyEdited).forEach(key => delete summaryCheckboxManuallyEdited[key]);
-                Object.keys(excludedSections).forEach(key => delete excludedSections[key]);
+                Object.keys(excludedModals).forEach(key => delete excludedModals[key]);
+                Object.keys(hiddenModals).forEach(key => delete hiddenModals[key]);
+                Object.keys(triggeredModals).forEach(key => delete triggeredModals[key]);
                 summaryManuallyEdited = false;
+                
+                // Initialize section visibility states based on config
+                initializeModalVisibility();
+                
+                // [v5.2] Initialize variable registry from loaded configs
+                initializeVariableRegistry();
                 
                 // Regenerate the measurements table and form
                 generateMeasurementsTable();
@@ -134,7 +852,33 @@ jQuery(document).ready(function () {
         };
         document.head.appendChild(measurementsScript);
 
-        // Load options config
+        // Load parameters config
+        if (config.parameters) {
+            const parametersScript = document.createElement('script');
+            parametersScript.src = config.parameters;
+            parametersScript.setAttribute('data-parameters-config', 'true');
+            parametersScript.onload = function() {
+                if (window.parameters && typeof window.parameters === 'object') {
+                    // Use parameters directly from window.parameters
+                    parameters = window.parameters;
+                    // Also expose globally immediately for form.js access
+                    window.parameters = parameters;
+                    parametersLoaded = true;
+                    checkAllLoaded();
+                } else {
+                    alert(`Parameters configuration loaded but not found: ${config.name}`);
+                }
+            };
+            parametersScript.onerror = function() {
+                alert(`Failed to load parameters configuration: ${config.name}`);
+            };
+            document.head.appendChild(parametersScript);
+        } else {
+            parametersLoaded = true;
+            checkAllLoaded();
+        }
+
+        // Load options config (modal groupings)
         const optionsScript = document.createElement('script');
         optionsScript.src = config.options;
         optionsScript.setAttribute('data-options-config', 'true');
@@ -153,83 +897,252 @@ jQuery(document).ready(function () {
         document.head.appendChild(optionsScript);
 
         // Load report template
-        const reportTemplateScript = document.createElement('script');
-        reportTemplateScript.src = config.report;
-        reportTemplateScript.setAttribute('data-report-template', 'true');
-        reportTemplateScript.onload = function() {
-            if (window.outputTemplate && typeof window.outputTemplate === 'function') {
-                // Template is loaded and available globally
+        const reportScript = document.createElement('script');
+        reportScript.src = config.report;
+        reportScript.setAttribute('data-report-template', 'true');
+        reportScript.onload = function() {
+            if (window.outputTemplate) {
                 reportTemplateLoaded = true;
                 checkAllLoaded();
             } else {
-                alert(`Report template loaded but outputTemplate not found: ${config.name}`);
+                alert(`Report template loaded but not found: ${config.name}`);
             }
         };
-        reportTemplateScript.onerror = function() {
+        reportScript.onerror = function() {
             alert(`Failed to load report template: ${config.name}`);
         };
-        document.head.appendChild(reportTemplateScript);
+        document.head.appendChild(reportScript);
 
-        // Load manual measurements config (if specified)
-        if (config.manual) {
-            const manualConfigScript = document.createElement('script');
-            manualConfigScript.src = config.manual;
-            manualConfigScript.setAttribute('data-manual-config', 'true');
-            manualConfigScript.onload = function() {
-                if (window.manualConfig && Array.isArray(window.manualConfig)) {
-                    // Merge manual config with existing parseConfig
-                    // Manual configs are appended to parseConfig
-                    parseConfig = [...parseConfig, ...window.manualConfig];
-                    
-                    // Rebuild the lookup map to include manual measurements
-                    parseConfigMap = {};
-                    parseConfig.forEach(item => {
-                        parseConfigMap[item.handle] = item;
-                    });
-                    
-                    console.log(`Loaded manual config: ${config.name} (${window.manualConfig.length} manual items, ${parseConfig.length} total)`);
-                    manualConfigLoaded = true;
-                    checkAllLoaded();
-                } else {
-                    alert(`Manual configuration loaded but manualConfig not found: ${config.name}`);
-                }
-            };
-            manualConfigScript.onerror = function() {
-                alert(`Failed to load manual configuration: ${config.name}`);
-            };
-            document.head.appendChild(manualConfigScript);
-        } else {
-            // No manual config specified, mark as loaded
-            manualConfigLoaded = true;
-            checkAllLoaded();
-        }
+        // Load manual measurements config
+        const manualScript = document.createElement('script');
+        manualScript.src = config.manual;
+        manualScript.setAttribute('data-manual-config', 'true');
+        manualScript.onload = function() {
+            if (window.manualConfig && Array.isArray(window.manualConfig)) {
+                manualConfigLoaded = true;
+                checkAllLoaded();
+            } else {
+                alert(`Manual measurements config loaded but not found: ${config.name}`);
+            }
+        };
+        manualScript.onerror = function() {
+            alert(`Failed to load manual measurements config: ${config.name}`);
+        };
+        document.head.appendChild(manualScript);
     }
 
-    // Handle report config selection
-    $("#report-config-select").on("change", function() {
-        const configId = $(this).val();
-        if (configId) {
-            loadReportConfig(configId);
+    // Handle report config selection change
+    let reportConfigLoaded = false;
+    $("#report-config-select").on("change", function () {
+        const selectedId = $(this).val();
+        loadReportConfig(selectedId);
+    });
+
+    // Populate input config dropdown
+    inputConfigs.forEach(config => {
+        const option = `<option value="${config.id}">${config.name}</option>`;
+        $("#parse-config-select").append(option);
+        
+        // Set as selected if it's the default
+        if (config.default) {
+            $("#parse-config-select").val(config.id);
         }
     });
 
-    // Modal handlers
+    // Load input/parse config
+    function loadInputConfig(configId) {
+        const config = inputConfigs.find(c => c.id === configId);
+        if (!config) return;
+        
+        // Remove any previously loaded input config script
+        document.querySelectorAll('script[data-input-config]').forEach(s => s.remove());
+        
+        // Dynamically load the input config file
+        const script = document.createElement('script');
+        script.src = config.file;
+        script.setAttribute('data-input-config', 'true');
+        script.onload = function() {
+            // After loading, parseConfig should be available as window.parseConfig
+            if (window.parseConfig && Array.isArray(window.parseConfig)) {
+                parseConfig = window.parseConfig;
+                
+                // Build the lookup map
+                parseConfigMap = {};
+                parseConfig.forEach(item => {
+                    parseConfigMap[item.handle] = item;
+                });
+                
+                console.log(`Loaded input config: ${config.name}`);
+                
+                // Regenerate the measurements table
+                generateMeasurementsTable();
+            } else {
+                alert(`Input configuration loaded but not found: ${config.name}`);
+            }
+        };
+        script.onerror = function() {
+            alert(`Failed to load input configuration: ${config.name}`);
+        };
+        document.head.appendChild(script);
+    }
+
+    // Handle input config selection change
+    $("#parse-config-select").on("change", function () {
+        const selectedId = $(this).val();
+        loadInputConfig(selectedId);
+    });
+
+    // Load default input config on page load
+    const defaultInputConfig = inputConfigs.find(c => c.default);
+    if (defaultInputConfig) {
+        loadInputConfig(defaultInputConfig.id);
+    }
+
+    // Generate measurements table
+    function generateMeasurementsTable() {
+        const $table = $("#measurements-table");
+        $table.empty();
+        
+        // Create table structure
+        const $tableEl = $('<table></table>');
+        
+        measurements.forEach(section => {
+            // Check if this is a highlighted section
+            const highlightClass = section.highlight ? ' highlight-section' : '';
+            
+            // Handle modalKey as string or array for data attribute
+            let sectionDataAttr = '';
+            if (section.modalKey) {
+                if (Array.isArray(section.modalKey)) {
+                    sectionDataAttr = section.modalKey.join(' ');
+                } else {
+                    sectionDataAttr = section.modalKey;
+                }
+            }
+            
+            // Section header row
+            const $headerRow = $(`<tr class="section-header${highlightClass}" data-section="${sectionDataAttr}"><th colspan="3">${section.modalTitle}</th></tr>`);
+            $tableEl.append($headerRow);
+            
+            // Measurement rows
+            section.items.forEach(handle => {
+                // Look up in parseConfig first
+                let config = parseConfigMap[handle];
+                
+                // If not found in parseConfig, check manualConfig
+                if (!config && window.manualConfig) {
+                    config = window.manualConfig.find(m => m.handle === handle);
+                }
+                
+                if (!config) {
+                    console.warn(`No config found for measurement: ${handle}`);
+                    return;
+                }
+                
+                const label = config.label || handle;
+                const unit = config.unit || '';
+                const currentValue = results[handle] || '';
+                
+                // Check if this is a calculated field
+                const isCalculated = typeof calculations !== 'undefined' && calculations[handle];
+                const calculatedClass = isCalculated ? ' calculated-field' : '';
+                const readonlyAttr = isCalculated ? ' readonly' : '';
+                
+                // Check if this should be full width (for fields like DOB, Operator)
+                const isFullWidth = config.full === true;
+                const fullWidthClass = isFullWidth ? ' full-width' : '';
+                
+                const $row = $(`
+                    <tr class="${highlightClass}" data-section="${sectionDataAttr}">
+                        <td class="measurement-label">${label}</td>
+                        <td class="measurement-value">
+                            <input type="text" 
+                                   class="measurement-input${calculatedClass}${fullWidthClass}" 
+                                   data-handle="${handle}" 
+                                   value="${currentValue}"
+                                   ${readonlyAttr} />
+                            ${!isFullWidth ? `<span class="unit-label">${unit}</span>` : ''}
+                        </td>
+                    </tr>
+                `);
+                $tableEl.append($row);
+            });
+        });
+        
+        $table.append($tableEl);
+        
+        // Add event handlers for measurement inputs
+        $table.find('.measurement-input').on('input', function() {
+            const handle = $(this).data('handle');
+            const value = $(this).val();
+            
+            // Don't update calculated fields manually
+            if ($(this).hasClass('calculated-field')) {
+                return;
+            }
+            
+            results[handle] = value;
+            
+            // [v5.2] Update variable registry with measurement
+            if (typeof updateRegistryMeasurement === 'function') {
+                updateRegistryMeasurement(handle, value, 'manual');
+            }
+            
+            // Run calculations after updating a measurement
+            runCalculations();
+            
+            // Update the report
+            if (typeof window.updateReportTextarea === 'function') {
+                window.updateReportTextarea();
+            }
+            
+            // Update summary if it contains measurements
+            updateSummary();
+        });
+    }
+    
+    // Run calculations for derived values
+    function runCalculations() {
+        if (typeof calculations === 'undefined') return;
+        
+        Object.entries(calculations).forEach(([handle, calcFn]) => {
+            try {
+                const result = calcFn(results);
+                results[handle] = result;
+                
+                // [v5.2] Update variable registry for calculated measurement
+                if (typeof updateRegistryMeasurement === 'function') {
+                    updateRegistryMeasurement(handle, result, 'imported');
+                }
+                
+                // Update the input field if it exists
+                const $input = $(`.measurement-input[data-handle="${handle}"]`);
+                if ($input.length) {
+                    $input.val(result !== 'N/A' ? result : '');
+                }
+            } catch (e) {
+                console.warn(`Calculation error for ${handle}:`, e);
+            }
+        });
+    }
+
+    // Import modal handling
     $("#open-import-modal").on("click", function() {
         $("#import-modal").addClass("active");
     });
-
+    
     $("#close-import-modal").on("click", function() {
         $("#import-modal").removeClass("active");
     });
-
-    // Close modal when clicking outside of it
+    
+    // Close modal when clicking outside
     $("#import-modal").on("click", function(e) {
-        if (e.target.id === "import-modal") {
-            $("#import-modal").removeClass("active");
+        if (e.target === this) {
+            $(this).removeClass("active");
         }
     });
-
-    // Load example data button handler
+    
+    // Load example data button
     $("#load-example-data").on("click", function() {
         // Get the currently selected parse config
         const configId = $("#parse-config-select").val();
@@ -269,7 +1182,7 @@ jQuery(document).ready(function () {
         
         document.head.appendChild(script);
     });
-
+    
     // Clear button handler - only clears imported measurements, not form selections
     $("#clear-import").on("click", function() {
         // Clear the textarea
@@ -281,7 +1194,58 @@ jQuery(document).ready(function () {
         // Regenerate the measurements table (form selections remain unchanged)
         generateMeasurementsTable();
     });
-    
+
+    // Parse imported data
+    $("#submit").on("click", function () {
+        const inputText = $("#report").val();
+        
+        // Clear previous results
+        Object.keys(results).forEach(key => delete results[key]);
+        
+        // Parse each config item
+        parseConfig.forEach(config => {
+            if (config.match) {
+                const regex = new RegExp(config.match);
+                const match = inputText.match(regex);
+                if (match && match[1]) {
+                    results[config.handle] = match[1].trim();
+                }
+            }
+        });
+        
+        // [v5.2] Update variable registry with all imported measurements
+        if (typeof updateRegistryMeasurement === 'function') {
+            Object.entries(results).forEach(([handle, value]) => {
+                updateRegistryMeasurement(handle, value, 'imported');
+            });
+        }
+        
+        // Run calculations after parsing
+        runCalculations();
+        
+        // Update the measurements table
+        Object.entries(results).forEach(([handle, value]) => {
+            const $input = $(`.measurement-input[data-handle="${handle}"]`);
+            if ($input.length) {
+                $input.val(value);
+            }
+        });
+        
+        // Update the report
+        if (typeof window.updateReportTextarea === 'function') {
+            window.updateReportTextarea();
+        }
+        
+        // Update summary
+        updateSummary();
+        
+        // Update section previews with imported data
+        updateAllSectionPreviews();
+        
+        // Close the modal
+        $("#import-modal").removeClass("active");
+    });
+
     // Reset button handler - clears all form selections, preserves measurements
     $("#reset-selections").on("click", function() {
         // Confirm before resetting
@@ -289,288 +1253,50 @@ jQuery(document).ready(function () {
             return;
         }
         
-        // Clear ONLY form selections (metrics), preserve measurements (results)
+        // Clear all metrics
         Object.keys(metrics).forEach(key => delete metrics[key]);
         
-        // Reset summary tracking
-        summaryManuallyEdited = false;
+        // Clear selected options
+        Object.keys(selectedOptions).forEach(key => delete selectedOptions[key]);
+        
+        // Clear excluded sections
+        Object.keys(excludedModals).forEach(key => delete excludedModals[key]);
+        if (window.excludedModals) {
+            Object.keys(window.excludedModals).forEach(key => delete window.excludedModals[key]);
+        }
+        
+        // Clear hidden sections
+        if (window.hiddenModals) {
+            Object.keys(window.hiddenModals).forEach(key => delete window.hiddenModals[key]);
+        }
+        
+        // Clear summary checkbox states
+        if (window.summaryCheckboxStates) {
+            Object.keys(window.summaryCheckboxStates).forEach(key => delete window.summaryCheckboxStates[key]);
+        }
+        
+        // Reset tracking flags
+        Object.keys(modalPreviewManuallyEdited).forEach(key => delete modalPreviewManuallyEdited[key]);
         Object.keys(summaryCheckboxManuallyEdited).forEach(key => delete summaryCheckboxManuallyEdited[key]);
+        summaryManuallyEdited = false;
         
-        // Reset section preview tracking
-        Object.keys(sectionPreviewManuallyEdited).forEach(key => delete sectionPreviewManuallyEdited[key]);
-        
-        // Reset excluded sections
-        Object.keys(excludedSections).forEach(key => delete excludedSections[key]);
-        
-        // Rebuild the form (measurements table remains unchanged)
+        // Rebuild the form (this will re-initialize defaults)
         $("#options-content").empty();
         buildOptionsForm();
+        
+        // Update summary and report
         updateSummary();
-        updateAllSectionPreviews();
-    });
-
-    // Load the default report config on first entry to options page
-    let reportConfigLoaded = false;
-    
-    // Populate parse config dropdown
-    inputConfigs.forEach(config => {
-        const option = `<option value="${config.id}" data-file="${config.file}">${config.name}</option>`;
-        $("#parse-config-select").append(option);
-        
-        // Set as selected if it's the default
-        if (config.default) {
-            $("#parse-config-select").val(config.id);
+        if (typeof window.updateReportTextarea === 'function') {
+            window.updateReportTextarea();
         }
     });
 
-    // Load the default config on page load
-    const defaultConfig = inputConfigs.find(c => c.default);
-    if (defaultConfig) {
-        loadParseConfig(defaultConfig.id);
-    }
-
-    // Load selected parse config
-    function loadParseConfig(configId) {
-        const config = inputConfigs.find(c => c.id === configId);
-        if (!config) return;
-
-        // Remove any previously loaded parse config script
-        const oldScript = document.querySelector('script[data-parse-config]');
-        if (oldScript) {
-            oldScript.remove();
-        }
-
-        // Create a script element to load the parse config
-        const script = document.createElement('script');
-        script.src = config.file;
-        script.setAttribute('data-parse-config', 'true');
-        
-        script.onload = function() {
-            // After loading, parseConfig should be available in window scope
-            if (window.parseConfig && Array.isArray(window.parseConfig)) {
-                parseConfig = window.parseConfig;
-                
-                // Rebuild the lookup map
-                parseConfigMap = {};
-                parseConfig.forEach(item => {
-                    parseConfigMap[item.handle] = item;
-                });
-                
-                console.log(`Loaded parse config: ${config.name} (${parseConfig.length} items)`);
-            } else {
-                alert(`Parse configuration loaded but parseConfig not found: ${config.name}`);
-            }
-        };
-        
-        script.onerror = function() {
-            alert(`Failed to load parse configuration: ${config.name}`);
-        };
-        
-        document.head.appendChild(script);
-    }
-
-    // Handle parse config selection
-    $("#parse-config-select").on("change", function() {
-        const configId = $(this).val();
-        if (configId) {
-            loadParseConfig(configId);
-        }
-    });
-
-    // Helper function to find measurement details in parseConfig
-    function getMeasurementDetails(handle) {
-        const config = parseConfigMap[handle];
-        return config ? 
-            { label: config.label, unit: config.unit || '', full: config.full || false } : 
-            { label: handle, unit: '', full: false };
-    }
-
-    // Generate measurements table with input boxes for manual entry
-    function generateMeasurementsTable() {
-        let rows = ``;
-        
-        for (const section of measurements) {
-            // Add a class for highlighting sections that have highlight: true
-            const sectionClass = section.highlight ? ' class="highlight-section"' : '';
-            
-            // Add data-section attribute for auto-scroll matching
-            // Support both string and array formats for sectionPreviewKey
-            let sectionData = '';
-            if (section.sectionPreviewKey) {
-                const keys = Array.isArray(section.sectionPreviewKey) 
-                    ? section.sectionPreviewKey 
-                    : [section.sectionPreviewKey];
-                sectionData = ` data-section="${keys.join(' ')}"`;
-            }
-            
-            rows += `<tr${sectionClass}${sectionData}><th colspan="2">${section.sectionTitle}</th></tr>`;
-            
-            for (const handle of section.items) {
-                const details = getMeasurementDetails(handle);
-                let rawValue = results[handle] || "";
-                
-                // Check if this is a calculated field
-                const isCalculated = typeof calculations === 'object' && calculations.hasOwnProperty(handle);
-                
-                // Strip unit from display value if it's already included
-                let displayValue = rawValue;
-                if (details.unit && rawValue.endsWith(details.unit)) {
-                    displayValue = rawValue.slice(0, -details.unit.length);
-                }
-                
-                // Add readonly attribute for calculated fields
-                const readonlyAttr = isCalculated ? ' readonly' : '';
-                const calculatedClass = isCalculated ? ' calculated-field' : '';
-                
-                rows += `<tr${sectionClass}>
-                    <td class="label">${details.label}<span class="copyable-value" style="opacity: 0; position: absolute; pointer-events: none;">${displayValue ? ' = ' + displayValue + (details.unit || '') : ''}</span></td>
-                    <td class="measurement-cell">
-                        <input type="text" class="measurement-input${details.full ? ' full-width' : ''}${calculatedClass}" data-key="${handle}" value="${displayValue}"${readonlyAttr} />
-                        ${details.unit ? `<span class="unit-label">${details.unit}</span>` : ''}
-                    </td>
-                </tr>`;
-            }
-        }
-        
-        $("#measurements-table").html(`<table><tbody>${rows}</tbody></table>`);
-        
-        // Add event listeners for measurement inputs
-        $(".measurement-input").on("change input", function() {
-            const key = $(this).data("key");
-            const value = $(this).val().trim(); // Trim whitespace
-            const unit = $(this).closest('td').find('.unit-label').text().trim();
-            
-            // Store value with unit appended (no space) only if both value and unit exist
-            results[key] = (value && unit) ? value + unit : value;
-            
-            // Update the copyable span in the label cell
-            const $row = $(this).closest('tr');
-            const $copyableSpan = $row.find('.copyable-value');
-            $copyableSpan.text(value ? ` = ${value}${unit}` : '');
-            
-            // Run calculations to update derived values
-            runCalculations();
-            
-            // Update summary to reflect the new measurement value
-            updateSummary();
-            
-            // Update section previews with the new measurement value
-            updateAllSectionPreviews();
-        });
-    }
-    
-    // Run calculations and update dependent measurement fields
-    function runCalculations() {
-        if (typeof calculations !== 'object') return;
-        
-        // Prepare metrics object with parsed numeric values for calculations
-        const metricsForCalc = {};
-        Object.entries(results).forEach(([key, value]) => {
-            // Strip units to get numeric value
-            const config = parseConfigMap[key];
-            if (config && config.unit && value) {
-                const numStr = value.toString().replace(config.unit, '').trim();
-                const num = parseFloat(numStr);
-                metricsForCalc[key] = isNaN(num) ? value : num;
-            } else {
-                metricsForCalc[key] = value;
-            }
-        });
-        
-        // Run each calculation function
-        Object.entries(calculations).forEach(([calcKey, calcFn]) => {
-            if (typeof calcFn === 'function') {
-                const calculatedValue = calcFn(metricsForCalc);
-                
-                // Update results with calculated value
-                if (calculatedValue !== "N/A" && calculatedValue !== null && calculatedValue !== undefined) {
-                    const config = parseConfigMap[calcKey];
-                    const unit = config?.unit || '';
-                    results[calcKey] = unit ? calculatedValue + unit : calculatedValue;
-                    
-                    // Update the input field display
-                    const $input = $(`.measurement-input[data-key="${calcKey}"]`);
-                    if ($input.length) {
-                        $input.val(calculatedValue);
-                        
-                        // Update the copyable span
-                        const $row = $input.closest('tr');
-                        const $copyableSpan = $row.find('.copyable-value');
-                        $copyableSpan.text(` = ${calculatedValue}${unit}`);
-                    }
-                } else {
-                    // Clear the field if calculation returns N/A
-                    results[calcKey] = "";
-                    const $input = $(`.measurement-input[data-key="${calcKey}"]`);
-                    if ($input.length) {
-                        $input.val("");
-                        const $row = $input.closest('tr');
-                        const $copyableSpan = $row.find('.copyable-value');
-                        $copyableSpan.text('');
-                    }
-                }
-            }
-        });
-    }
-    
-    // Import button handler
-    $("#submit").on("click", function () {
-        // Check if a parse config has been selected
-        if (parseConfig.length === 0) {
-            alert("Please select a data format before importing.");
-            return;
-        }
-
-        const report = $("#report").val();
-        
-        // Parse the report data
-        parseConfig.forEach(item => {
-            if (item.match) {
-                const match = new RegExp(item.match, 'g').exec(report);
-                if (match) {
-                    results[item.handle] = match[1].trim(); // Trim parsed values
-                }
-            }
-        });
-        
-        // Run calculations to compute derived values
-        runCalculations();
-        
-        // Close the modal
-        $("#import-modal").removeClass("active");
-        
-        // Load default report config on first entry to options page
-        if (!reportConfigLoaded) {
-            const defaultReportConfig = reportConfigs.find(c => c.default);
-            if (defaultReportConfig) {
-                loadReportConfig(defaultReportConfig.id);
-                reportConfigLoaded = true;
-            }
-        } else {
-            // If already loaded, just regenerate the table and update section previews
-            generateMeasurementsTable();
-            runCalculations(); // Ensure calculated values are updated in the new table
-            updateAllSectionPreviews();
-            updateSummary();  // Update summary to process Handlebars variables like {{EFBP}}
-        }
-    });
-
-    // Update summary from checked items in modal checkboxes
+    // Update summary
     function updateSummary() {
         const summaryItems = [];
         
-        // Prepare data for Handlebars
-        const resultsWithUnits = {};
-        Object.entries(results).forEach(([key, value]) => {
-            const config = parseConfigMap[key];
-            if (value && config?.unit) {
-                const unit = config.unit;
-                resultsWithUnits[key] = value.toString().endsWith(unit) ? value : value + unit;
-            } else {
-                resultsWithUnits[key] = value;
-            }
-        });
-        
+        // Prepare data for Handlebars using shared utility
+        const resultsWithUnits = prepareResultsWithUnits();
         const summaryData = { ...resultsWithUnits, ...metrics };
         
         // Collect summary items from modal checkboxes
@@ -578,15 +1304,21 @@ jQuery(document).ready(function () {
             if (!section.params) return;
             
             // Skip this entire section if it's excluded OR hidden
-            if (section.sectionPreviewKey && (excludedSections[section.sectionPreviewKey] || (window.hiddenSections && window.hiddenSections[section.sectionPreviewKey]))) {
+            if (section.modalKey && (excludedModals[section.modalKey] || (window.hiddenModals && window.hiddenModals[section.modalKey]))) {
                 return;
             }
             
-            Object.entries(section.params).forEach(([key, option]) => {
-                if (!option.enableSummary) return;
+            // [v5.0] Handle both array-based (new) and object-based (old) params
+            const paramList = Array.isArray(section.params) ? section.params : Object.keys(section.params || {});
+            
+            paramList.forEach(paramKey => {
+                // [v5.0] Look up parameter definition from global parameters
+                const option = window.parameters ? window.parameters[paramKey] : (section.params[paramKey] || null);
                 
-                const $checkbox = $(`#${key}-summary-modal`);
-                const metricValue = metrics[key];
+                if (!option || !option.enableSummary) return;
+                
+                const $checkbox = $(`#${paramKey}-summary-modal`);
+                const metricValue = metrics[paramKey];
                 
                 // Determine if checkbox is checked:
                 // - If modal exists (checkbox in DOM), use actual checkbox state
@@ -597,7 +1329,7 @@ jQuery(document).ready(function () {
                     isChecked = $checkbox.is(':checked');
                 } else {
                     // Checkbox doesn't exist yet (modal not created) - use virtual state
-                    isChecked = window.summaryCheckboxStates?.[key] ?? false;
+                    isChecked = window.summaryCheckboxStates?.[paramKey] ?? false;
                 }
                 
                 // Include if either:
@@ -621,8 +1353,8 @@ jQuery(document).ready(function () {
                         });
                         
                         // If not found and we have a tracked selected option, use that
-                        if (!selectedOption && window.selectedOptions && window.selectedOptions[key]) {
-                            selectedOption = window.selectedOptions[key];
+                        if (!selectedOption && window.selectedOptions && window.selectedOptions[paramKey]) {
+                            selectedOption = window.selectedOptions[paramKey];
                         }
                         
                         // If found and has summarytext, use that instead
@@ -632,25 +1364,19 @@ jQuery(document).ready(function () {
                     }
                     // For customtext options, use summarytext from selectedOptions
                     else if (option.options === "customtext") {
-                        if (window.selectedOptions && window.selectedOptions[key]) {
-                            selectedOption = window.selectedOptions[key];
+                        if (window.selectedOptions && window.selectedOptions[paramKey]) {
+                            selectedOption = window.selectedOptions[paramKey];
                             if (selectedOption.summarytext) {
                                 textToUse = selectedOption.summarytext;
                             }
                         }
                     }
                     
-                    // Process through Handlebars
-                    let processedText = textToUse;
-                    try {
-                        const template = Handlebars.compile(processedText);
-                        processedText = template(summaryData);
-                    } catch (e) {
-                        console.warn(`Failed to compile summary text for ${key}:`, e);
-                    }
-                    
+                    // DON'T process through Handlebars here - keep {{}} syntax intact
+                    // This will be processed later in updateReportTextarea() along with everything else
+                    // This allows measurement values within summary to be wrapped in spans
                     summaryItems.push({
-                        text: processedText,
+                        text: textToUse,
                         order: option.summaryOrder ?? 999
                     });
                 }
@@ -696,6 +1422,26 @@ jQuery(document).ready(function () {
         
         const autoGeneratedContent = lines.join('\n');
         
+        console.log('[v5.1] updateSummary called - autoGeneratedContent:', autoGeneratedContent ? autoGeneratedContent.substring(0, 100) : '(empty string)');
+        
+        // [v5.0] Update Summary in metrics (no separate textarea in new architecture)
+        // Always update metrics.Summary for use in ContentEditable
+        if (summaryManuallyEdited && metrics.Summary) {
+            // Append new items to existing manual content
+            const currentLines = metrics.Summary.split('\n').filter(line => line.trim());
+            const autoLines = autoGeneratedContent.split('\n').filter(line => line.trim());
+            const newLines = autoLines.filter(line => !currentLines.includes(line));
+            
+            if (newLines.length > 0) {
+                metrics.Summary = metrics.Summary + '\n' + newLines.join('\n');
+            }
+        } else {
+            // Replace with auto-generated
+            metrics.Summary = autoGeneratedContent;
+        }
+        
+        // TODO [v5.0]: Old Summary textarea code below - kept for reference
+        // Summary is now part of ContentEditable, not a separate textarea
         // Update Summary textarea
         const $summaryTextarea = $('#Summary-textarea');
         if ($summaryTextarea.length && !$summaryTextarea.is(':focus')) {
@@ -725,41 +1471,27 @@ jQuery(document).ready(function () {
     }
     
     // Update section preview
-    function updateSectionPreview(sectionKey) {
-        if (!sectionTemplates[sectionKey]) return;
+    function updateModalPreview(modalKey) {
+        if (!modalTemplates[modalKey]) return;
         
         // Don't update if manually edited
-        if (sectionPreviewManuallyEdited[sectionKey]) return;
+        if (modalPreviewManuallyEdited[modalKey]) return;
         
-        // Prepare data for Handlebars - ensure units are appended to results
-        const resultsWithUnits = {};
-        Object.entries(results).forEach(([key, value]) => {
-            const config = parseConfigMap[key];
-            if (value && config?.unit) {
-                const unit = config.unit;
-                resultsWithUnits[key] = value.toString().endsWith(unit) ? value : value + unit;
-            } else {
-                resultsWithUnits[key] = value;
-            }
-        });
+        // Prepare data using shared utility (with SafeString for nested Handlebars)
+        const resultsWithUnits = prepareResultsWithUnits();
         
-        // Pre-process metrics values through Handlebars
-        // This allows metrics that contain Handlebars variables (like {{IVSd}}) to be resolved
-        // before being passed to the section template
+        // Pre-process metrics values through Handlebars with SafeString
         const processedMetrics = {};
-        const baseData = { ...resultsWithUnits }; // Base data for processing metrics
-        
         Object.entries(metrics).forEach(([key, value]) => {
             if (typeof value === 'string' && value.includes('{{')) {
-                // This metric contains Handlebars variables, process it
                 try {
                     const template = Handlebars.compile(value);
-                    const processed = template(baseData);
-                    // Mark as SafeString to prevent double-escaping when inserted into section template
+                    const processed = template(resultsWithUnits);
+                    // Mark as SafeString to prevent double-escaping
                     processedMetrics[key] = new Handlebars.SafeString(processed);
                 } catch (e) {
                     console.warn(`Failed to process metric ${key}:`, e);
-                    processedMetrics[key] = value; // Fall back to original
+                    processedMetrics[key] = value;
                 }
             } else {
                 processedMetrics[key] = value;
@@ -769,39 +1501,39 @@ jQuery(document).ready(function () {
         const data = { ...resultsWithUnits, ...processedMetrics };
         
         try {
-            const rendered = sectionTemplates[sectionKey](data);
+            const rendered = modalTemplates[modalKey](data);
             
             // Use new textarea-based form
-            const $textarea = $(`#${sectionKey}-textarea`);
+            const $textarea = $(`#${modalKey}-textarea`);
             if ($textarea.length) {
                 $textarea.val(rendered);
-                metrics[sectionKey] = rendered;
+                metrics[modalKey] = rendered;
                 // Auto-resize textarea using global function
                 if (typeof window.autoResizeTextarea === 'function') {
                     window.autoResizeTextarea($textarea);
                 }
             }
         } catch (e) {
-            console.error(`Error rendering section preview for ${sectionKey}:`, e);
+            console.error(`Error rendering section preview for ${modalKey}:`, e);
         }
     }
     
     // Update all section previews
     function updateAllSectionPreviews() {
         options.forEach(section => {
-            if (section.sectionPreviewKey) {
-                updateSectionPreview(section.sectionPreviewKey);
+            if (section.modalKey) {
+                updateModalPreview(section.modalKey);
             }
         });
     }
     
     // Build the options form - now delegated to form.js
     function buildOptionsForm() {
-        // Compile section templates from window.sectionTemplates
-        if (window.sectionTemplates) {
-            Object.entries(window.sectionTemplates).forEach(([key, templateString]) => {
+        // Compile section templates from window.modalTemplates
+        if (window.modalTemplates) {
+            Object.entries(window.modalTemplates).forEach(([key, templateString]) => {
                 try {
-                    sectionTemplates[key] = Handlebars.compile(templateString);
+                    modalTemplates[key] = Handlebars.compile(templateString);
                 } catch (e) {
                     console.error(`Error compiling template for ${key}:`, e);
                 }
@@ -856,49 +1588,33 @@ jQuery(document).ready(function () {
     }
     
     // Populate section textareas with default content
-    function populateSectionTextareas() {
+    function populateModalTextareas() {
         // Metrics defaults are now set in buildOptionsForm() before the form is built
         // This function just renders the sections with those defaults
         
         // Render and populate each section textarea
         options.forEach(section => {
-            if (section.sectionPreviewKey) {
-                const sectionKey = section.sectionPreviewKey;
+            if (section.modalKey) {
+                const modalKey = section.modalKey;
                 
-                if (!sectionTemplates[sectionKey]) {
-                    console.warn(`No template found for section: ${sectionKey}`);
+                if (!modalTemplates[modalKey]) {
+                    console.warn(`No template found for section: ${modalKey}`);
                     return;
                 }
                 
-                // Prepare data for Handlebars - ensure units are appended to results
-                const resultsWithUnits = {};
-                Object.entries(results).forEach(([key, value]) => {
-                    const config = parseConfigMap[key];
-                    if (value && config?.unit) {
-                        const unit = config.unit;
-                        resultsWithUnits[key] = value.toString().endsWith(unit) ? value : value + unit;
-                    } else {
-                        resultsWithUnits[key] = value;
-                    }
-                });
+                // Prepare data using shared utilities (with SafeString)
+                const resultsWithUnits = prepareResultsWithUnits();
                 
-                // Pre-process metrics values through Handlebars
-                // This allows metrics that contain Handlebars variables (like {{IVSd}}) to be resolved
-                // before being passed to the section template
                 const processedMetrics = {};
-                const baseData = { ...resultsWithUnits }; // Base data for processing metrics
-                
                 Object.entries(metrics).forEach(([key, value]) => {
                     if (typeof value === 'string' && value.includes('{{')) {
-                        // This metric contains Handlebars variables, process it
                         try {
                             const template = Handlebars.compile(value);
-                            const processed = template(baseData);
-                            // Mark as SafeString to prevent double-escaping when inserted into section template
+                            const processed = template(resultsWithUnits);
                             processedMetrics[key] = new Handlebars.SafeString(processed);
                         } catch (e) {
                             console.warn(`Failed to process metric ${key}:`, e);
-                            processedMetrics[key] = value; // Fall back to original
+                            processedMetrics[key] = value;
                         }
                     } else {
                         processedMetrics[key] = value;
@@ -908,12 +1624,12 @@ jQuery(document).ready(function () {
                 const data = { ...resultsWithUnits, ...processedMetrics };
                 
                 try {
-                    const rendered = sectionTemplates[sectionKey](data);
-                    const $textarea = $(`#${sectionKey}-textarea`);
+                    const rendered = modalTemplates[modalKey](data);
+                    const $textarea = $(`#${modalKey}-textarea`);
                     
                     if ($textarea.length) {
                         $textarea.val(rendered);
-                        metrics[sectionKey] = rendered;
+                        metrics[modalKey] = rendered;
                         
                         // Auto-resize the textarea using global function
                         if (typeof window.autoResizeTextarea === 'function') {
@@ -921,7 +1637,7 @@ jQuery(document).ready(function () {
                         }
                     }
                 } catch (e) {
-                    console.error(`Error rendering section ${sectionKey}:`, e);
+                    console.error(`Error rendering section ${modalKey}:`, e);
                 }
             }
         });
@@ -932,13 +1648,787 @@ jQuery(document).ready(function () {
         }
     }
     
-    // Auto-scroll measurements table to relevant section for active modal
-    function scrollToMeasurementSection(sectionPreviewKey) {
-        if (!sectionPreviewKey) return;
+    // [v5.4] Granular update - only updates changed parameter spans
+    // NEVER falls back to full re-render to preserve manual edits
+    // Uses data-modal attribute for precise span targeting
+    function updateChangedParameters(changedParamKeys) {
+        const $textarea = $('#report-textarea');
+        
+        if (!$textarea.length) {
+            console.warn('ContentEditable textarea not found');
+            return;
+        }
+        
+        // Build param -> modal mapping for precise targeting
+        const paramToModal = {};
+        if (window.options && Array.isArray(window.options)) {
+            window.options.forEach(group => {
+                if (!group.modalKey || !group.params) return;
+                const modalKey = group.modalKey;
+                const paramList = Array.isArray(group.params) ? group.params : Object.keys(group.params);
+                paramList.forEach(paramKey => {
+                    paramToModal[paramKey] = modalKey;
+                });
+            });
+        }
+        
+        // Prepare data using shared utility
+        const outputResults = prepareResultsWithUnits();
+        
+        // Track if any spans were updated
+        let spansUpdated = false;
+        
+        // Track if cursor was in the textarea
+        const selection = window.getSelection();
+        const wasInTextarea = selection.rangeCount > 0 && 
+                             $textarea[0].contains(selection.anchorNode);
+        let savedRange = null;
+        
+        if (wasInTextarea) {
+            savedRange = selection.getRangeAt(0).cloneRange();
+        }
+        
+        // Update each changed parameter
+        changedParamKeys.forEach(paramKey => {
+            let newValue = metrics[paramKey];
+            
+            // Process through Handlebars if needed
+            if (typeof newValue === 'string' && newValue.includes('{{')) {
+                try {
+                    const template = Handlebars.compile(newValue);
+                    newValue = template(outputResults);
+                } catch (e) {
+                    console.warn(`Failed to process metric ${paramKey}:`, e);
+                }
+            }
+            
+            // Get the modal this parameter belongs to
+            const modalKey = paramToModal[paramKey];
+            
+            // Check if parameter is excluded/hidden
+            let isExcludedOrHidden = false;
+            if (modalKey && (window.excludedModals || window.hiddenModals)) {
+                if ((window.excludedModals && window.excludedModals[modalKey]) ||
+                    (window.hiddenModals && window.hiddenModals[modalKey])) {
+                    isExcludedOrHidden = true;
+                }
+            }
+            
+            // If excluded/hidden, set to empty
+            if (isExcludedOrHidden) {
+                newValue = '';
+            }
+            
+            // Find spans using BOTH data-param AND data-modal for precise targeting
+            // This ensures we only update spans belonging to the correct modal
+            let $spans;
+            if (modalKey) {
+                // Use both attributes for precise targeting
+                $spans = $textarea.find(`[data-param="${paramKey}"][data-modal="${modalKey}"]`);
+            } else {
+                // Fallback: no modal mapping, use param only
+                $spans = $textarea.find(`[data-param="${paramKey}"]`);
+            }
+            
+            if ($spans.length > 0) {
+                $spans.each(function() {
+                    $(this).text(newValue || '');
+                });
+                spansUpdated = true;
+                
+                // [v5.4] Toggle if-block visibility based on value
+                const $block = $textarea.find(`.param-block[data-block-param="${paramKey}"]`);
+                if ($block.length) {
+                    if (newValue && newValue.trim() !== '') {
+                        $block.removeClass('block-empty');
+                    } else {
+                        $block.addClass('block-empty');
+                    }
+                }
+            }
+            // [v5.4] Span always exists - no fallback needed
+        });
+        
+        // Restore cursor position if it was in the textarea
+        if (wasInTextarea && savedRange) {
+            try {
+                selection.removeAllRanges();
+                selection.addRange(savedRange);
+            } catch (e) {
+                // Cursor restoration failed, that's ok
+                console.log('Could not restore cursor position');
+            }
+        }
+    }
+    
+    // [v5.2] Update ContentEditable report textarea with span-wrapped parameters
+    // Now uses preprocessed template that wraps variables in spans at template level
+    function updateReportTextarea() {
+        const $textarea = $('#report-textarea');
+        
+        if (!$textarea.length) {
+            console.warn('ContentEditable textarea not found');
+            return;
+        }
+        
+        // 1. Prepare data using shared utilities
+        const data = prepareOutputData();
+        
+        // 2. Filter excluded/hidden sections
+        const filteredData = filterExcludedModalData(data);
+        
+        // 3. Generate report using preprocessed template
+        // The preprocessed template has {{variables}} wrapped in spans with data-modal
+        let rawReport = '';
+        try {
+            const template = getPreprocessedTemplate();
+            rawReport = template(filteredData);
+        } catch (e) {
+            console.error('Error generating report:', e);
+            return;
+        }
+        
+        // 4. Post-process: field markers and button placement
+        const processedReport = postProcessReport(rawReport, filteredData);
+        
+        // 5. Update ContentEditable preserving cursor position
+        updateContentEditableHTML(processedReport);
+        
+        // 6. Update button positions
+        if (typeof updateButtonPositions === 'function') {
+            updateButtonPositions();
+        }
+    }
+    
+    // [v5.4] Post-process report: if-blocks, field markers, and button placement
+    function postProcessReport(reportHTML, data) {
+        let processed = reportHTML;
+        
+        // Get excluded variables set (for field marker logic)
+        const excludedVariables = data._excludedVariables || new Set();
+        
+        // ========================================================================
+        // IF-BLOCKS: Process <!--if:paramKey-->content<!--/if-->
+        // Creates inline span wrapper for granular updates
+        // CSS ::before adds line break for non-empty, display:none hides empty
+        // Consumes template newline - CSS provides visual line break instead
+        // ========================================================================
+        const ifBlockRegex = /\n?<!--if:(\w+)-->([\s\S]*?)<!--\/if-->/g;
+        
+        processed = processed.replace(ifBlockRegex, (match, paramKey, content) => {
+            const paramValue = data[paramKey] || '';
+            const isEmpty = !paramValue || paramValue.trim() === '';
+            const emptyClass = isEmpty ? ' block-empty' : '';
+            
+            // Span is always inline, CSS ::before adds line break when not empty
+            return `<span class="param-block${emptyClass}" data-block-param="${paramKey}">${content.trim()}</span>`;
+        });
+        
+        // ========================================================================
+        // FIELD MARKERS: Process <!--@FieldName-->content<!--/@FieldName-->
+        // These wrap fixed text + variables together for exclude/include behavior
+        // - Excluded variable: entire field is hidden (fixed text + variable)
+        // - Included but empty: field is shown (fixed text + empty variable)
+        // ========================================================================
+        const fieldMarkerRegex = /<!--@(\w+)-->([\s\S]*?)<!--\/@\1-->\n?/g;
+        
+        processed = processed.replace(fieldMarkerRegex, (match, fieldName, content) => {
+            // Check if this field's variable is excluded/hidden
+            if (excludedVariables.has(fieldName)) {
+                // Remove the entire field (fixed text + variable + trailing newline)
+                return '';
+            }
+            
+            // Field is included - wrap in field wrapper span
+            const hadNewline = match.endsWith('\n');
+            return `<span class="field-wrapper" data-field="${fieldName}">${content}</span>${hadNewline ? '\n' : ''}`;
+        });
+        
+        // ========================================================================
+        // BUTTON PLACEMENT: Replace <!--button:modalKey--> with button groups
+        // ========================================================================
+        window.options.forEach(modalGroup => {
+            const modalKey = modalGroup.modalKey;
+            if (!modalKey) return;
+            
+            // Check if section is excluded or hidden
+            const isExcluded = excludedModals[modalKey] || (window.excludedModals && window.excludedModals[modalKey]);
+            const isHidden = window.hiddenModals && window.hiddenModals[modalKey];
+            const isTriggered = window.triggeredModals && window.triggeredModals[modalKey];
+            
+            // For hidden sections (but not triggered), just remove the marker
+            if (isHidden && !isTriggered) {
+                processed = processed.replace(new RegExp(`<!--button:${modalKey}-->`, 'g'), '');
+                return;
+            }
+            
+            // Create button HTML
+            let buttonHTML = '';
+            
+            if (modalKey === 'Summary') {
+                // Summary only gets edit button
+                buttonHTML = `<button type="button" class="inline-edit-button" data-modal="${modalKey}" title="Edit Summary">✎</button>`;
+            } else if (isTriggered) {
+                // Triggered sections get only the orange [x] reset button
+                buttonHTML = `<button type="button" class="inline-exclude-button reset-trigger-button" data-modal="${modalKey}" title="Close and reset to default">×</button>`;
+            } else {
+                // Regular sections get exclude button always, edit button only when not excluded
+                const excludeText = isExcluded ? '+' : '−';
+                const excludeTitle = isExcluded ? 'Include section in report' : 'Exclude section from report';
+                const excludeClass = isExcluded ? 'inline-exclude-button excluded' : 'inline-exclude-button';
+                
+                if (isExcluded) {
+                    buttonHTML = `<button type="button" class="${excludeClass}" data-modal="${modalKey}" title="${excludeTitle}">${excludeText}</button>`;
+                } else {
+                    buttonHTML = `<button type="button" class="inline-edit-button" data-modal="${modalKey}" title="Edit ${modalGroup.modalTitle}">✎</button><button type="button" class="${excludeClass}" data-modal="${modalKey}" title="${excludeTitle}">${excludeText}</button>`;
+                }
+            }
+            
+            // Create button group
+            const trailingNewline = isExcluded ? '\n' : '';
+            const buttonGroup = `<span class="inline-button-group" contenteditable="false" data-modal="${modalKey}">${buttonHTML}</span>${trailingNewline}`;
+            
+            // Replace marker with button group
+            processed = processed.replace(new RegExp(`<!--button:${modalKey}-->`, 'g'), buttonGroup);
+        });
+        
+        // Remove any remaining button markers not in options
+        processed = processed.replace(/<!--button:[^>]+-->/g, '');
+        
+        // ========================================================================
+        // WHITESPACE CLEANUP
+        // ========================================================================
+        
+        // [v5.4] Keep all param spans - needed for granular updates
+        // Empty param spans are invisible, param-block spans handle visibility via CSS
+        
+        // [v5.2] Remove field wrapper spans that are completely empty
+        processed = processed.replace(/<span[^>]*class="field-wrapper"[^>]*>\s*<\/span>/g, '');
+        
+        // Clean up lines that only contain whitespace or empty spans
+        // This handles hidden modal content (like mPEffFull)
+        // [v5.4] Preserve lines containing param-block (they use CSS for visibility)
+        processed = processed
+            .split('\n')
+            .map(line => {
+                // Preserve lines with param-block spans - they use CSS for visibility
+                if (line.includes('param-block') || line.includes('data-block-param')) {
+                    return line;
+                }
+                // Check if line only contains HTML tags (spans) with no text content
+                const textOnly = line.replace(/<[^>]+>/g, '').trim();
+                return textOnly === '' ? '' : line;
+            })
+            .join('\n')
+            .replace(/\n{3,}/g, '\n\n');  // Collapse 3+ newlines to 2
+        
+        return processed;
+    }
+    
+    // [v5.0] Update ContentEditable HTML while preserving cursor position
+    function updateContentEditableHTML(newHTML) {
+        const $textarea = $('#report-textarea');
+        
+        if (!$textarea.length) return;
+        
+        // [v5.1] Set flag to prevent MutationObserver from triggering during intentional update
+        isRestoringButtons = true;
+        
+        // [v5.2] Capture manual edit spans before update
+        // These are text edits made outside of parameter spans
+        // Store context including preceding line breaks for proper restoration
+        const manualEdits = [];
+        let manualEditCounter = 0;
+        
+        $textarea.find('.manual-edit').each(function() {
+            const $edit = $(this);
+            const text = $edit.text();
+            
+            if (!text.trim()) return; // Skip empty edits
+            
+            // Assign unique ID if not already present
+            let editId = $edit.attr('data-manual-id');
+            if (!editId) {
+                editId = `manual-${Date.now()}-${manualEditCounter++}`;
+                $edit.attr('data-manual-id', editId);
+            }
+            
+            // [v5.2] Check for preceding line break context
+            // Browsers create different structures for new lines:
+            // - <br> before text
+            // - Text inside a <div>
+            // - Text after a newline character
+            let hasLineBreakBefore = false;
+            
+            // Check for <br> immediately before
+            const prevSibling = this.previousSibling;
+            if (prevSibling) {
+                if (prevSibling.nodeName === 'BR') {
+                    hasLineBreakBefore = true;
+                } else if (prevSibling.nodeType === Node.TEXT_NODE && 
+                           prevSibling.textContent.endsWith('\n')) {
+                    hasLineBreakBefore = true;
+                }
+            }
+            
+            // Check if we're inside a div (browser's way of creating new lines)
+            const $parent = $edit.parent();
+            if ($parent.is('div') && !$parent.is('#report-textarea')) {
+                hasLineBreakBefore = true;
+            }
+            
+            // [v5.2] Find anchors by searching the entire textarea
+            let anchor = null;
+            let anchorType = null;
+            let bestDistance = Infinity;
+            
+            // Get the text position of this manual edit (approximate)
+            const editRect = this.getBoundingClientRect();
+            const editTop = editRect.top;
+            
+            // Search all param spans and button groups for closest anchor
+            $textarea.find('[data-param], .inline-button-group').each(function() {
+                const $candidate = $(this);
+                const candidateRect = this.getBoundingClientRect();
+                const candidateBottom = candidateRect.bottom;
+                
+                // Check if candidate is BEFORE this edit (above it in the document)
+                if (candidateBottom <= editTop + 5) { // 5px tolerance
+                    const distance = editTop - candidateBottom;
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        if ($candidate.attr('data-param')) {
+                            anchor = $candidate.data('param');
+                            anchorType = 'afterParam';
+                        } else if ($candidate.hasClass('inline-button-group')) {
+                            anchor = $candidate.data('modal');
+                            anchorType = 'afterButton';
+                        }
+                    }
+                }
+            });
+            
+            // If no "before" anchor found, look for "after" anchor
+            if (!anchor) {
+                bestDistance = Infinity;
+                $textarea.find('[data-param], .inline-button-group').each(function() {
+                    const $candidate = $(this);
+                    const candidateRect = this.getBoundingClientRect();
+                    const candidateTop = candidateRect.top;
+                    
+                    // Check if candidate is AFTER this edit (below it)
+                    if (candidateTop >= editTop - 5) { // 5px tolerance
+                        const distance = candidateTop - editTop;
+                        if (distance < bestDistance) {
+                            bestDistance = distance;
+                            if ($candidate.attr('data-param')) {
+                                anchor = $candidate.data('param');
+                                anchorType = 'beforeParam';
+                            } else if ($candidate.hasClass('inline-button-group')) {
+                                anchor = $candidate.data('modal');
+                                anchorType = 'beforeButton';
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Store edit info for restoration
+            manualEdits.push({
+                id: editId,
+                text: text,
+                anchor: anchor,
+                anchorType: anchorType,
+                hasLineBreakBefore: hasLineBreakBefore
+            });
+            
+            if (anchor) {
+                console.log(`[v5.2] Captured manual edit: "${text.substring(0, 20)}..." anchor=${anchor} type=${anchorType} lineBreak=${hasLineBreakBefore}`);
+            } else {
+                console.warn(`[v5.2] No anchor found for manual edit: "${text.substring(0, 20)}..."`);
+            }
+        });
+        
+        // Also store in window for debugging
+        window._lastManualEdits = manualEdits;
+        
+        // Get current cursor position
+        const selection = window.getSelection();
+        let cursorOffset = 0;
+        let cursorNode = null;
+        
+        if (selection.rangeCount > 0) {
+            const range = selection.getRangeAt(0);
+            cursorNode = range.startContainer;
+            cursorOffset = range.startOffset;
+        }
+        
+        // Update HTML
+        $textarea.html(newHTML);
+        
+        // [v5.2] Restore manual edit spans with line break context
+        let restoredCount = 0;
+        
+        manualEdits.forEach(edit => {
+            if (!edit.anchor) {
+                console.warn(`[v5.2] Skipping restoration of "${edit.text.substring(0, 20)}..." - no anchor`);
+                return;
+            }
+            
+            let $anchorElement = null;
+            let restored = false;
+            
+            // Find anchor element
+            if (edit.anchorType === 'afterParam' || edit.anchorType === 'beforeParam') {
+                $anchorElement = $textarea.find(`[data-param="${edit.anchor}"]`).first();
+            } else if (edit.anchorType === 'afterButton' || edit.anchorType === 'beforeButton') {
+                $anchorElement = $textarea.find(`.inline-button-group[data-modal="${edit.anchor}"]`).first();
+            }
+            
+            if ($anchorElement && $anchorElement.length) {
+                // Create the span with line break if needed
+                const $newSpan = $('<span class="manual-edit"></span>')
+                    .attr('data-manual-id', edit.id)
+                    .text(edit.text);
+                
+                if (edit.anchorType === 'afterParam' || edit.anchorType === 'afterButton') {
+                    if (edit.hasLineBreakBefore) {
+                        // Insert line break then span
+                        $anchorElement.after($newSpan);
+                        $anchorElement.after('<br>');
+                    } else {
+                        $anchorElement.after($newSpan);
+                    }
+                    restored = true;
+                } else if (edit.anchorType === 'beforeParam' || edit.anchorType === 'beforeButton') {
+                    if (edit.hasLineBreakBefore) {
+                        $anchorElement.before('<br>');
+                        $anchorElement.before($newSpan);
+                    } else {
+                        $anchorElement.before($newSpan);
+                    }
+                    restored = true;
+                }
+            }
+            
+            if (restored) {
+                restoredCount++;
+            } else {
+                console.warn(`[v5.2] Could not restore manual edit: "${edit.text.substring(0, 20)}..." - anchor ${edit.anchor} not found in new HTML`);
+            }
+        });
+        
+        if (manualEdits.length > 0) {
+            console.log(`[v5.2] Restored ${restoredCount}/${manualEdits.length} manual edit(s)`);
+        }
+        
+        // [v5.1] Reset flag after a short delay to allow mutations to complete
+        setTimeout(() => {
+            isRestoringButtons = false;
+        }, 10);
+        
+        // Don't automatically focus or move cursor - this was causing issues
+        // when typing in measurement fields. The cursor should only move when
+        // the user explicitly interacts with the report textarea.
+    }
+    
+    // [v5.0] Setup button event handlers (buttons are placed via template markers)
+    function updateButtonPositions() {
+        setupInlineButtonHandlers();
+    }
+    
+    // [v5.0] Setup click handlers for inline buttons
+    function setupInlineButtonHandlers() {
+        const $reportTextarea = $('#report-textarea');
+        
+        // Edit button - open modal
+        $reportTextarea.off('click', '.inline-edit-button').on('click', '.inline-edit-button', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const modalKey = $(this).data('modal');
+            const modalId = `${modalKey}-modal`;
+            const $modal = $(`#${modalId}`);
+            
+            // [v5.2] Initialize modal state tracking for bi-directional updates
+            // This captures dropdown states so we can detect if user changed them
+            if (!window.modalChangedInSession) window.modalChangedInSession = {};
+            if (!window.modalInitialState) window.modalInitialState = {};
+            if (!window.modalDropdownState) window.modalDropdownState = {};
+            
+            window.modalChangedInSession[modalKey] = false;
+            window.modalInitialState[modalKey] = {};
+            window.modalDropdownState[modalKey] = {};
+            
+            // Find all params in this modal and capture their dropdown states
+            $modal.find('select[data-param]').each(function() {
+                const paramKey = $(this).data('param');
+                window.modalDropdownState[modalKey][paramKey] = $(this).val() || '';
+                window.modalInitialState[modalKey][paramKey] = window.metrics?.[paramKey] || '';
+                
+                // [v5.2] If this param was manually edited, show the custom textarea
+                if (window.manuallyEditedParams && window.manuallyEditedParams[paramKey]) {
+                    const $customRow = $modal.find(`#${paramKey}-custom-row`);
+                    const $customTextarea = $modal.find(`#${paramKey}-custom-textarea`);
+                    const $select = $(this);
+                    
+                    if ($customRow.length && $customTextarea.length) {
+                        // Show custom row and populate with current value
+                        $customRow.show();
+                        $customTextarea.val(window.metrics?.[paramKey] || '');
+                        
+                        // Dim the dropdown to indicate custom mode
+                        $select.css({
+                            'opacity': '0.5',
+                            'background-color': '#f0f0f0'
+                        });
+                        
+                        console.log(`[v5.2] Showing custom textarea for manually edited param: ${paramKey}`);
+                    }
+                }
+            });
+            
+            // Open the modal
+            $modal.addClass('active');
+            
+            // Auto-scroll measurements table (skip for Summary)
+            if (modalKey !== 'Summary' && typeof window.scrollToMeasurementModal === 'function') {
+                window.scrollToMeasurementModal(modalKey);
+            }
+        });
+        
+        // Exclude button - use unified toggle function or reset triggered section
+        $reportTextarea.off('click', '.inline-exclude-button').on('click', '.inline-exclude-button', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const modalKey = $(this).data('modal');
+            
+            // Check if this is a reset-trigger-button (for triggered sections)
+            if ($(this).hasClass('reset-trigger-button')) {
+                // Reset the triggered section
+                if (typeof window.resetTriggeredModal === 'function') {
+                    window.resetTriggeredModal(modalKey);
+                }
+            } else {
+                // Use unified toggle function for normal sections
+                toggleModalExclusion(modalKey);
+            }
+        });
+        
+        // [v5.1] Protect buttons using MutationObserver
+        // If buttons get deleted by any means, restore them by re-rendering
+        setupButtonProtection($reportTextarea[0]);
+    }
+    
+    // [v5.1] MutationObserver to protect buttons from deletion
+    function setupButtonProtection(textarea) {
+        // Disconnect existing observer if any
+        if (buttonProtectionObserver) {
+            buttonProtectionObserver.disconnect();
+        }
+        
+        // Count expected buttons based on options config
+        expectedButtonCount = 0;
+        if (window.options && Array.isArray(window.options)) {
+            window.options.forEach(section => {
+                if (section.modalKey) {
+                    // Check if section is hidden
+                    const isHidden = window.hiddenModals && window.hiddenModals[section.modalKey];
+                    if (!isHidden) {
+                        expectedButtonCount++;
+                    }
+                }
+            });
+        }
+        
+        // Create observer
+        buttonProtectionObserver = new MutationObserver((mutations) => {
+            // Skip if we're currently restoring buttons (prevent infinite loop)
+            if (isRestoringButtons) return;
+            
+            // Count current button groups
+            const currentButtonCount = textarea.querySelectorAll('.inline-button-group').length;
+            
+            // If buttons were removed, restore them
+            if (currentButtonCount < expectedButtonCount) {
+                console.log(`[ButtonProtection] Buttons removed (${currentButtonCount}/${expectedButtonCount}), restoring...`);
+                isRestoringButtons = true;
+                
+                // Save cursor position before restoration
+                const savedCursor = saveCursorPosition(textarea);
+                
+                // Use setTimeout to allow the current mutation to complete
+                setTimeout(() => {
+                    if (typeof updateReportTextarea === 'function') {
+                        updateReportTextarea();
+                    }
+                    
+                    // Restore cursor position after re-render
+                    setTimeout(() => {
+                        restoreCursorPosition(textarea, savedCursor);
+                        isRestoringButtons = false;
+                    }, 0);
+                }, 0);
+            }
+        });
+        
+        // Start observing
+        buttonProtectionObserver.observe(textarea, {
+            childList: true,
+            subtree: true
+        });
+        
+        // [v5.1] Prevent cursor from entering buttons via selection change
+        setupCursorProtection(textarea);
+    }
+    
+    // [v5.1] Save cursor position relative to text content
+    function saveCursorPosition(textarea) {
+        const selection = window.getSelection();
+        if (!selection.rangeCount) return null;
+        
+        const range = selection.getRangeAt(0);
+        
+        // Calculate text offset from start of textarea
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(textarea);
+        preCaretRange.setEnd(range.startContainer, range.startOffset);
+        
+        // Get text content up to cursor, excluding button text
+        const tempDiv = document.createElement('div');
+        tempDiv.appendChild(preCaretRange.cloneContents());
+        
+        // Remove button groups from the clone to get accurate text position
+        tempDiv.querySelectorAll('.inline-button-group').forEach(el => el.remove());
+        
+        const textOffset = tempDiv.textContent.length;
+        
+        return {
+            textOffset: textOffset,
+            collapsed: range.collapsed
+        };
+    }
+    
+    // [v5.1] Restore cursor position based on saved text offset
+    function restoreCursorPosition(textarea, savedCursor) {
+        if (!savedCursor) return;
+        
+        const selection = window.getSelection();
+        const range = document.createRange();
+        
+        // Walk through text nodes to find the right position
+        let currentOffset = 0;
+        let targetNode = null;
+        let targetOffset = 0;
+        
+        function walkNodes(node) {
+            if (targetNode) return; // Already found
+            
+            if (node.nodeType === Node.TEXT_NODE) {
+                const nodeLength = node.textContent.length;
+                if (currentOffset + nodeLength >= savedCursor.textOffset) {
+                    targetNode = node;
+                    targetOffset = savedCursor.textOffset - currentOffset;
+                    return;
+                }
+                currentOffset += nodeLength;
+            } else if (node.nodeType === Node.ELEMENT_NODE) {
+                // Skip button groups
+                if (node.classList && node.classList.contains('inline-button-group')) {
+                    return;
+                }
+                for (const child of node.childNodes) {
+                    walkNodes(child);
+                    if (targetNode) return;
+                }
+            }
+        }
+        
+        walkNodes(textarea);
+        
+        if (targetNode) {
+            try {
+                range.setStart(targetNode, targetOffset);
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            } catch (e) {
+                console.log('[CursorRestore] Could not restore cursor:', e);
+            }
+        }
+    }
+    
+    // [v5.1] Prevent cursor from entering button elements
+    function setupCursorProtection(textarea) {
+        // Use selectionchange to detect cursor entering buttons
+        document.addEventListener('selectionchange', function() {
+            // Skip during restoration or if already fixing cursor
+            if (isRestoringButtons || isFixingCursor) return;
+            
+            const selection = window.getSelection();
+            if (!selection.rangeCount) return;
+            
+            const range = selection.getRangeAt(0);
+            const node = range.startContainer;
+            
+            // Check if cursor is inside a button group
+            const buttonGroup = node.nodeType === Node.ELEMENT_NODE 
+                ? node.closest('.inline-button-group')
+                : node.parentElement?.closest('.inline-button-group');
+            
+            if (buttonGroup && textarea.contains(buttonGroup)) {
+                isFixingCursor = true;
+                
+                // Move cursor after the button group
+                const newRange = document.createRange();
+                
+                // Find next valid position after button group
+                let nextNode = buttonGroup.nextSibling;
+                
+                // If next sibling is a text node, position at start
+                if (nextNode && nextNode.nodeType === Node.TEXT_NODE) {
+                    newRange.setStart(nextNode, 0);
+                } else if (nextNode && nextNode.nodeType === Node.ELEMENT_NODE) {
+                    // Position at start of next element
+                    newRange.setStartBefore(nextNode);
+                } else {
+                    // No next sibling, position after button group
+                    newRange.setStartAfter(buttonGroup);
+                }
+                
+                newRange.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(newRange);
+                
+                // Reset flag after a short delay
+                setTimeout(() => {
+                    isFixingCursor = false;
+                }, 10);
+            }
+        });
+    }
+    
+    // Update expected button count when sections change
+    function updateExpectedButtonCount() {
+        expectedButtonCount = 0;
+        if (window.options && Array.isArray(window.options)) {
+            window.options.forEach(section => {
+                if (section.modalKey) {
+                    const isHidden = window.hiddenModals && window.hiddenModals[section.modalKey];
+                    if (!isHidden) {
+                        expectedButtonCount++;
+                    }
+                }
+            });
+        }
+    }
+    
+    function scrollToMeasurementModal(modalKey) {
+        if (!modalKey) return;
         
         // Find the first measurement section header with matching data-section attribute
-        // Using [data-section~="value"] to match space-separated values
-        const $targetSection = $(`#measurements-table tr[data-section~="${sectionPreviewKey}"]`).first();
+        const $targetSection = $(`#measurements-table tr[data-section~="${modalKey}"]`).first();
         
         if ($targetSection.length) {
             const $measurementsPanel = $('#measurements-panel');
@@ -948,8 +2438,7 @@ jQuery(document).ready(function () {
                 const panelOffset = $measurementsPanel.offset().top;
                 const currentScroll = $measurementsPanel.scrollTop();
                 
-                // Calculate the scroll position with extra offset to show the header clearly
-                // 60px offset ensures the section header is visible with comfortable spacing
+                // Calculate the scroll position with extra offset
                 const scrollPosition = currentScroll + (targetOffset - panelOffset) - 60;
                 
                 // Smooth scroll to the target
@@ -960,21 +2449,46 @@ jQuery(document).ready(function () {
         }
     }
     
-    // Expose globally for form.js to call
+    // ============================================================================
+    // GLOBAL EXPORTS
+    // ============================================================================
+    
     window.autoResizeTextarea = autoResizeTextarea;
-    window.populateSectionTextareas = populateSectionTextareas;
-    window.updateSectionPreview = updateSectionPreview;
+    window.populateModalTextareas = populateModalTextareas;
+    window.updateModalPreview = updateModalPreview;
+    window.updateReportTextarea = updateReportTextarea;
+    window.updateChangedParameters = updateChangedParameters;
+    window.updateButtonPositions = updateButtonPositions;
     window.updateSummary = updateSummary;
-    window.scrollToMeasurementSection = scrollToMeasurementSection;
+    window.scrollToMeasurementModal = scrollToMeasurementModal;
     window.metrics = metrics;
     window.selectedOptions = selectedOptions;
-    window.sectionPreviewManuallyEdited = sectionPreviewManuallyEdited;
+    window.modalPreviewManuallyEdited = modalPreviewManuallyEdited;
     window.summaryCheckboxManuallyEdited = summaryCheckboxManuallyEdited;
     window.summaryManuallyEdited = summaryManuallyEdited;
-    window.excludedSections = excludedSections;
+    window.excludedModals = excludedModals;
+    window.hiddenModals = hiddenModals;
+    window.triggeredModals = triggeredModals;
+    window.parameters = parameters;
+    window.options = options;
+    
+    // Expose shared utilities for form.js
+    window.extractModalVariables = extractModalVariables;
+    window.prepareOutputData = prepareOutputData;
+    window.filterExcludedModalData = filterExcludedModalData;
+    window.initializeModalVisibility = initializeModalVisibility;
+    window.triggerModal = triggerModal;
+    window.resetTriggeredModal = resetTriggeredModal;
+    
+    // [v5.2] Variable Registry exports
+    window.variableRegistry = variableRegistry;
+    window.initializeVariableRegistry = initializeVariableRegistry;
+    window.updateRegistryValue = updateRegistryValue;
+    window.updateRegistryMeasurement = updateRegistryMeasurement;
+    window.getRegistryEntry = getRegistryEntry;
+    window.getRegistryValues = getRegistryValues;
     
     // Initialize - load default report config
-    // This is called by form.js once it's ready
     window.initializeReportForm = function() {
         const defaultReportConfig = reportConfigs.find(c => c.default);
         if (defaultReportConfig) {
@@ -986,62 +2500,36 @@ jQuery(document).ready(function () {
         }
     };
     
-    // Copy to clipboard button
+    // ============================================================================
+    // CLIPBOARD - SIMPLIFIED (v5.1)
+    // Simply copies visible text from ContentEditable
+    // ============================================================================
+    
     $("#copy-report").on("click", function () {
-        // Update all section previews to ensure they're current
-        updateAllSectionPreviews();
+        const $textarea = $('#report-textarea');
         
-        // Note: We don't call updateSummary() here because:
-        // 1. Summary is already updated when checkboxes change (via checkbox handlers)
-        // 2. Summary is already updated when user types (via textarea input handler)
-        // 3. metrics.Summary always contains the current textarea value
-        // This preserves manual edits to the summary textarea
-        
-        // Prepare output by appending units to results
-        const outputResults = {};
-        Object.entries(results).forEach(([key, value]) => {
-            const config = parseConfigMap[key];
-            if (value && config?.unit) {
-                const unit = config.unit;
-                outputResults[key] = value.toString().endsWith(unit) ? value : value + unit;
-            } else {
-                outputResults[key] = value;
-            }
-        });
-
-        const output = { ...outputResults, ...metrics };
-        
-        // Filter out excluded sections AND hidden sections
-        const filteredOutput = { ...output };
-        
-        // Filter out excluded sections (defaultExcluded or manually excluded)
-        Object.keys(excludedSections).forEach(sectionKey => {
-            if (excludedSections[sectionKey]) {
-                // Set excluded section content to empty string
-                filteredOutput[sectionKey] = '';
-            }
-        });
-        
-        // Filter out hidden sections (defaultHidden that haven't been triggered)
-        if (window.hiddenSections) {
-            Object.keys(window.hiddenSections).forEach(sectionKey => {
-                if (window.hiddenSections[sectionKey]) {
-                    // Set hidden section content to empty string
-                    filteredOutput[sectionKey] = '';
-                }
-            });
+        if (!$textarea.length) {
+            alert('Report textarea not found');
+            return;
         }
         
-        const finalReport = outputTemplate(filteredOutput);
+        // Clone the content to manipulate without affecting the display
+        const $clone = $textarea.clone();
         
-        // Clean up excessive whitespace from excluded sections
-        // Replace 3+ consecutive newlines with just 2 newlines (keeps section spacing)
-        const cleanedReport = finalReport
+        // Remove button groups (edit/exclude buttons) from the clone
+        $clone.find('.inline-button-group').remove();
+        
+        // Get the visible text content from the cleaned clone
+        // innerText preserves visual line breaks and excludes hidden elements
+        const textContent = $clone[0].innerText;
+        
+        // Clean up excessive whitespace
+        const cleanedText = textContent
             .replace(/\n{3,}/g, '\n\n')  // Replace 3+ newlines with 2
-            .trim();                      // Remove leading/trailing whitespace
+            .trim();                       // Remove leading/trailing whitespace
         
         // Copy to clipboard
-        navigator.clipboard.writeText(cleanedReport).then(() => {
+        navigator.clipboard.writeText(cleanedText).then(() => {
             // Show success feedback
             const originalText = $(this).html();
             $(this).html("Copied!");

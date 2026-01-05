@@ -1,10 +1,5 @@
 window.manualConfig = [
     {
-        "handle": "EFVisual",
-        "match": "",
-        "label": "Visual EF",
-        "unit": "%"
-    },{
         "handle": "LVPLAX",
         "match": "",
         "label": "LV (PLAX)",

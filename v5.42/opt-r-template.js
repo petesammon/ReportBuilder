@@ -25,9 +25,9 @@ window.outputTemplateString = `<!--button:mHeader--><!--@mHeader-->US Trans-Thor
 <!--@pDemo-->{{pDemo}}<!--/@pDemo-->
 
 <!--button:mLV--><!--@mLV-->Left Ventricle:<!--/@mLV-->
-{{#if pRWMA ~}}{{pRWMA}}
-{{/if~}}{{#if pLVComments ~}}{{pLVComments}}
-{{/if~}}{{pLVSF}}
+<!--if:pRWMA-->{{pRWMA}}<!--/if-->
+<!--if:pLVComments-->{{pLVComments}}<!--/if-->
+{{pLVSF}}
 {{pLVH}}
 {{pLVD}}
 {{pDiastology}}{{pLAP}}
@@ -36,8 +36,8 @@ window.outputTemplateString = `<!--button:mHeader--><!--@mHeader-->US Trans-Thor
 {{pLVEF}}
 
 <!--button:mMV--><!--@mMV-->Mitral Valve:<!--/@mMV-->
-{{pMV}} {{pMS}} {{pMR}}{{#if pMVMeasurements}}
-{{pMVMeasurements}}{{/if}}
+{{pMV}} {{pMS}} {{pMR}}
+<!--if:pMVMeasurements-->{{pMVMeasurements}}<!--/if-->
 
 <!--button:mLA--><!--@mLA-->Left Atrium:<!--/@mLA-->
 {{pLA}} <!--@LAESV-->LA volume (Biplane) = {{LAESV}}, Indexed = {{LAESVInd}} (Normal = <34ml/m2, Borderline dilated = 34-38ml/m2, Dilated = >38ml/m2)<!--/@LAESV-->
@@ -62,8 +62,8 @@ window.outputTemplateString = `<!--button:mHeader--><!--@mHeader-->US Trans-Thor
 
 <!--button:mTV--><!--@mTV-->Tricuspid Valve:<!--/@mTV-->
 {{pTV}} {{pTS}} {{pTR}}
-{{#if pTVMeasurements ~}}{{pTVMeasurements}}
-{{/if~}}{{pRVtoRA}}
+<!--if:pTVMeasurements-->{{pTVMeasurements}}<!--/if-->
+{{pRVtoRA}}
 
 <!--button:mPV--><!--@mPV-->Pulmonary Valve:<!--/@mPV-->
 {{pPV}} {{pPS}} {{pPR}}
@@ -75,8 +75,8 @@ window.outputTemplateString = `<!--button:mHeader--><!--@mHeader-->US Trans-Thor
 <!--@pPASP-->Pulmonary artery systolic pressure {{pPASP}}.<!--/@pPASP-->
 {{pPPHT}}
 {{pASD}}
-{{#if pPlEff ~}}{{pPlEff}}
-{{/if~}}{{pPEff}}
+<!--if:pPlEff-->{{pPlEff}}<!--/if-->
+{{pPEff}}
 
 <!--button:mPeffFull--><!--@mPeffFull-->Pericardial Effusion:<!--/@mPeffFull-->
 {{pEffSize}}

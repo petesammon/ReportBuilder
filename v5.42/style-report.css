@@ -42,9 +42,11 @@ button {
 }
 
 #copy-report {
-    width: 98%;
+    display: block;
+    width: 97%;
+    max-width: 1000px;
     box-sizing: border-box;
-    margin: 0 auto;
+    float: left;
 }
 
 section {
@@ -201,6 +203,7 @@ th {
 .template-options-table .param-label {
     font-weight: 500;
     white-space: nowrap;
+    text-align: right;
 }
 
 .template-options-table .param-edit {
@@ -294,6 +297,18 @@ th {
 .modal-exclude-button:hover {
     background-color: var(--pico-secondary-hover-background);
     border-color: var(--pico-secondary-hover-border);
+}
+
+/* Modal reset-trigger-button - orange style for defaultHidden sections */
+.modal-exclude-button.reset-trigger-button {
+    background-color: #ff8c00; /* Dark orange */
+    border-color: #ff8c00;
+    color: white;
+}
+
+.modal-exclude-button.reset-trigger-button:hover {
+    background-color: #ff7700;
+    border-color: #ff7700;
 }
 
 /* Modal back button */
@@ -781,25 +796,88 @@ hr {
 }
 
 .report-contenteditable:focus {
-    outline: 2px solid var(--pico-primary-border);
-    outline-offset: -2px;
+    outline: none;
+    background-color: rgba(248, 249, 250, 0.5); /* Subtle lighter shade */
 }
 
-/* [v5.0] Parameter spans - subtle background highlight */
-.param-span {
-    background-color: rgba(118, 191, 68, 0.08); /* Very subtle green tint */
+/* ============================================================================
+   [v5.42] TEXT COLORING RULES
+   All text in contenteditable is wrapped and colored by type/state:
+   - Fixed text (unedited) = yellow
+   - Parameter (dropdown selected) = green
+   - Manual edit (any origin) = orange
+   - Measurement (imported) = blue
+   ============================================================================ */
+
+/* Base span styling */
+.param-span,
+.fixed-span,
+.manual-edit {
     border-radius: 2px;
     padding: 0 1px;
     transition: background-color 0.15s ease;
 }
 
-.param-span:hover {
-    background-color: rgba(118, 191, 68, 0.15); /* Slightly more visible on hover */
+/* Parameter spans - dropdown selected (green) */
+.param-span.param-default,
+.param-span.param-selected,
+.param-type-param:not(.param-manual):not(.param-imported) {
+    background-color: rgba(0, 185, 0, 0.05); /* Subtle green tint */
 }
 
-/* [v5.0] Manual edit spans - no special styling */
+.param-span.param-default:hover,
+.param-span.param-selected:hover,
+.param-type-param:not(.param-manual):not(.param-imported):hover {
+    background-color: rgba(0, 185, 0, 0.10); /* More visible on hover */
+}
+
+/* Measurement spans - imported (blue) */
+.param-span.param-imported,
+.param-type-measurement:not(.param-manual) {
+    background-color: rgba(0, 0, 255, 0.05); /* Subtle blue tint */
+}
+
+.param-span.param-imported:hover,
+.param-type-measurement:not(.param-manual):hover {
+    background-color: rgba(0, 0, 255, 0.10); /* More visible on hover */
+}
+
+/* Fixed text spans - unedited (yellow) */
+.fixed-span.param-fixed,
+.fixed-span.param-default {
+    background-color: rgba(255, 255, 0, 0.05); /* Subtle yellow tint */
+}
+
+.fixed-span.param-fixed:hover,
+.fixed-span.param-default:hover {
+    background-color: rgba(255, 255, 0, 0.10); /* More visible on hover */
+}
+
+/* Manual edit - ANY span that's been manually edited (orange) */
+/* This applies to param spans, fixed spans, and manual-edit spans */
+.param-manual,
+.param-span.param-manual,
+.fixed-span.param-manual,
+.manual-edit.param-manual,
 .manual-edit {
-    /* Intentionally no background - indistinguishable from regular text */
+    background-color: rgba(255, 0, 0, 0.05); /* Subtle orange tint */
+}
+
+.param-manual:hover,
+.param-span.param-manual:hover,
+.fixed-span.param-manual:hover,
+.manual-edit.param-manual:hover,
+.manual-edit:hover {
+    background-color: rgba(255, 0, 0, 0.10); /* More visible on hover */
+}
+
+/* Unknown/uncategorized (grey) */
+.param-span.param-unknown {
+    background-color: rgba(0, 0, 0, 0.05); /* Very subtle grey tint */
+}
+
+.param-span.param-unknown:hover {
+    background-color: rgba(0, 0, 0, 0.10); /* Slightly more visible on hover */
 }
 
 .section-preview {
@@ -902,3 +980,72 @@ hr {
     background-color: rgba(118, 191, 68, 0.05);
 }
 */
+
+/* [v5.4] If-block wrapper - wraps conditional parameters for granular updates */
+.param-block {
+    /* Inline display - doesn't affect layout */
+    display: inline;
+}
+
+/* Add line break BEFORE non-empty param-blocks */
+.param-block:not(.block-empty)::before {
+    content: "\A";
+    white-space: pre;
+}
+
+/* Hide empty param-blocks entirely */
+.param-block.block-empty {
+    display: none;
+}
+
+/* ============================================================================
+   [v5.42] MEASUREMENT INPUT IN MODALS
+   Styles for measurement input rows within modal dialogs
+   ============================================================================ */
+
+/* Measurement input row - same styling as parameter rows */
+.measurement-input-row td {
+    padding: 0.35rem 0.5rem;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    vertical-align: middle;
+}
+
+/* Measurement input wrapper - contains input + unit */
+.measurement-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Measurement input field */
+.modal-measurement-input {
+    flex: 1;
+    max-width: 150px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    margin: 0;
+}
+
+.modal-measurement-input:focus {
+    border-color: var(--pico-primary-border);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--pico-primary-rgb), 0.1);
+}
+
+/* Measurement unit display */
+.measurement-unit {
+    color: var(--pico-muted-color);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+/* Measurement section header (only used if separate section needed) */
+.measurement-section-header td {
+    background-color: #e9ecef !important;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #495057;
+    border-top: 2px solid #dee2e6;
+}

@@ -1,5 +1,5 @@
 /* jshint loopfunc: true, esversion: 11 */
-/* EchoTools v5.2 - Modal-centric refactoring with robust parameter tracking */
+/* EchoTools v5.42 - Decoupled modalKey, full text wrapping with registry storage */
 
 jQuery(document).ready(function () {
     // Show the options section
@@ -29,36 +29,91 @@ jQuery(document).ready(function () {
     let expectedButtonCount = 0;
     let isRestoringButtons = false;
     let isFixingCursor = false;
+    
+    // [v5.42] Counter for unique fixed text IDs
+    let fixedTextIdCounter = 0;
+    let manualEditIdCounter = 0;
 
     // ============================================================================
-    // VARIABLE REGISTRY (v5.2)
-    // Central data store for all parameters and measurements with metadata
+    // VARIABLE REGISTRY (v5.42)
+    // Central data store for all parameters, measurements, fixed text, and manual edits
+    // modalKey is NO LONGER stored in registry - use window.options for modal membership
     // ============================================================================
     
     /**
-     * Variable Registry - stores value, modalKey, type, and state for every variable
+     * Variable Registry - stores value, type, and state for every variable
+     * 
+     * [v5.42] modalKey REMOVED from registry entries
+     * Modal membership is determined by looking up window.options when needed
+     * This allows same parameter to be controlled by multiple modals
      * 
      * Structure:
      * {
      *   'pLVSize': { 
      *     value: 'Normal LV size',
-     *     modalKey: 'modalLV',
      *     type: 'param',
      *     state: 'default' | 'selected' | 'manual'
      *   },
      *   'LVEF': {
      *     value: '55%',
-     *     modalKey: 'modalLV', 
      *     type: 'measurement',
      *     state: 'imported' | 'manual',
      *     unit: '%'
+     *   },
+     *   'fixed-pQuality-prefix': {
+     *     value: 'Technical Quality: ',
+     *     type: 'fixed',
+     *     state: 'default' | 'manual'
+     *   },
+     *   'manual-1735689234567-0': {
+     *     value: 'User typed this',
+     *     type: 'manual',
+     *     state: 'manual'
      *   }
      * }
      */
     const variableRegistry = {};
     
     /**
+     * [v5.42] Helper to get modalKey(s) for a parameter from options config
+     * Used for exclusion checking - NOT stored in registry
+     * @param {string} paramKey - Parameter name
+     * @returns {string[]} - Array of modalKeys this param belongs to
+     */
+    function getModalKeysForParam(paramKey) {
+        const modalKeys = [];
+        if (window.options && Array.isArray(window.options)) {
+            window.options.forEach(group => {
+                if (!group.modalKey || !group.variables) return;
+                if (group.variables.includes(paramKey)) {
+                    modalKeys.push(group.modalKey);
+                }
+            });
+        }
+        return modalKeys;
+    }
+    
+    /**
+     * [v5.42] Check if a parameter is excluded/hidden based on its modal membership
+     * A param is excluded if ALL its modals are excluded/hidden
+     * @param {string} paramKey - Parameter name
+     * @returns {boolean} - True if param should be hidden
+     */
+    function isParamExcluded(paramKey) {
+        const modalKeys = getModalKeysForParam(paramKey);
+        if (modalKeys.length === 0) return false;
+        
+        // Param is excluded only if ALL its modals are excluded/hidden
+        return modalKeys.every(modalKey => {
+            const isExcluded = window.excludedModals && window.excludedModals[modalKey];
+            const isHidden = window.hiddenModals && window.hiddenModals[modalKey];
+            return isExcluded || isHidden;
+        });
+    }
+    
+    /**
      * Initialize variable registry from config files
+     * [v5.42] modalKey is NO LONGER stored - use getModalKeysForParam() when needed
      * Called once after all configs are loaded
      */
     function initializeVariableRegistry() {
@@ -68,30 +123,15 @@ jQuery(document).ready(function () {
         // Clear preprocessed template so it gets rebuilt with new registry
         clearPreprocessedTemplate();
         
-        // 1. Register all parameters with their modalKeys (from options/form config)
-        if (window.options && Array.isArray(window.options)) {
-            window.options.forEach(group => {
-                if (!group.modalKey || !group.params) return;
-                const modalKey = group.modalKey;
-                const paramList = Array.isArray(group.params) ? group.params : Object.keys(group.params);
-                
-                paramList.forEach(paramKey => {
-                    variableRegistry[paramKey] = {
-                        value: '',
-                        modalKey: modalKey,
-                        type: 'param',
-                        state: 'default'
-                    };
-                });
-            });
-        }
+        // Reset ID counters
+        fixedTextIdCounter = 0;
+        manualEditIdCounter = 0;
         
-        // 2. Register all measurements with their modalKeys (from measurements config)
+        // 1. Register all measurements FIRST (from measurements config - opt-m-table.js)
+        // [v5.42] No modalKey stored
         if (measurements && Array.isArray(measurements)) {
             measurements.forEach(group => {
                 if (!group.items) return;
-                const modalKeys = Array.isArray(group.modalKey) ? group.modalKey : [group.modalKey];
-                const primaryModalKey = modalKeys[0] || null;
                 
                 group.items.forEach(measurementKey => {
                     // Get unit from parseConfigMap if available
@@ -100,11 +140,30 @@ jQuery(document).ready(function () {
                     
                     variableRegistry[measurementKey] = {
                         value: '',
-                        modalKey: primaryModalKey,
                         type: 'measurement',
                         state: 'imported',
                         unit: unit
                     };
+                });
+            });
+        }
+        
+        // 2. Register all parameters (from options/modal config)
+        // [v5.42] Use variables array, check window.parameters to identify params
+        if (window.options && Array.isArray(window.options)) {
+            window.options.forEach(group => {
+                if (!group.modalKey || !group.variables) return;
+                
+                group.variables.forEach(varKey => {
+                    // Only register as param if it's in window.parameters
+                    // and NOT already registered as a measurement
+                    if (window.parameters && window.parameters[varKey] && !variableRegistry[varKey]) {
+                        variableRegistry[varKey] = {
+                            value: '',
+                            type: 'param',
+                            state: 'default'
+                        };
+                    }
                 });
             });
         }
@@ -124,13 +183,15 @@ jQuery(document).ready(function () {
             });
         }
         
-        // 4. Register Summary (special case - belongs to Summary modal)
+        // 4. Register Summary (special case)
         variableRegistry['Summary'] = {
             value: '',
-            modalKey: 'Summary',
             type: 'param',
             state: 'default'
         };
+        
+        // 5. [v5.42] Fixed text entries will be registered during template preprocessing
+        // They are created dynamically based on field markers in the template
         
         console.log('[VariableRegistry] Initialized with', Object.keys(variableRegistry).length, 'variables');
         
@@ -155,11 +216,43 @@ jQuery(document).ready(function () {
             console.warn(`[VariableRegistry] Auto-registering unknown variable: ${key}`);
             variableRegistry[key] = {
                 value: value,
-                modalKey: null,
                 type: 'unknown',
                 state: state || 'manual'
             };
         }
+    }
+    
+    /**
+     * [v5.42] Register a manual edit in the registry
+     * @param {string} id - Unique ID for this manual edit
+     * @param {string} value - Text content
+     * @returns {string} - The ID used (may be generated if not provided)
+     */
+    function registerManualEdit(id, value) {
+        const editId = id || `manual-${Date.now()}-${manualEditIdCounter++}`;
+        variableRegistry[editId] = {
+            value: value,
+            type: 'manual',
+            state: 'manual'
+        };
+        return editId;
+    }
+    
+    /**
+     * [v5.42] Register fixed text in the registry
+     * @param {string} fieldName - Field marker name (e.g., 'pQuality')
+     * @param {string} value - Fixed text content
+     * @returns {string} - The registry key used
+     */
+    function registerFixedText(fieldName, value) {
+        const fixedId = `fixed-${fieldName}-${fixedTextIdCounter++}`;
+        variableRegistry[fixedId] = {
+            value: value,
+            type: 'fixed',
+            state: 'default',
+            fieldName: fieldName  // Track which field this belongs to
+        };
+        return fixedId;
     }
     
     /**
@@ -174,7 +267,6 @@ jQuery(document).ready(function () {
             const config = parseConfigMap[key];
             variableRegistry[key] = {
                 value: '',
-                modalKey: null,
                 type: 'measurement',
                 state: state || 'imported',
                 unit: config?.unit || ''
@@ -218,11 +310,14 @@ jQuery(document).ready(function () {
     }
     
     /**
-     * Preprocess template to wrap {{variables}} in spans with full metadata
+     * [v5.42] Preprocess template to wrap {{variables}} in spans
      * Called before Handlebars compilation
      * 
      * This ensures spans are created with correct identity at point of creation,
      * rather than reverse-engineering after the fact.
+     * 
+     * [v5.42] data-modal attribute REMOVED - spans identified by data-param only
+     * This allows same parameter to be controlled by multiple modals
      * 
      * @param {string} templateHTML - Raw Handlebars template
      * @returns {string} - Template with variables wrapped in spans
@@ -245,14 +340,12 @@ jQuery(document).ready(function () {
             
             const entry = variableRegistry[varName];
             
-            if (entry && entry.modalKey) {
-                // Wrap in span with full metadata
-                // Preserve whitespace control characters (~)
-                // The {{varName}} stays inside so Handlebars will fill in the value
-                return `<span data-param="${varName}" data-modal="${entry.modalKey}" class="param-span">{{${leadingTilde}${varName}${trailingTilde}}}</span>`;
-            } else if (entry) {
-                // Has entry but no modalKey (edge case)
-                return `<span data-param="${varName}" class="param-span">{{${leadingTilde}${varName}${trailingTilde}}}</span>`;
+            if (entry) {
+                // [v5.42] Wrap in span with data-param and state class ONLY
+                // No data-modal attribute - modal membership looked up when needed
+                const stateClass = entry.state ? ` param-${entry.state}` : '';
+                const typeClass = entry.type ? ` param-type-${entry.type}` : '';
+                return `<span data-param="${varName}" class="param-span${stateClass}${typeClass}">{{${leadingTilde}${varName}${trailingTilde}}}</span>`;
             }
             
             // Not in registry - leave as-is for Handlebars to handle
@@ -300,17 +393,16 @@ jQuery(document).ready(function () {
     function extractModalVariables(modalKey) {
         const variables = [];
         
-        // 1. Get parameters from options config
+        // [v5.42] Get variables from options config (unified variables array)
         if (options && Array.isArray(options)) {
             options.forEach(section => {
-                if (section.modalKey === modalKey && section.params) {
-                    const paramList = Array.isArray(section.params) ? section.params : Object.keys(section.params);
-                    variables.push(...paramList);
+                if (section.modalKey === modalKey && section.variables) {
+                    variables.push(...section.variables);
                 }
             });
         }
         
-        // 2. Get measurements from measurements config
+        // 2. Get measurements from measurements config (opt-m-table.js)
         if (measurements && Array.isArray(measurements)) {
             measurements.forEach(section => {
                 // modalKey can be string or array
@@ -609,6 +701,10 @@ jQuery(document).ready(function () {
      * @param {string} modalKey - The section to toggle
      * @returns {boolean} - New exclusion state (true = excluded)
      */
+    /**
+     * [v5.4] Toggle section exclusion with granular DOM updates
+     * Instead of full re-render, we show/hide section content in the DOM
+     */
     function toggleModalExclusion(modalKey) {
         // Initialize excludedModals if needed
         if (!window.excludedModals) {
@@ -622,9 +718,67 @@ jQuery(document).ready(function () {
         // Also update local reference
         excludedModals[modalKey] = window.excludedModals[modalKey];
         
-        // Regenerate report
-        if (typeof window.updateReportTextarea === 'function') {
-            window.updateReportTextarea();
+        const isNowExcluded = window.excludedModals[modalKey];
+        
+        // [v5.4] Granular DOM update instead of full re-render
+        const $textarea = $('#report-textarea');
+        const $buttonGroup = $textarea.find(`.inline-button-group[data-modal="${modalKey}"]`);
+        
+        if ($buttonGroup.length) {
+            // Get the section config
+            const section = window.options.find(s => s.modalKey === modalKey);
+            const modalTitle = section ? section.modalTitle : modalKey;
+            
+            if (isNowExcluded) {
+                // Update button to show + only
+                $buttonGroup.html(`<button type="button" class="inline-exclude-button excluded" data-modal="${modalKey}" title="Include section in report">+</button>`);
+            } else {
+                // Update button to show edit + exclude
+                $buttonGroup.html(`<button type="button" class="inline-edit-button" data-modal="${modalKey}" title="Edit ${modalTitle}">✎</button><button type="button" class="inline-exclude-button" data-modal="${modalKey}" title="Exclude section from report">−</button>`);
+            }
+            
+            // Hide/show field wrappers for this section
+            const sectionVariables = extractModalVariables(modalKey);
+            sectionVariables.forEach(varName => {
+                const $fieldWrapper = $textarea.find(`.field-wrapper[data-field="${varName}"]`);
+                if ($fieldWrapper.length) {
+                    if (isNowExcluded) {
+                        $fieldWrapper.hide();
+                    } else {
+                        $fieldWrapper.show();
+                    }
+                }
+                
+                // [v5.42] Clear/restore param spans - now using data-param only
+                const $paramSpan = $textarea.find(`[data-param="${varName}"]`);
+                if ($paramSpan.length) {
+                    if (isNowExcluded) {
+                        $paramSpan.data('savedValue', $paramSpan.text());
+                        $paramSpan.text('');
+                    } else {
+                        // Restore from saved value or metrics
+                        const savedValue = $paramSpan.data('savedValue');
+                        const metricsValue = window.metrics ? window.metrics[varName] : '';
+                        $paramSpan.text(savedValue || metricsValue || '');
+                    }
+                }
+            });
+            
+            // Also handle the section heading field wrapper (uses modalKey as field name)
+            const $sectionFieldWrapper = $textarea.find(`.field-wrapper[data-field="${modalKey}"]`);
+            if ($sectionFieldWrapper.length) {
+                if (isNowExcluded) {
+                    $sectionFieldWrapper.hide();
+                } else {
+                    $sectionFieldWrapper.show();
+                }
+            }
+        } else {
+            // Fallback: if button not found, do full regenerate
+            console.warn(`[toggleModalExclusion] Button group not found for ${modalKey}, falling back to full re-render`);
+            if (typeof updateReportTextarea === 'function') {
+                updateReportTextarea();
+            }
         }
         
         // Update summary (excluded sections shouldn't contribute)
@@ -910,6 +1064,16 @@ jQuery(document).ready(function () {
                     parseConfigMap[item.handle] = item;
                 });
                 
+                // Also add manual measurements to parseConfigMap so units are available
+                if (window.manualConfig && Array.isArray(window.manualConfig)) {
+                    window.manualConfig.forEach(item => {
+                        // Don't overwrite parseConfig entries, but add manual ones
+                        if (!parseConfigMap[item.handle]) {
+                            parseConfigMap[item.handle] = item;
+                        }
+                    });
+                }
+                
                 console.log(`Loaded input config: ${config.name}`);
                 
                 // Regenerate the measurements table
@@ -984,7 +1148,7 @@ jQuery(document).ready(function () {
                 // Check if this is a calculated field
                 const isCalculated = typeof calculations !== 'undefined' && calculations[handle];
                 const calculatedClass = isCalculated ? ' calculated-field' : '';
-                const readonlyAttr = isCalculated ? ' readonly' : '';
+                // Calculated fields are now editable, but keep the class for styling distinction
                 
                 // Check if this should be full width (for fields like DOB, Operator)
                 const isFullWidth = config.full === true;
@@ -997,8 +1161,7 @@ jQuery(document).ready(function () {
                             <input type="text" 
                                    class="measurement-input${calculatedClass}${fullWidthClass}" 
                                    data-handle="${handle}" 
-                                   value="${currentValue}"
-                                   ${readonlyAttr} />
+                                   value="${currentValue}" />
                             ${!isFullWidth ? `<span class="unit-label">${unit}</span>` : ''}
                         </td>
                     </tr>
@@ -1237,26 +1400,23 @@ jQuery(document).ready(function () {
         const resultsWithUnits = prepareResultsWithUnits();
         const summaryData = { ...resultsWithUnits, ...metrics };
         
-        // Collect summary items from modal checkboxes
+        // [v5.42] Collect summary items from modal checkboxes
         options.forEach(section => {
-            if (!section.params) return;
+            if (!section.variables) return;
             
             // Skip this entire section if it's excluded OR hidden
             if (section.modalKey && (excludedModals[section.modalKey] || (window.hiddenModals && window.hiddenModals[section.modalKey]))) {
                 return;
             }
             
-            // [v5.0] Handle both array-based (new) and object-based (old) params
-            const paramList = Array.isArray(section.params) ? section.params : Object.keys(section.params || {});
-            
-            paramList.forEach(paramKey => {
-                // [v5.0] Look up parameter definition from global parameters
-                const option = window.parameters ? window.parameters[paramKey] : (section.params[paramKey] || null);
+            section.variables.forEach(varKey => {
+                // [v5.42] Look up parameter definition from global parameters
+                const option = window.parameters ? window.parameters[varKey] : null;
                 
                 if (!option || !option.enableSummary) return;
                 
-                const $checkbox = $(`#${paramKey}-summary-modal`);
-                const metricValue = metrics[paramKey];
+                const $checkbox = $(`#${varKey}-summary-modal`);
+                const metricValue = metrics[varKey];
                 
                 // Determine if checkbox is checked:
                 // - If modal exists (checkbox in DOM), use actual checkbox state
@@ -1267,7 +1427,7 @@ jQuery(document).ready(function () {
                     isChecked = $checkbox.is(':checked');
                 } else {
                     // Checkbox doesn't exist yet (modal not created) - use virtual state
-                    isChecked = window.summaryCheckboxStates?.[paramKey] ?? false;
+                    isChecked = window.summaryCheckboxStates?.[varKey] ?? false;
                 }
                 
                 // Include if either:
@@ -1291,8 +1451,8 @@ jQuery(document).ready(function () {
                         });
                         
                         // If not found and we have a tracked selected option, use that
-                        if (!selectedOption && window.selectedOptions && window.selectedOptions[paramKey]) {
-                            selectedOption = window.selectedOptions[paramKey];
+                        if (!selectedOption && window.selectedOptions && window.selectedOptions[varKey]) {
+                            selectedOption = window.selectedOptions[varKey];
                         }
                         
                         // If found and has summarytext, use that instead
@@ -1302,8 +1462,8 @@ jQuery(document).ready(function () {
                     }
                     // For customtext options, use summarytext from selectedOptions
                     else if (option.options === "customtext") {
-                        if (window.selectedOptions && window.selectedOptions[paramKey]) {
-                            selectedOption = window.selectedOptions[paramKey];
+                        if (window.selectedOptions && window.selectedOptions[varKey]) {
+                            selectedOption = window.selectedOptions[varKey];
                             if (selectedOption.summarytext) {
                                 textToUse = selectedOption.summarytext;
                             }
@@ -1489,8 +1649,12 @@ jQuery(document).ready(function () {
         // This ensures modals can access the default values when they're created
         // BUT only set defaults if values don't already exist (preserve user selections)
         options.forEach(section => {
-            if (section.params) {
-                Object.entries(section.params).forEach(([key, option]) => {
+            if (section.variables) {
+                section.variables.forEach(varKey => {
+                    // Look up parameter definition from global parameters
+                    const option = window.parameters ? window.parameters[varKey] : null;
+                    if (!option) return; // Not a parameter (likely a measurement)
+                    
                     // Find default option (only if options is an array)
                     if (option.options && Array.isArray(option.options)) {
                         const defaultOption = option.options.find(opt => {
@@ -1501,16 +1665,16 @@ jQuery(document).ready(function () {
                         if (defaultOption) {
                             const title = typeof defaultOption === 'string' ? defaultOption : defaultOption.title;
                             // Only set default if value doesn't already exist (preserve user selections)
-                            if (metrics[key] === undefined) {
-                                metrics[key] = title || "";
+                            if (metrics[varKey] === undefined) {
+                                metrics[varKey] = title || "";
                             }
                         }
                     }
                     // For customtext options, initialize with empty string
                     else if (option.options === "customtext") {
                         // Only set empty string if value doesn't already exist
-                        if (metrics[key] === undefined) {
-                            metrics[key] = "";
+                        if (metrics[varKey] === undefined) {
+                            metrics[varKey] = "";
                         }
                     }
                 });
@@ -1586,28 +1750,15 @@ jQuery(document).ready(function () {
         }
     }
     
-    // [v5.0] Granular update - only updates changed parameter spans (PERFORMANCE OPTIMIZATION)
-    // [v5.1] Falls back to full re-render if spans not found
-    // [v5.2] Uses data-modal attribute for precise span targeting
+    // [v5.42] Granular update - only updates changed parameter spans
+    // NEVER falls back to full re-render to preserve manual edits
+    // [v5.42] Uses data-param ONLY for span targeting (data-modal removed)
     function updateChangedParameters(changedParamKeys) {
         const $textarea = $('#report-textarea');
         
         if (!$textarea.length) {
             console.warn('ContentEditable textarea not found');
             return;
-        }
-        
-        // Build param -> modal mapping for precise targeting
-        const paramToModal = {};
-        if (window.options && Array.isArray(window.options)) {
-            window.options.forEach(group => {
-                if (!group.modalKey || !group.params) return;
-                const modalKey = group.modalKey;
-                const paramList = Array.isArray(group.params) ? group.params : Object.keys(group.params);
-                paramList.forEach(paramKey => {
-                    paramToModal[paramKey] = modalKey;
-                });
-            });
         }
         
         // Prepare data using shared utility
@@ -1640,48 +1791,48 @@ jQuery(document).ready(function () {
                 }
             }
             
-            // Get the modal this parameter belongs to
-            const modalKey = paramToModal[paramKey];
-            
-            // Check if parameter is excluded/hidden
-            let isExcludedOrHidden = false;
-            if (modalKey && (window.excludedModals || window.hiddenModals)) {
-                if ((window.excludedModals && window.excludedModals[modalKey]) ||
-                    (window.hiddenModals && window.hiddenModals[modalKey])) {
-                    isExcludedOrHidden = true;
-                }
-            }
+            // [v5.42] Check if parameter is excluded/hidden using helper function
+            const paramExcluded = isParamExcluded(paramKey);
             
             // If excluded/hidden, set to empty
-            if (isExcludedOrHidden) {
+            if (paramExcluded) {
                 newValue = '';
             }
             
-            // Find spans using BOTH data-param AND data-modal for precise targeting
-            // This ensures we only update spans belonging to the correct modal
-            let $spans;
-            if (modalKey) {
-                // Use both attributes for precise targeting
-                $spans = $textarea.find(`[data-param="${paramKey}"][data-modal="${modalKey}"]`);
-            } else {
-                // Fallback: no modal mapping, use param only
-                $spans = $textarea.find(`[data-param="${paramKey}"]`);
-            }
+            // [v5.42] Find spans using data-param ONLY (data-modal removed)
+            // All spans with this param get updated - allows cross-modal control
+            const $spans = $textarea.find(`[data-param="${paramKey}"]`);
             
             if ($spans.length > 0) {
                 $spans.each(function() {
                     $(this).text(newValue || '');
+                    
+                    // [v5.42] Apply state-based CSS class for color coding
+                    const entry = getRegistryEntry(paramKey);
+                    if (entry) {
+                        // Remove all state classes first
+                        $(this).removeClass('param-default param-selected param-manual param-imported param-unknown');
+                        
+                        // Add the current state class
+                        if (entry.state) {
+                            $(this).addClass(`param-${entry.state}`);
+                        }
+                    }
                 });
                 spansUpdated = true;
+                
+                // [v5.42] Toggle if-block visibility based on value
+                const $block = $textarea.find(`.param-block[data-block-param="${paramKey}"]`);
+                if ($block.length) {
+                    if (newValue && newValue.trim() !== '') {
+                        $block.removeClass('block-empty');
+                    } else {
+                        $block.addClass('block-empty');
+                    }
+                }
             }
+            // [v5.4] Span always exists - no fallback needed
         });
-        
-        // If no spans were updated, fall back to full re-render
-        if (!spansUpdated && changedParamKeys.length > 0) {
-            console.log('[updateChangedParameters] No spans found, falling back to full re-render');
-            updateReportTextarea();
-            return;
-        }
         
         // Restore cursor position if it was in the textarea
         if (wasInTextarea && savedRange) {
@@ -1693,6 +1844,49 @@ jQuery(document).ready(function () {
                 console.log('Could not restore cursor position');
             }
         }
+    }
+    
+    // [v5.42] Helper function to wrap fixed text portions within content
+    // Fixed text is any text that's not inside a param span
+    // Example: "Technical Quality: <span data-param="pQuality">Good</span>"
+    //   Fixed text = "Technical Quality: "
+    //   Param span = <span data-param="pQuality">Good</span>
+    function wrapFixedTextInContent(content, fieldName) {
+        // Use a parsing approach to identify text segments vs span elements
+        // Split by span tags while preserving them
+        const spanRegex = /(<span[^>]*>[\s\S]*?<\/span>)/g;
+        const parts = content.split(spanRegex);
+        
+        let wrappedParts = [];
+        let fixedTextIndex = 0;
+        
+        parts.forEach(part => {
+            if (!part) return; // Skip empty parts
+            
+            if (part.startsWith('<span')) {
+                // This is a span element - keep as-is
+                wrappedParts.push(part);
+            } else if (part.trim()) {
+                // This is fixed text - wrap it in a span and register
+                const fixedId = `fixed-${fieldName}-${fixedTextIndex++}`;
+                
+                // Register in variable registry
+                variableRegistry[fixedId] = {
+                    value: part,
+                    type: 'fixed',
+                    state: 'default',
+                    fieldName: fieldName
+                };
+                
+                // Wrap in span with data-fixed attribute
+                wrappedParts.push(`<span data-fixed="${fixedId}" class="fixed-span param-fixed">${part}</span>`);
+            } else if (part) {
+                // Whitespace-only text - preserve but don't wrap
+                wrappedParts.push(part);
+            }
+        });
+        
+        return wrappedParts.join('');
     }
     
     // [v5.2] Update ContentEditable report textarea with span-wrapped parameters
@@ -1712,7 +1906,7 @@ jQuery(document).ready(function () {
         const filteredData = filterExcludedModalData(data);
         
         // 3. Generate report using preprocessed template
-        // The preprocessed template has {{variables}} wrapped in spans with data-modal
+        // [v5.42] The preprocessed template has {{variables}} wrapped in spans with data-param
         let rawReport = '';
         try {
             const template = getPreprocessedTemplate();
@@ -1734,9 +1928,7 @@ jQuery(document).ready(function () {
         }
     }
     
-    // [v5.2] Post-process report: field markers and button placement
-    // Parameter wrapping is now handled by preprocessTemplate, so this just handles
-    // field markers, button placement, and whitespace cleanup
+    // [v5.4] Post-process report: if-blocks, field markers, and button placement
     function postProcessReport(reportHTML, data) {
         let processed = reportHTML;
         
@@ -1744,8 +1936,26 @@ jQuery(document).ready(function () {
         const excludedVariables = data._excludedVariables || new Set();
         
         // ========================================================================
+        // IF-BLOCKS: Process <!--if:paramKey-->content<!--/if-->
+        // Creates inline span wrapper for granular updates
+        // CSS ::before adds line break for non-empty, display:none hides empty
+        // Consumes template newline - CSS provides visual line break instead
+        // ========================================================================
+        const ifBlockRegex = /\n?<!--if:(\w+)-->([\s\S]*?)<!--\/if-->/g;
+        
+        processed = processed.replace(ifBlockRegex, (match, paramKey, content) => {
+            const paramValue = data[paramKey] || '';
+            const isEmpty = !paramValue || paramValue.trim() === '';
+            const emptyClass = isEmpty ? ' block-empty' : '';
+            
+            // Span is always inline, CSS ::before adds line break when not empty
+            return `<span class="param-block${emptyClass}" data-block-param="${paramKey}">${content.trim()}</span>`;
+        });
+        
+        // ========================================================================
         // FIELD MARKERS: Process <!--@FieldName-->content<!--/@FieldName-->
-        // These wrap fixed text + variables together for exclude/include behavior
+        // [v5.42] These now wrap fixed text in spans and register in variable registry
+        // - Fixed text outside param spans gets its own span with data-fixed attribute
         // - Excluded variable: entire field is hidden (fixed text + variable)
         // - Included but empty: field is shown (fixed text + empty variable)
         // ========================================================================
@@ -1758,9 +1968,13 @@ jQuery(document).ready(function () {
                 return '';
             }
             
+            // [v5.42] Wrap fixed text portions (text outside of param spans)
+            // Parse content to identify and wrap fixed text segments
+            const wrappedContent = wrapFixedTextInContent(content, fieldName);
+            
             // Field is included - wrap in field wrapper span
             const hadNewline = match.endsWith('\n');
-            return `<span class="field-wrapper" data-field="${fieldName}">${content}</span>${hadNewline ? '\n' : ''}`;
+            return `<span class="field-wrapper" data-field="${fieldName}">${wrappedContent}</span>${hadNewline ? '\n' : ''}`;
         });
         
         // ========================================================================
@@ -1788,8 +2002,8 @@ jQuery(document).ready(function () {
                 // Summary only gets edit button
                 buttonHTML = `<button type="button" class="inline-edit-button" data-modal="${modalKey}" title="Edit Summary">✎</button>`;
             } else if (isTriggered) {
-                // Triggered sections get only the orange [x] reset button
-                buttonHTML = `<button type="button" class="inline-exclude-button reset-trigger-button" data-modal="${modalKey}" title="Close and reset to default">×</button>`;
+                // Triggered sections get edit button AND orange [x] reset button
+                buttonHTML = `<button type="button" class="inline-edit-button" data-modal="${modalKey}" title="Edit ${modalGroup.modalTitle}">✎</button><button type="button" class="inline-exclude-button reset-trigger-button" data-modal="${modalKey}" title="Close and reset to default">×</button>`;
             } else {
                 // Regular sections get exclude button always, edit button only when not excluded
                 const excludeText = isExcluded ? '+' : '−';
@@ -1818,17 +2032,22 @@ jQuery(document).ready(function () {
         // WHITESPACE CLEANUP
         // ========================================================================
         
-        // [v5.2] Remove param spans that are completely empty (just contain whitespace)
-        // This happens when variables are cleared for hidden/excluded sections
-        processed = processed.replace(/<span[^>]*data-param="[^"]*"[^>]*>\s*<\/span>/g, '');
+        // [v5.4] Keep all param spans - needed for granular updates
+        // Empty param spans are invisible, param-block spans handle visibility via CSS
         
         // [v5.2] Remove field wrapper spans that are completely empty
         processed = processed.replace(/<span[^>]*class="field-wrapper"[^>]*>\s*<\/span>/g, '');
         
-        // Clean up lines that only contain whitespace
+        // Clean up lines that only contain whitespace or empty spans
+        // This handles hidden modal content (like mPEffFull)
+        // [v5.4] Preserve lines containing param-block (they use CSS for visibility)
         processed = processed
             .split('\n')
             .map(line => {
+                // Preserve lines with param-block spans - they use CSS for visibility
+                if (line.includes('param-block') || line.includes('data-block-param')) {
+                    return line;
+                }
                 // Check if line only contains HTML tags (spans) with no text content
                 const textOnly = line.replace(/<[^>]+>/g, '').trim();
                 return textOnly === '' ? '' : line;
@@ -2398,9 +2617,19 @@ jQuery(document).ready(function () {
     window.variableRegistry = variableRegistry;
     window.initializeVariableRegistry = initializeVariableRegistry;
     window.updateRegistryValue = updateRegistryValue;
+    
+    // [v5.42] New registry functions
+    window.registerManualEdit = registerManualEdit;
+    window.registerFixedText = registerFixedText;
+    window.getModalKeysForParam = getModalKeysForParam;
+    window.isParamExcluded = isParamExcluded;
     window.updateRegistryMeasurement = updateRegistryMeasurement;
     window.getRegistryEntry = getRegistryEntry;
     window.getRegistryValues = getRegistryValues;
+    
+    // [v5.42] Measurement data exports
+    window.results = results;  // Parsed measurement values
+    window.getParseConfigMap = function() { return parseConfigMap; };  // Measurement metadata
     
     // Initialize - load default report config
     window.initializeReportForm = function() {
@@ -2432,6 +2661,14 @@ jQuery(document).ready(function () {
         
         // Remove button groups (edit/exclude buttons) from the clone
         $clone.find('.inline-button-group').remove();
+        
+        // [v5.4] Process param-block spans: CSS adds line breaks via ::before
+        // Convert CSS-generated line breaks to actual line breaks in HTML
+        $clone.find('.param-block:not(.block-empty)').each(function() {
+            // Insert an actual line break before non-empty param-blocks
+            // This replicates the CSS ::before { content: "\A"; } effect
+            $(this).before('\n');
+        });
         
         // Get the visible text content from the cleaned clone
         // innerText preserves visual line breaks and excludes hidden elements

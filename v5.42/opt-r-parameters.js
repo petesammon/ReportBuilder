@@ -2,7 +2,7 @@ window.parameters = {
     pHeader: {
                 title: "Header",
                 options: [
-                    { label: "Default", title: "The report is compiled in accordance to a locally agreed combination of BSE Guidelines 2024 and ASE/EACVI guidelines 2016/2025. Unless specified in the report conclusion, it is the sole responsibility of the referring physician to act upon the findings of this study. In specific cases where delay may result in patient harm, sonographers will refer for urgent clinical support.", default: true, },    
+                    { label: "Default (UHBW 2025)", title: "The report is compiled in accordance to a locally agreed combination of BSE Guidelines 2024 and ASE/EACVI guidelines 2016/2025. Unless specified in the report conclusion, it is the sole responsibility of the referring physician to act upon the findings of this study. In specific cases where delay may result in patient harm, sonographers will refer for urgent clinical support.", default: true, },    
                     { label: "(none)", title: ""}
                 ],
             },
@@ -25,19 +25,19 @@ window.parameters = {
                 ],
             },
             pRhythm: {
-                title: "Rhythm",
+                title: "ECG Rhythm",
                 options: [
-                    { label: "Sinus rhythm", title: "Sinus rhythm", default: true },
-                    { label: "Atrial fibrillaion", title: "Atrial fibrillation" },
+                    { label: "Sinus Rhythm", title: "Sinus rhythm", default: true },
+                    { label: "Atrial Fibrillaion", title: "Atrial fibrillation" },
                     { label: "Paced", title: "Paced rhyhtm" },
                 ],
             },
             pDemo: {
-                title: "Patient Details",
+                title: "Height, Weight, BSA, BP",
                 options: [
-                    { label: "Default (Height, Weight, BSA, BP)", title: `Height: {{Height}}, Weight: {{Weight}}, BSA: {{BSA}}
+                    { label: "Default", title: `Height: {{Height}}, Weight: {{Weight}}, BSA: {{BSA}}
 BP: {{BP}}`, default: true },
-                    { label: "Height, Weight, BSA (no BP)", title: `Height: {{Height}}, Weight: {{Weight}}, BSA: {{BSA}}
+                    { label: "No BP (Height + Weight + BSA only)", title: `Height: {{Height}}, Weight: {{Weight}}, BSA: {{BSA}}
 BP: (not available)` },
                     { label: "BP only (Height and Weight not available)", title: `Height and Weight: (not available)
 BP: {{BP}}`, default: true },
@@ -88,10 +88,10 @@ BP: {{BP}}`, default: true },
             pLVD: {
                 title: "Dilatation",
                 options: [
-                    { label: "Not dilated", title: "No left ventricular dilatation", summarytext: "no dilatation.", default: true },
-                    { label: "Mild dilatation", title: "Mild left ventricular dilatation", summarytext: "mild dilatation." },
-                    { label: "Moderate dilatation", title: "Moderate left ventricular dilatation", summarytext: "moderate dilatation." },
-                    { label: "Severe dilatation", title: "Severe left ventricular dilatation", summarytext: "severe dilatation." },
+                    { label: "Not dilated", title: "No left ventricular dilatation.", summarytext: "no dilatation.", default: true },
+                    { label: "Mild dilatation", title: "Mild left ventricular dilatation.", summarytext: "mild dilatation." },
+                    { label: "Moderate dilatation", title: "Moderate left ventricular dilatation.", summarytext: "moderate dilatation." },
+                    { label: "Severe dilatation", title: "Severe left ventricular dilatation.", summarytext: "severe dilatation." },
                 ],
                 enableSummary: true,
                 summaryDefault: true,
@@ -123,20 +123,20 @@ BP: {{BP}}`, default: true },
                 summaryOrder: 4,
             },
             pLVMeasurements: {
-                title: "Measurement Template",
+                title: "LV Measurements",
                 options: [
-                    { label: "Default", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
+                    { label: "Default (Sinus Rhythm)", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
 Peak E velocity = {{EVel}}, E DecT = {{EDecT}}, Peak A velocity = {{AVel}}, E/A ratio = {{EARatio}}
 Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (averaged) = {{EEPrimeAv}}
 Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}`, default: true },
+                    { label: "Atrial Fibrillation", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
+Peak E velocity = {{EVel}}, E DecT = {{EDecT}}
+Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (septal) = {{EEPrimeSept}}
+Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}`},
                     { label: "Default + Volumes", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
 LVEDV = {{LVEDV}} (Indexed = {{LVEDVInd}}), LVESV = {{LVESV}} (Indexed = {{LVESVInd}})
 Peak E velocity = {{EVel}}, E DecT = {{EDecT}}, Peak A velocity = {{AVel}}, E/A ratio = {{EARatio}}
 Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (averaged) = {{EEPrimeAv}}
-Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}`},
-                    { label: "Atrial Fibrillation", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
-Peak E velocity = {{EVel}}, E DecT = {{EDecT}}
-Septal E prime = {{EPrimeSept}}, Lateral E prime = {{EPrimeLat}}, E/E prime (septal) = {{EEPrimeSept}}
 Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}`},
                     { label: "Oncology", title: `IVS = {{IVSd}}, PWd = {{LVPWd}}, LVIDd = {{LVIDd}}, LVIDs = {{LVIDs}}
 Peak E velocity = {{EVel}}, E DecT = {{EDecT}}, Peak A velocity = {{AVel}}, E/A ratio = {{EARatio}}
@@ -157,9 +157,11 @@ Septal S prime = {{SPrimeSept}}, Lateral S prime = {{SPrimeLat}}`},
             pLVEF: {
                 title: "EF Template",
                 options: [
-                    { label: "Default (BP + Auto + GLS)", title: `Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
-Global Averaged Longitudinal Strain = {{GLS}}`, default: true },
-                    { label: "BP + Visual", title: `Simpsons Biplane LVEF = {{EFBP}}, Visual EF = {{EFVisual}}`},
+                    { label: "Default (Auto + GLS)", title: `Auto EF = {{EFAuto}}
+Global Averaged Longitudinal Strain = {{GLS}}`, default: true,},
+                    { label: "Biplane + Auto + GLS", title: `Simpsons Biplane LVEF = {{EFBP}}, Auto EF = {{EFAuto}}
+Global Averaged Longitudinal Strain = {{GLS}}`},
+                    { label: "Biplane + Visual", title: `Simpsons Biplane LVEF = {{EFBP}}, Visual EF = {{EFVisual}}`},
                     { label: "Visual only", title: `Visual EF = {{EFVisual}}`},
                     { label: "Oncology", title: `Simpsons Biplane LVEF = {{EFBP}}
 Auto EF = {{EFAuto}}
@@ -348,9 +350,9 @@ LV CO = {{LVCO}} (Indexed = {{LVCI}})`},
                 summaryOrder: 30,
             },
             pAoMeasurements: {
-                title: "Gender",
+                title: "Aorta Dimensions",
                 options: [
-                    { label: "(Please select gender...)", title: `Sinus of Valsalva = {{SoV}}, Indexed to height = {{SoVI}} (Normal range, male: 14.8-23.2mm/m) (Normal range, female: 14.1-22.1mm/m)
+                    { label: "(Select gender...)", title: `Sinus of Valsalva = {{SoV}}, Indexed to height = {{SoVI}} (Normal range, male: 14.8-23.2mm/m) (Normal range, female: 14.1-22.1mm/m)
 Sinotubular Junction = {{StJ}}, Indexed to height = {{StJI}} (Normal range, male: 12.6-19.8mm/m) (Normal range, female: 12.2-19.4mm/m)
 Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, male: 12.6-21.4mm/m) (Normal range, female: 12.3-21.1mm/m)`, default: true },
                     { label: "Male", title: `Sinus of Valsalva = {{SoV}}, Indexed to height = {{SoVI}} (Normal range, male: 14.8-23.2mm/m)
@@ -491,8 +493,8 @@ TAPSE = {{TAPSE}}, S prime = {{RVS}}, FAC = {{FAC}}`},
             pRVtoRA: {
                 title: "TR Vmax",
                 options: [
-                    { label: "Vmax and MaxPG (Default)", title: `TR Vmax = {{TRVmax}}, TR MaxPG = {{TRMaxPG}}`, default: true },
-                    { label: "Vmax = insufficient for measurement", title: "TR Vmax = insufficient for measurement"},
+                    { label: "Default (Insufficient for measurement)", title: "TR Vmax = insufficient for measurement", default: true,},
+                    { label: "TR Vmax + MaxPG", title: `TR Vmax = {{TRVmax}}, TR MaxPG = {{TRMaxPG}}`},
                 ],
             },
             pTVMeasurements: {
@@ -593,7 +595,7 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
             pPASP: {
                 title: "ePASP",
                 options: [
-                    { label: "not estimated in the absence of TR Vmax", title: "not estimated in the absence of TR Vmax", default: true },
+                    { label: "(not estimated in the absence of TR Vmax)", title: "not estimated in the absence of TR Vmax", default: true },
                 ]
             },
             pPPHT: {
@@ -754,12 +756,13 @@ TV inflow: Vmax = {{EffTVVmax}}, Vmin = {{EffTVVmin}}; Variation = {{EffTVVar}} 
                 summaryOrder: 0,
             },
             spLV: {
-                title: "Ejection Fraction",
+                title: "EF - Summary",
                 options: [
-                    { label: "Biplane", title: "Estimated ejection fraction {{EFBP}}", default: true },
+                    { label: "Default (Biplane)", title: "Estimated ejection fraction {{EFBP}}", default: true },
                     { label: "Biplane + GLS", title: "Estimated ejection fraction {{EFBP}}, GLS {{GLS}}"},
                     { label: "Auto EF", title: "Estimated ejection fraction {{EFAuto}}"},
                     { label: "Auto EF + GLS", title: "Estimated ejection fraction {{EFAuto}}, GLS {{GLS}}"},
+                    { label: "Visual EF only", title: "Estimated ejection fraction {{EFVisual}}"},
                 ],
                 enableSummary: true,
                 summaryDefault: true,

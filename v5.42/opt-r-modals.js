@@ -1,17 +1,29 @@
 window.options = [
     {
         modalKey: "mHeader",
-        modalTitle: "Report Header",
-        params: [
-            "pHeader"
+        modalTitle: "Cheat Code (Normal Study)",
+        variables: [
+            "pHeader",
+            "pMachine",
+            "Operator1",
+            "pQuality",
+            "pDemo",
+            "pRhythm",
+            "HR",
+            "pLVMeasurements",
+            "pLVEF",
+            "EFVisual",
+            "pAoMeasurements",
+            "pRVtoRA",
+            "pPASP",
         ],
     },
     {
         modalKey: "mStudy",
-        modalTitle: "Study details",
-        params: [
-            "pQuality",
+        modalTitle: "Study Details",
+        variables: [
             "pMachine",
+            "pQuality",
             "pRhythm",
             "pDemo",
         ],
@@ -19,7 +31,7 @@ window.options = [
     {
         modalKey: "mLV",
         modalTitle: "Left Ventricle",
-        params: [
+        variables: [
             "pRWMA",
             "pLVComments",
             "pLVSF",
@@ -32,7 +44,7 @@ window.options = [
     {
         modalKey: "mLVMeasurements",
         modalTitle: "LV Measurements",
-        params: [
+        variables: [
             "pLVMeasurements",
             "pLVEF",
         ],
@@ -40,7 +52,7 @@ window.options = [
     {
         modalKey: "mMV",
         modalTitle: "Mitral Valve",
-        params: [
+        variables: [
             "pMV",
             "pMS",
             "pMR",
@@ -50,14 +62,14 @@ window.options = [
     {
         modalKey: "mLA",
         modalTitle: "Left Atrium",
-        params: [
+        variables: [
             "pLA",
         ],
     },
     {
         modalKey: "mAV",
         modalTitle: "Aortic Valve",
-        params: [
+        variables: [
             "pAV",
             "pAS",
             "pAR",
@@ -67,7 +79,7 @@ window.options = [
     {
         modalKey: "mAo",
         modalTitle: "Aorta",
-        params: [
+        variables: [
             "pAorta",
             "pAoMeasurements",
             "pCoarc",
@@ -76,7 +88,7 @@ window.options = [
     {
         modalKey: "mRV",
         modalTitle: "Right Ventricle",
-        params: [
+        variables: [
             "pRVF",
             "pRVD",
             "pRVH",
@@ -86,14 +98,14 @@ window.options = [
     {
         modalKey: "mRA",
         modalTitle: "Right Atrium",
-        params: [
+        variables: [
             "pRA",
         ],
     },
     {
         modalKey: "mTV",
         modalTitle: "Tricuspid Valve",
-        params: [
+        variables: [
             "pTV",
             "pTS",
             "pTR",
@@ -104,7 +116,7 @@ window.options = [
     {
         modalKey: "mPV",
         modalTitle: "Pulmonary Valve",
-        params: [
+        variables: [
             "pPV",
             "pPS",
             "pPR",
@@ -115,7 +127,7 @@ window.options = [
     {
         modalKey: "mMisc",
         modalTitle: "Miscellaneous",
-        params: [
+        variables: [
             "pIVCD",
             "pPASP",
             "pPPHT",
@@ -129,7 +141,7 @@ window.options = [
         modalTitle: "Pericardial Effusion",
         defaultHidden: true,
         defaultExcluded: false,
-        params: [
+        variables: [
             "pEffSize",
             "pEffOther",
             "pEffMeasures",
@@ -145,7 +157,7 @@ window.options = [
     {
         modalKey: "Summary",
         modalTitle: "Summary",
-        params: [
+        variables: [
             "spTitle",
             "spLV",
             "spValves",

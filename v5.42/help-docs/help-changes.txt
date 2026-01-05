@@ -67,15 +67,49 @@ Updated in v5.35:
     X add visual EF measurment
 
 Updated in v5.4:
-    - significant refactor...
-        - remove vestigial lazy-loading functionality which is not being used
-        - move to 'never re-render html' model to preserve manual edits in text-area
+    X significant refactor...
+        X remove vestigial lazy-loading functionality which is not being used
+        X move to 'never re-render html' model to preserve manual edits in text-area
+    X very complex and time-consuming process to get conditional parameters working (<!--if: pRWMAs--> etc)
+    X calculate DVI
+    X renamed all options files for easier understanding/futureproofing
+    X LV Other Comments - automatically adding to summary despite 'summaryOnChange: false'
+    X copy to clipboard button needs to span both columns (and/or remove the 2-column structure entirely!)
+    X hidden modal needs [edit] button!!
+    X colouring of parameters in textarea
+    X remove green border from textarea-focus
+    
+    X allow measurements to be editable
+    X units not getting appended to 'manual' measurements
+    
+    X update parsing file and example file with new measurements
 
-Wider To Do list:
-    - copy to clipboard button needs to span both columns (and/or remove the 2-column structure entirely!)
+Updated to v5.42:
+    (I lost the file changes betwen there and now...!!!)
+    summary: 
+        X updated central registry 
+            X removed modalKey links to parameters (only used for modal creation)
+            X all manual text edits entered into registry for persistence (with unique ID)
+            X any clearerd text is kept as clear entry in registry (rather than registry entry deleted)
+        X ability to use multiple modals to control the same parameters
+        X text-coloring enabled and working well
+        X added measurement fields to modals (under 'variables' array)
+        X minimum dataset modal
+        
+        - BP on modal not working as expected...
+        - additional modal adding summary statements twice...
+        
+
+To Do list:
     - hidden sections need some greyed out text identifier...
     - consider template builder to hide/show sections?
-    - move to drag-drop/clickable wrapped strings (single click = focus/cursor position; options-click = select multiple strings; shift-click = select multiple contiguous strings; drag = move string(s) as a whole, double-click = open specific modal?)
-    - LV Other Comments - automatically adding to summary despite 'summaryOnChange: false'
-
-
+    
+    - Visual representation of report strings 
+        - cursor focus gives box style
+        - right click gives options
+        - drag and drop possible
+        
+    - New parsing, calculations
+    - Auto parameter selection based on measurements/other parameteres ('algorithm: "diastology" atribute?)
+    - Autovalidate operator?
+    - Edit measurements in modals?
