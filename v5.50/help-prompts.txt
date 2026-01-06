@@ -182,3 +182,9 @@ Here are my current v5.42 project files. I've been doing some testing since the 
     2. measurements table: keep as-is (should remain a persistent UI element) - but ensure that functions update to/from the central registry (not via the measurements table)
     3. consolidating state object: I would prefer 'results' and 'metrics' to be consolidated into the variableRegistry. I am happy with selectedOptions remaining seperate because it serves a specific purpose and is only called by the summary.
     4. #options-content container: if this can be slimmed down for the on-demand modal architecture, then perhaps use that route - it would reduce the risk of breaking dependent links. but if that approach has significant optimisation downsides then I am happy to reconsider.
+    
+    ---- right click to edit ----
+    ok then, let's give this a go. for edge cases: 
+    1) 'custom: true' I think this is an old function that has since been deprecated and can almost certainly be ignored (please flag this in the code for consideration for cleanup in future refactoring)
+    2) by options: "customtext" - igiven that there is no drop-down array specified, then simply highlight the full text string for manual editing (do not create anything)
+    3) read-only or excluded parameters - no action

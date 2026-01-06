@@ -2447,6 +2447,9 @@ jQuery(document).ready(function () {
         // [v5.1] Protect buttons using MutationObserver
         // If buttons get deleted by any means, restore them by re-rendering
         setupButtonProtection($reportTextarea[0]);
+        
+        // [v5.5] Setup right-click context menu for parameter options
+        setupParameterContextMenu($reportTextarea);
     }
     
     // [v5.1] MutationObserver to protect buttons from deletion
@@ -2675,6 +2678,408 @@ jQuery(document).ready(function () {
                 }, 300);
             }
         }
+    }
+    
+    // ============================================================================
+    // [v5.5] PARAMETER CONTEXT MENU
+    // Right-click on parameter text to show dropdown options
+    // ============================================================================
+    
+    let $contextMenu = null;
+    
+    /**
+     * Setup right-click context menu for parameter options
+     * @param {jQuery} $reportTextarea - The contenteditable element
+     */
+    function setupParameterContextMenu($reportTextarea) {
+        // Create context menu element if it doesn't exist
+        if (!$contextMenu) {
+            $contextMenu = $('<ul id="param-context-menu" class="param-context-menu"></ul>');
+            $('body').append($contextMenu);
+        }
+        
+        // Right-click handler
+        $reportTextarea.on('contextmenu', function(e) {
+            const $target = $(e.target);
+            const $paramSpan = $target.closest('[data-param]');
+            
+            // Only handle if clicking on a parameter span
+            if (!$paramSpan.length) {
+                hideContextMenu();
+                return; // Allow default context menu
+            }
+            
+            const paramKey = $paramSpan.data('param');
+            const paramConfig = window.parameters?.[paramKey];
+            
+            // No config found - allow default
+            if (!paramConfig) {
+                hideContextMenu();
+                return;
+            }
+            
+            // Check if parameter is in an excluded section
+            const modalKeys = getModalKeysForParam(paramKey);
+            const isExcluded = modalKeys.some(mk => excludedModals[mk] || (window.hiddenModals && window.hiddenModals[mk]));
+            if (isExcluded) {
+                hideContextMenu();
+                return; // No action for excluded parameters
+            }
+            
+            // [v5.5] TODO: custom: true is deprecated - flag for future cleanup
+            // Skip context menu for custom: true params
+            if (paramConfig.custom === true) {
+                hideContextMenu();
+                return;
+            }
+            
+            // Handle customtext - select text for manual editing
+            if (paramConfig.options === "customtext") {
+                e.preventDefault();
+                hideContextMenu();
+                selectParameterText($paramSpan[0]);
+                return;
+            }
+            
+            // Must have array options to show menu
+            if (!paramConfig.options || !Array.isArray(paramConfig.options)) {
+                hideContextMenu();
+                return;
+            }
+            
+            e.preventDefault();
+            showContextMenu(e.clientX, e.clientY, paramKey, paramConfig, $paramSpan[0]);
+        });
+        
+        // Click outside to close
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#param-context-menu').length) {
+                hideContextMenu();
+            }
+        });
+        
+        // Escape to close
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideContextMenu();
+            }
+        });
+        
+        // Scroll to close
+        $reportTextarea.on('scroll', hideContextMenu);
+        $(window).on('scroll', hideContextMenu);
+    }
+    
+    /**
+     * Show context menu with parameter options
+     * @param {number} x - X position
+     * @param {number} y - Y position
+     * @param {string} paramKey - Parameter key
+     * @param {object} paramConfig - Parameter configuration
+     * @param {HTMLElement} paramSpan - The span element that was clicked
+     */
+    function showContextMenu(x, y, paramKey, paramConfig, paramSpan) {
+        const currentValue = metrics[paramKey] || '';
+        
+        // Check if custom text is allowed for this parameter
+        const allowsCustomText = paramConfig.customText !== false;
+        
+        // Build menu items
+        let menuHtml = '';
+        
+        // Add custom text option at top if allowed
+        if (allowsCustomText) {
+            menuHtml += `<li class="context-menu-item context-menu-custom" data-param="${paramKey}" data-action="custom">(custom text)</li>`;
+            menuHtml += `<li class="context-menu-separator"></li>`;
+        }
+        
+        paramConfig.options.forEach((opt, index) => {
+            const isString = typeof opt === 'string';
+            const label = isString ? opt : (opt.label || opt.title);
+            const title = isString ? opt : opt.title;
+            const isSelected = title === currentValue;
+            const selectedClass = isSelected ? ' selected' : '';
+            
+            menuHtml += `<li class="context-menu-item${selectedClass}" data-param="${paramKey}" data-index="${index}" data-value="${title.replace(/"/g, '&quot;')}">${label}</li>`;
+        });
+        
+        $contextMenu.html(menuHtml);
+        
+        // Position menu
+        $contextMenu.css({
+            display: 'block',
+            left: x + 'px',
+            top: y + 'px'
+        });
+        
+        // Adjust if overflowing viewport
+        const menuRect = $contextMenu[0].getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        if (menuRect.right > viewportWidth) {
+            $contextMenu.css('left', (x - menuRect.width) + 'px');
+        }
+        if (menuRect.bottom > viewportHeight) {
+            $contextMenu.css('top', (y - menuRect.height) + 'px');
+        }
+        
+        // Setup click handler for custom text option
+        $contextMenu.find('.context-menu-custom').off('click').on('click', function() {
+            hideContextMenu();
+            selectParameterText(paramSpan);
+        });
+        
+        // Setup click handlers for regular menu items
+        $contextMenu.find('.context-menu-item:not(.context-menu-custom)').off('click').on('click', function() {
+            const paramKey = $(this).data('param');
+            const selectedValue = $(this).data('value');
+            const selectedIndex = $(this).data('index');
+            
+            handleContextMenuSelection(paramKey, selectedValue, selectedIndex);
+            hideContextMenu();
+        });
+    }
+    
+    /**
+     * Hide the context menu
+     */
+    function hideContextMenu() {
+        if ($contextMenu) {
+            $contextMenu.css('display', 'none');
+        }
+    }
+    
+    /**
+     * Handle selection from context menu
+     */
+    function handleContextMenuSelection(paramKey, selectedValue, selectedIndex) {
+        const paramConfig = window.parameters?.[paramKey];
+        if (!paramConfig) return;
+        
+        // Get the full option object
+        const selectedOption = paramConfig.options[selectedIndex];
+        const isObjectOption = typeof selectedOption === 'object';
+        
+        // Get label for threshold checking
+        const selectedLabel = isObjectOption ? (selectedOption.label || selectedOption.title) : selectedOption;
+        
+        // Determine state: default or selected
+        const state = (isObjectOption && selectedOption.default === true) ? 'default' : 'selected';
+        
+        // Update metrics
+        metrics[paramKey] = selectedValue;
+        
+        // [v5.5] Update variable registry
+        if (typeof updateRegistryValue === 'function') {
+            updateRegistryValue(paramKey, selectedValue, state);
+        }
+        
+        // Update selectedOptions with the full option object
+        if (isObjectOption) {
+            selectedOptions[paramKey] = selectedOption;
+        } else {
+            selectedOptions[paramKey] = { title: selectedOption };
+        }
+        
+        // Clear manual edit flag if it was set
+        if (window.manuallyEditedParams && window.manuallyEditedParams[paramKey]) {
+            delete window.manuallyEditedParams[paramKey];
+        }
+        
+        // ========================================================================
+        // Handle triggerModal - show/hide sections based on selection
+        // ========================================================================
+        const currentTriggerSection = isObjectOption && selectedOption.triggerModal ? selectedOption.triggerModal : null;
+        
+        // Check if ANY option in this parameter has a triggerModal
+        let paramTriggersSections = [];
+        if (paramConfig.options && Array.isArray(paramConfig.options)) {
+            paramConfig.options.forEach(opt => {
+                if (typeof opt !== 'string' && opt.triggerModal) {
+                    paramTriggersSections.push(opt.triggerModal);
+                }
+            });
+        }
+        
+        // Track if any sections need to be hidden (need full report update)
+        let sectionsWereHidden = false;
+        
+        // Hide any sections that were triggered by this parameter but are not currently selected
+        paramTriggersSections.forEach(triggeredSectionKey => {
+            if (triggeredSectionKey !== currentTriggerSection) {
+                const wasVisible = !hiddenModals[triggeredSectionKey];
+                
+                hiddenModals[triggeredSectionKey] = true;
+                excludedModals[triggeredSectionKey] = true;
+                triggeredModals[triggeredSectionKey] = false;
+                
+                if (wasVisible) {
+                    sectionsWereHidden = true;
+                }
+            }
+        });
+        
+        // Trigger the currently selected section (if any)
+        if (currentTriggerSection && typeof triggerModal === 'function') {
+            triggerModal(currentTriggerSection);
+        }
+        
+        // ========================================================================
+        // Handle summary checkbox auto-check/uncheck
+        // [v5.5] Update registry directly (modal may not exist in DOM)
+        // ========================================================================
+        if (paramConfig.enableSummary) {
+            const shouldCheck = determineContextMenuCheckboxState(selectedOption, selectedLabel, paramConfig, selectedValue);
+            
+            // Update registry directly
+            if (typeof setRegistrySummaryChecked === 'function') {
+                setRegistrySummaryChecked(paramKey, shouldCheck);
+            }
+            
+            // Handle summaryExclude
+            if (shouldCheck) {
+                handleContextMenuSummaryExclude(paramKey, paramConfig);
+            } else {
+                handleContextMenuSummaryRestore(paramKey, paramConfig);
+            }
+        }
+        
+        // ========================================================================
+        // Update display
+        // ========================================================================
+        if (typeof updateSummary === 'function') {
+            updateSummary();
+        }
+        
+        // Use appropriate update strategy
+        if (sectionsWereHidden && typeof updateReportTextarea === 'function') {
+            updateReportTextarea();
+        } else if (typeof updateChangedParameters === 'function') {
+            updateChangedParameters([paramKey]);
+            // Also update Summary since parameter changes affect it
+            updateChangedParameters(['Summary']);
+        }
+    }
+    
+    /**
+     * Determine if summary checkbox should be checked (context menu version)
+     * Mirrors logic from script-form.js determineCheckboxState
+     */
+    function determineContextMenuCheckboxState(selectedOption, selectedLabel, paramConfig, selectedValue) {
+        const isObjectOption = typeof selectedOption === 'object';
+        
+        // If this is the default option, check based on summaryDefault
+        if (isObjectOption && selectedOption.default === true) {
+            return paramConfig.summaryDefault === true;
+        }
+        // If summaryThreshold exists, check only labels against threshold
+        if (paramConfig.summaryThreshold && Array.isArray(paramConfig.summaryThreshold) && selectedLabel) {
+            return paramConfig.summaryThreshold.includes(selectedLabel);
+        }
+        // If summaryNotThreshold exists, check all labels EXCEPT those in the list
+        if (paramConfig.summaryNotThreshold && Array.isArray(paramConfig.summaryNotThreshold) && selectedLabel) {
+            return !paramConfig.summaryNotThreshold.includes(selectedLabel);
+        }
+        // If summaryOnChange is true, check for any non-default selection
+        if (paramConfig.summaryOnChange === true && isObjectOption && selectedOption.default !== true) {
+            return true;
+        }
+        // If none of the above, but summaryDefault is true, keep it checked
+        if (paramConfig.summaryDefault === true && selectedValue !== "") {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Handle summary exclude logic (context menu version)
+     * Updates registry directly since modal may not be in DOM
+     */
+    function handleContextMenuSummaryExclude(paramKey, paramConfig) {
+        if (paramConfig.summaryExclude && Array.isArray(paramConfig.summaryExclude)) {
+            paramConfig.summaryExclude.forEach(excludeKey => {
+                // Check if currently checked in registry
+                const isCurrentlyChecked = typeof getRegistrySummaryChecked === 'function' 
+                    ? getRegistrySummaryChecked(excludeKey) 
+                    : false;
+                
+                if (isCurrentlyChecked) {
+                    // Uncheck in registry
+                    if (typeof setRegistrySummaryChecked === 'function') {
+                        setRegistrySummaryChecked(excludeKey, false);
+                    }
+                    
+                    if (summaryCheckboxManuallyEdited) {
+                        summaryCheckboxManuallyEdited[excludeKey] = true;
+                    }
+                }
+            });
+        }
+    }
+    
+    /**
+     * Handle summary restore logic (context menu version)
+     * Re-checks excluded items if no other excluders are active
+     */
+    function handleContextMenuSummaryRestore(paramKey, paramConfig) {
+        if (!paramConfig.summaryExclude || !Array.isArray(paramConfig.summaryExclude)) return;
+        
+        paramConfig.summaryExclude.forEach(excludeKey => {
+            // Check if any OTHER parameters that also exclude this key are currently checked
+            let otherExcludersChecked = false;
+            
+            if (window.options && Array.isArray(window.options)) {
+                window.options.forEach(section => {
+                    if (!section.variables || otherExcludersChecked) return;
+                    
+                    section.variables.forEach(otherVarKey => {
+                        if (otherVarKey === paramKey || otherExcludersChecked) return;
+                        
+                        const otherParamConfig = window.parameters?.[otherVarKey];
+                        if (!otherParamConfig) return;
+                        
+                        if (otherParamConfig.summaryExclude && 
+                            Array.isArray(otherParamConfig.summaryExclude) && 
+                            otherParamConfig.summaryExclude.includes(excludeKey)) {
+                            
+                            const isOtherChecked = typeof getRegistrySummaryChecked === 'function'
+                                ? getRegistrySummaryChecked(otherVarKey)
+                                : false;
+                            
+                            if (isOtherChecked) {
+                                otherExcludersChecked = true;
+                            }
+                        }
+                    });
+                });
+            }
+            
+            // If no other excluders are checked, restore this item based on its default
+            if (!otherExcludersChecked) {
+                const excludeParamConfig = window.parameters?.[excludeKey];
+                if (excludeParamConfig && excludeParamConfig.summaryDefault === true) {
+                    if (typeof setRegistrySummaryChecked === 'function') {
+                        setRegistrySummaryChecked(excludeKey, true);
+                    }
+                }
+            }
+        });
+    }
+    
+    /**
+     * Select parameter text for manual editing (customtext params)
+     */
+    function selectParameterText(paramSpan) {
+        const selection = window.getSelection();
+        const range = document.createRange();
+        
+        // Select all text content within the param span
+        range.selectNodeContents(paramSpan);
+        
+        selection.removeAllRanges();
+        selection.addRange(range);
     }
     
     // ============================================================================

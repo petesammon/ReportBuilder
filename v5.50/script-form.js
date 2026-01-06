@@ -281,6 +281,9 @@ jQuery(document).ready(function () {
             return `<span class="no-options">No options available</span>`;
         }
         
+        // [v5.5] Get current value from metrics to set selected option
+        const currentMetricsValue = window.metrics && window.metrics[paramKey] ? window.metrics[paramKey] : null;
+        
         return `
             <select id="${paramKey}-select" data-param="${paramKey}">
                 ${paramOption.options.map(opt => {
@@ -288,7 +291,11 @@ jQuery(document).ready(function () {
                     const label = isString ? opt : (opt.label || opt.title);
                     const title = isString ? opt : opt.title;
                     const isDefault = !isString && opt.default === true;
-                    return `<option value="${title}" ${isDefault ? 'selected' : ''}>${label}</option>`;
+                    // [v5.5] Select based on current metrics value, fallback to default
+                    const isSelected = currentMetricsValue !== null 
+                        ? (title === currentMetricsValue) 
+                        : isDefault;
+                    return `<option value="${title}" ${isSelected ? 'selected' : ''}>${label}</option>`;
                 }).join('')}
             </select>
         `;
@@ -471,7 +478,7 @@ jQuery(document).ready(function () {
                                data-measurement="${measurementKey}"
                                data-unit="${info.unit}"
                                value="${currentValue}"
-                               placeholder="Enter value..." />
+                               placeholder="-" />
                         ${unitDisplay}
                     </div>
                 </td>

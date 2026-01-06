@@ -111,9 +111,10 @@ Updated to v5.5:
     X spLV in non-summary modal adds EF statement to front position (just had to change summaryOrder as modal order determines location on same line)
     x widened measurements table from 260px to 270px (to avoid wrapping)
     x fixed spelling of 'abnormalities' in RWMA summarytext
+    XXXX right click on parameter for drop-down options
 
 To Do list:
-    * for v5.6 - right click on parameter for drop-down options
+    
     * for v5.6 - changed processMetricsThroughHandlebars and prepareResultsWithUnits to read from the registry, but most code still writes directly to metrics and results. reverted those functions to read from the legacy objects. The registry is being populated (and setParamValue updates both) but we're not reading from it for rendering yet - that can be a future enhancement when all write paths are updated.
     * for v5.6 - consider template builder to hide/show sections (now possible with multi-modal approach - just make a bunch of parameters with triggers and put them on a modal, ideally add some code to have yes/no options and checkboxes to activate sections)
     

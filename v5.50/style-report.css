@@ -550,7 +550,7 @@ hr {
 }
 
 #measurements-table input.measurement-input {
-    width: 60px;
+    width: 70px;
     padding: 0.2rem 0.4rem;
     font-size: 0.8rem;
     margin: 0;
@@ -1026,7 +1026,6 @@ hr {
     border: 1px solid var(--pico-muted-border-color);
     border-radius: var(--pico-border-radius);
     margin: 0;
-    text-align: right;
 }
 
 .modal-measurement-input:focus {
@@ -1049,4 +1048,68 @@ hr {
     font-size: 0.85rem;
     color: #495057;
     border-top: 2px solid #dee2e6;
+}
+/* ============================================================================
+   [v5.5] PARAMETER CONTEXT MENU
+   Right-click menu for quick parameter option selection
+   ============================================================================ */
+
+.param-context-menu {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 4px 0;
+    margin: 0;
+    list-style: none;
+    min-width: 150px;
+    max-width: 350px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.param-context-menu .context-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.param-context-menu .context-menu-item:hover {
+    background-color: #f0f0f0;
+}
+
+.param-context-menu .context-menu-item.selected {
+    background-color: #e3f2fd;
+    font-weight: 500;
+}
+
+.param-context-menu .context-menu-item.selected::before {
+    content: "✓ ";
+    color: #1976d2;
+}
+
+/* Separator line between custom text and regular options */
+.param-context-menu .context-menu-separator {
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 4px 8px;
+    padding: 0;
+}
+
+/* Custom text option styling */
+.param-context-menu .context-menu-custom {
+    color: #666;
+    font-style: italic;
+}
+
+.param-context-menu .context-menu-custom:hover {
+    background-color: #ededed;
+    color: #4d4d4d;
 }
