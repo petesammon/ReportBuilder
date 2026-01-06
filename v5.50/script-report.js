@@ -667,7 +667,11 @@ jQuery(document).ready(function () {
         // By checking window state, we ensure we have the latest state.
         const isHidden = window.hiddenModals && window.hiddenModals[modalKey];
         
+        console.log(`[triggerModal] Called for ${modalKey}, isHidden: ${isHidden}`);
+        
         if (isHidden) {
+            console.log(`[triggerModal] Section ${modalKey} was hidden, will unhide and trigger full re-render`);
+            
             // Update both local and window state
             hiddenModals[modalKey] = false;
             excludedModals[modalKey] = false;
@@ -1879,6 +1883,12 @@ jQuery(document).ready(function () {
             return;
         }
         
+        // [v5.5] Set flag to prevent MutationObserver from triggering during update
+        // Without this, .text() calls trigger childList mutations which could
+        // cause button protection to call updateReportTextarea and recreate content
+        const wasRestoringButtons = isRestoringButtons;
+        isRestoringButtons = true;
+        
         // Prepare data using shared utility
         const outputResults = prepareResultsWithUnits();
         
@@ -1962,6 +1972,11 @@ jQuery(document).ready(function () {
                 console.log('Could not restore cursor position');
             }
         }
+        
+        // [v5.5] Reset flag after a short delay to allow mutations to complete
+        setTimeout(() => {
+            isRestoringButtons = wasRestoringButtons;
+        }, 10);
     }
     
     // [v5.42] Helper function to wrap fixed text portions within content
@@ -2010,6 +2025,9 @@ jQuery(document).ready(function () {
     // [v5.2] Update ContentEditable report textarea with span-wrapped parameters
     // Now uses preprocessed template that wraps variables in spans at template level
     function updateReportTextarea() {
+        console.log('[updateReportTextarea] FULL RE-RENDER triggered');
+        console.trace('[updateReportTextarea] Call stack:');
+        
         const $textarea = $('#report-textarea');
         
         if (!$textarea.length) {
@@ -2922,6 +2940,7 @@ jQuery(document).ready(function () {
         
         // Trigger the currently selected section (if any)
         if (currentTriggerSection && typeof triggerModal === 'function') {
+            console.log('[ContextMenu] Calling triggerModal for section:', currentTriggerSection);
             triggerModal(currentTriggerSection);
         }
         
@@ -2954,8 +2973,10 @@ jQuery(document).ready(function () {
         
         // Use appropriate update strategy
         if (sectionsWereHidden && typeof updateReportTextarea === 'function') {
+            console.log('[ContextMenu] Calling updateReportTextarea because sectionsWereHidden');
             updateReportTextarea();
         } else if (typeof updateChangedParameters === 'function') {
+            console.log('[ContextMenu] Using granular updateChangedParameters for:', paramKey);
             updateChangedParameters([paramKey]);
             // Also update Summary since parameter changes affect it
             updateChangedParameters(['Summary']);
