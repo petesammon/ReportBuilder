@@ -83,7 +83,7 @@ th {
 .modal.group-modal {
     left: auto;
     right: 0;
-    width: calc(100% - 270px - 2rem); /* Cover everything except measurements column + container padding */
+    width: calc(100% - 325px - 2rem); /* Cover everything except measurements column + container padding */
     background-color: rgba(0, 0, 0, 0.3);
 }
 
@@ -91,7 +91,7 @@ th {
 @media (min-width: calc(1300px + 2rem)) {
     .modal.group-modal {
         right: calc((100% - 1300px + 2rem) / 2); /* Offset from right edge to match centered layout */
-        width: calc(1300px - 270px - 2rem); /* Width of right column in centered layout */
+        width: calc(1300px - 325px - 2rem); /* Width of right column in centered layout */
     }
 }
 
@@ -497,7 +497,7 @@ hr {
 /* Two-column layout for measurements and options */
 .two-column-layout {
     display: grid;
-    grid-template-columns: 270px 1fr;
+    grid-template-columns: 325px 1fr;
     grid-gap: 1.5rem;
     height: 100%;
     max-width: 1300px;

@@ -112,6 +112,7 @@ Updated to v5.5:
     x widened measurements table from 260px to 270px (to avoid wrapping)
     x fixed spelling of 'abnormalities' in RWMA summarytext
     XXXX right click on parameter for drop-down options
+    - issue with moved parameter string, then update parameter, updates the moved string, but also inserts new string in original location
 
 To Do list:
     

@@ -13,6 +13,10 @@ Still need to get:
     DOB: 01/01/1900 
     Gender: Male 
     BP:  300/100mmHg
+    
+// Operators
+    Operator1: Pete Sammon (Echocardiographer)
+    Supervisor: Dr S Vahabi (Consultant)
 
 // LV 2D
     IVSd 9.5 cm  

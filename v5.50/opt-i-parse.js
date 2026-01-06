@@ -1,8 +1,15 @@
 window.parseConfig = [
-    {
+ {
    "handle": "Operator1",
-   "match": "",
+   "match": "Operator1: (.*)",
    "label": "Operator",
+   "unit": "",
+   "full": true
+ },
+ {
+   "handle": "Supervisor",
+   "match": "Supervisor: (.*)",
+   "label": "Supervisor",
    "unit": "",
    "full": true
  },
