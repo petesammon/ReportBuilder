@@ -143,3 +143,42 @@ wonderful!
     - the measurement units are getting picked up as expected
     - the report text shows the measurements, but not the parameters ('variable' handler not successfully collecting the parameters?)
 2. there is no need to preserve backwards-compatibility for the 'params' or 'measurements' arrays (opt-m-table.js uses 'items' array) so you can stremline the array-finding code accordingly
+
+------ v5.42 bug fixes -----
+
+Here are my current v5.42 project files. I've been doing some testing since the last round of changes (please reference previous chat) and have identified some bugs:
+1. measurement unit mismanagement in modal 'variable' fields:
+    - mHeader modal (defined on opt-m-modals.js) includes the measurement 'variable' "BP"
+    - If I load the page and use the import function to parse measurement data (which includes parsed BP value), then load the modal, the BP field is empty (unexpected, because it is evident in the measurements table); if I then click into the BP field on the modal, it suddenly populates with the parsed value but with the units appended (e.g. '300/100mmHg' within the field, with 'mmHg' units also stated outside the field); at this moment, it updates the measurement table to the value with the units appended (e.g. 300/100mmHg, with mmHg units additionally stated outside the field); surprisingly, on the report this gets rendered correctly as "300/100mmHg". 
+    - I don't have the same problem with the "HR" field, but I think this is because there is never a parsed import for this
+    - could you trace the data flow and fix the unit mismanagement? I suspect we have some vesitigial code to strip/add units that is creating an error when reading the measurement value from the central reistry and adding units to the string when presenting it to the modal (to clarify, units should be stored seperately from the values in the central registry, and only ever appended when writing from the registry to the report text).
+    - could you also trace the update handlers for the modal fields to find out why the measuremnt field isn't pre-populated on modal load?
+2. additional modal summary text handling: 
+    - the "pDiastology" parameter is listed on both the mHeader and mLV modals
+    - this parameter has the following summary-handling attributes: enableSummary: true, summaryDefault: false, summaryOnChange: true, summaryOrder: 4,
+    - if I use the mHeader modal to change from 'Normal diastolic function' to 'Impaired diastolic function':
+        - the report-body statement gets changed from 'Normal diastolic function.' to 'Impaired diastolic function.' (expected)
+        - the summary checkbox gets activated (expected)
+        - the summarytext gets added to the summary twice (e.g. "Impaired diastolic function Impaired diastolic function")
+        - the mLV modal shows the dropdown state as 'Normal diastoic function'
+    - if I use the mLV modal to change from 'Normal diastolic function' to 'Impaired diastolic function':
+        - the report-body statement gets changed from 'Normal diastolic function.' to 'Impaired diastolic function.' (expected)
+        - the summary checkbox gets activated (expected)
+        - the summarytext does not get added to the summary 
+        - the mHeader modal shows the dropdown state as 'Normal diastoic function'
+    - it seems that we have a problem handling parameter states for both modals and summary text. Since parameter values are being stored to the central registry, we should already have a single source of truth to refer to when creating any modal or summary statement as to the current parameter value and the summary status - when the parameter value or summary status is changed in one place, it should cascade globally and, importantly, there should only ever be one instance of the summary statement (which should be produced based on the registry status, not any single drop-down). 
+    - Could you trace both of these flows to find out why we are getting this bug, and ensure that the logic above is being followed, making fixes where necessary?
+    
+    --- ----
+    
+    ok thank you. 
+    - it's clear that the unit-handling error was actually a result of parsing the "BP" with units included in the value string. I would prefer to ensure that units are parsed correctly in the first instance, and the code to handle the values is as simple and robust as possible. So please revert all of the changes relating to stripping units on the basis that all measurements are unit-free at the point they are added to the central registry. The code can be simplified as a result. I will edit the parsing match string on opt-m-parse.js to ensure the correct string is parsed for BP
+    - the logic I would prefer is for updateSummary to track summary states from the central registry directly as this serves as a single source of truth - can you confirm whether this is happening, and if not, devise an architectural change to store summary status within the registry alongside parameters, and update handlers to write-to/read-from the registry when building the summary?
+    
+    ---- upgarde to v5.5 ----
+    
+    answers:
+    1. modal lifecycle: please destroy the DOM and rebuild fresh each time
+    2. measurements table: keep as-is (should remain a persistent UI element) - but ensure that functions update to/from the central registry (not via the measurements table)
+    3. consolidating state object: I would prefer 'results' and 'metrics' to be consolidated into the variableRegistry. I am happy with selectedOptions remaining seperate because it serves a specific purpose and is only called by the summary.
+    4. #options-content container: if this can be slimmed down for the on-demand modal architecture, then perhaps use that route - it would reduce the risk of breaking dependent links. but if that approach has significant optimisation downsides then I am happy to reconsider.

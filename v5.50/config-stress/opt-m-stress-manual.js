@@ -39,19 +39,19 @@ window.manualConfig = [
         "handle": "PeakWatts",
         "match": "",
         "label": "Watts",
-        "unit": "Watts"
+        "unit": " Watts"
     },
     {
         "handle": "ExMinutes",
         "match": "",
         "label": "Exercise (m)",
-        "unit": "minutes"
+        "unit": " minutes"
     },
     {
         "handle": "ExSeconds",
         "match": "",
         "label": "Exercise (s)",
-        "unit": "seconds"
+        "unit": " seconds"
     },
     {
         "handle": "MaxDobutamineDose",

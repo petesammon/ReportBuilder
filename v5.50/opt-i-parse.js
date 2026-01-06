@@ -36,7 +36,7 @@ window.parseConfig = [
  },
  {
    "handle": "BP",
-   "match": "BP: (.*)",
+   "match": "BP: (.*)mmHg",
    "label": "BP",
    "unit": "mmHg",
    "full": null

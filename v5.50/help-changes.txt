@@ -96,20 +96,32 @@ Updated to v5.42:
         X added measurement fields to modals (under 'variables' array)
         X minimum dataset modal
         
-        - BP on modal not working as expected...
-        - additional modal adding summary statements twice...
-        
+        X BP on modal not working as expected...
+        X additional modal adding summary statements twice...
+            x registry now tracks summary status and reads to relevant functions
+            
+Updated to v5.5:
+    X page is built initially from registry
+    X modals are temporary and built/destroyed on demand (reference registry for build states)
+    X results (parameters) and metrics (measurements) are consolidated into registry (instead of seperate stores)
+    X units are stored seperately and only appended on report insertion
+    
+    X ! need to draw measurement units into Stress report (why not working?) - only works on default because the measurements are duplicated in opt-i-parse.js
+    X force registry rebuild on template change
+    X spLV in non-summary modal adds EF statement to front position (just had to change summaryOrder as modal order determines location on same line)
+    x widened measurements table from 260px to 270px (to avoid wrapping)
+    x fixed spelling of 'abnormalities' in RWMA summarytext
 
 To Do list:
-    - hidden sections need some greyed out text identifier...
-    - consider template builder to hide/show sections?
+    * for v5.6 - right click on parameter for drop-down options
+    * for v5.6 - changed processMetricsThroughHandlebars and prepareResultsWithUnits to read from the registry, but most code still writes directly to metrics and results. reverted those functions to read from the legacy objects. The registry is being populated (and setParamValue updates both) but we're not reading from it for rendering yet - that can be a future enhancement when all write paths are updated.
+    * for v5.6 - consider template builder to hide/show sections (now possible with multi-modal approach - just make a bunch of parameters with triggers and put them on a modal, ideally add some code to have yes/no options and checkboxes to activate sections)
     
-    - Visual representation of report strings 
-        - cursor focus gives box style
-        - right click gives options
-        - drag and drop possible
-        
-    - New parsing, calculations
+    
+    !- refactor to remove backwards compatibility and streamline code
+    
+    - hidden sections need some greyed out text identifier...??
+    
     - Auto parameter selection based on measurements/other parameteres ('algorithm: "diastology" atribute?)
+    
     - Autovalidate operator?
-    - Edit measurements in modals?

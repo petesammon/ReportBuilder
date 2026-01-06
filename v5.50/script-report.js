@@ -1,5 +1,5 @@
 /* jshint loopfunc: true, esversion: 11 */
-/* EchoTools v5.42 - Decoupled modalKey, full text wrapping with registry storage */
+/* EchoTools v5.5 - Registry as single source of truth, on-demand modals */
 
 jQuery(document).ready(function () {
     // Show the options section
@@ -41,24 +41,29 @@ jQuery(document).ready(function () {
     // ============================================================================
     
     /**
-     * Variable Registry - stores value, type, and state for every variable
+     * Variable Registry - single source of truth for all variable values
      * 
-     * [v5.42] modalKey REMOVED from registry entries
-     * Modal membership is determined by looking up window.options when needed
-     * This allows same parameter to be controlled by multiple modals
+     * [v5.5] Registry consolidates results and metrics objects
+     * - Measurements: store RAW value (no unit), unit stored separately
+     * - Parameters: store value directly
+     * - All reads/writes go through registry getter/setter functions
+     * 
+     * [v5.43] summaryChecked added to parameter entries
+     * This is the single source of truth for summary checkbox state
      * 
      * Structure:
      * {
      *   'pLVSize': { 
      *     value: 'Normal LV size',
      *     type: 'param',
-     *     state: 'default' | 'selected' | 'manual'
+     *     state: 'default' | 'selected' | 'manual',
+     *     summaryChecked: true | false
      *   },
      *   'LVEF': {
-     *     value: '55%',
+     *     value: '55',              // [v5.5] RAW value without unit
      *     type: 'measurement',
      *     state: 'imported' | 'manual',
-     *     unit: '%'
+     *     unit: '%'                 // Unit stored separately
      *   },
      *   'fixed-pQuality-prefix': {
      *     value: 'Technical Quality: ',
@@ -134,8 +139,11 @@ jQuery(document).ready(function () {
                 if (!group.items) return;
                 
                 group.items.forEach(measurementKey => {
-                    // Get unit from parseConfigMap if available
-                    const config = parseConfigMap[measurementKey];
+                    // Get unit from parseConfigMap, fallback to manualConfig
+                    let config = parseConfigMap[measurementKey];
+                    if (!config && window.manualConfig) {
+                        config = window.manualConfig.find(m => m.handle === measurementKey);
+                    }
                     const unit = config?.unit || '';
                     
                     variableRegistry[measurementKey] = {
@@ -150,6 +158,7 @@ jQuery(document).ready(function () {
         
         // 2. Register all parameters (from options/modal config)
         // [v5.42] Use variables array, check window.parameters to identify params
+        // [v5.43] Initialize summaryChecked from parameter config
         if (window.options && Array.isArray(window.options)) {
             window.options.forEach(group => {
                 if (!group.modalKey || !group.variables) return;
@@ -158,10 +167,13 @@ jQuery(document).ready(function () {
                     // Only register as param if it's in window.parameters
                     // and NOT already registered as a measurement
                     if (window.parameters && window.parameters[varKey] && !variableRegistry[varKey]) {
+                        const paramConfig = window.parameters[varKey];
                         variableRegistry[varKey] = {
                             value: '',
                             type: 'param',
-                            state: 'default'
+                            state: 'default',
+                            // [v5.43] Initialize summaryChecked from config
+                            summaryChecked: paramConfig.enableSummary ? (paramConfig.summaryDefault === true) : undefined
                         };
                     }
                 });
@@ -179,6 +191,10 @@ jQuery(document).ready(function () {
                         variableRegistry[paramKey].value = defaultOpt.title || '';
                         variableRegistry[paramKey].state = 'default';
                     }
+                }
+                // [v5.43] Ensure summaryChecked is initialized for all params with enableSummary
+                if (param.enableSummary && variableRegistry[paramKey] && variableRegistry[paramKey].summaryChecked === undefined) {
+                    variableRegistry[paramKey].summaryChecked = param.summaryDefault === true;
                 }
             });
         }
@@ -263,8 +279,11 @@ jQuery(document).ready(function () {
      */
     function updateRegistryMeasurement(key, rawValue, state) {
         if (!variableRegistry[key]) {
-            // Try to get unit from parseConfigMap
-            const config = parseConfigMap[key];
+            // Try to get unit from parseConfigMap, fallback to manualConfig
+            let config = parseConfigMap[key];
+            if (!config && window.manualConfig) {
+                config = window.manualConfig.find(m => m.handle === key);
+            }
             variableRegistry[key] = {
                 value: '',
                 type: 'measurement',
@@ -274,18 +293,76 @@ jQuery(document).ready(function () {
         }
         
         const entry = variableRegistry[key];
-        const unit = entry.unit || '';
         
-        // Store value with unit appended
-        if (rawValue && unit && !rawValue.toString().endsWith(unit)) {
-            entry.value = rawValue + unit;
-        } else {
-            entry.value = rawValue || '';
-        }
+        // [v5.5] Store RAW value (without unit)
+        entry.value = rawValue || '';
         
         if (state) {
             entry.state = state;
         }
+        
+        // [v5.5] Sync to legacy results object for backwards compatibility
+        results[key] = rawValue || '';
+        
+        // [v5.43] Sync modal measurement input if it exists
+        const $modalInput = $(`#${key}-modal-input`);
+        if ($modalInput.length) {
+            $modalInput.val(rawValue || '');
+        }
+    }
+    
+    /**
+     * [v5.5] Get measurement raw value (without unit)
+     * @param {string} key - Measurement key
+     * @returns {string} - Raw value or empty string
+     */
+    function getMeasurementValue(key) {
+        const entry = variableRegistry[key];
+        return entry ? entry.value : '';
+    }
+    
+    /**
+     * [v5.5] Get measurement value with unit appended
+     * @param {string} key - Measurement key
+     * @returns {string} - Value with unit or empty string
+     */
+    function getMeasurementWithUnit(key) {
+        const entry = variableRegistry[key];
+        if (!entry || !entry.value) return '';
+        return entry.unit ? entry.value + entry.unit : entry.value;
+    }
+    
+    /**
+     * [v5.5] Get parameter value
+     * @param {string} key - Parameter key
+     * @returns {string} - Parameter value or empty string
+     */
+    function getParamValue(key) {
+        const entry = variableRegistry[key];
+        return entry ? entry.value : '';
+    }
+    
+    /**
+     * [v5.5] Set parameter value
+     * @param {string} key - Parameter key
+     * @param {string} value - New value
+     * @param {string} state - Optional state ('default', 'selected', 'manual')
+     */
+    function setParamValue(key, value, state) {
+        if (!variableRegistry[key]) {
+            variableRegistry[key] = {
+                value: '',
+                type: 'param',
+                state: 'default'
+            };
+        }
+        variableRegistry[key].value = value || '';
+        if (state) {
+            variableRegistry[key].state = state;
+        }
+        
+        // [v5.5] Sync to legacy metrics object for backwards compatibility
+        metrics[key] = value || '';
     }
     
     /**
@@ -295,6 +372,30 @@ jQuery(document).ready(function () {
      */
     function getRegistryEntry(key) {
         return variableRegistry[key] || null;
+    }
+    
+    /**
+     * [v5.43] Get summary checkbox state from registry
+     * @param {string} paramKey - Parameter name
+     * @returns {boolean} - Whether summary checkbox is checked
+     */
+    function getRegistrySummaryChecked(paramKey) {
+        const entry = variableRegistry[paramKey];
+        if (entry && entry.summaryChecked !== undefined) {
+            return entry.summaryChecked;
+        }
+        return false;
+    }
+    
+    /**
+     * [v5.43] Set summary checkbox state in registry
+     * @param {string} paramKey - Parameter name
+     * @param {boolean} isChecked - Whether checkbox is checked
+     */
+    function setRegistrySummaryChecked(paramKey, isChecked) {
+        if (variableRegistry[paramKey]) {
+            variableRegistry[paramKey].summaryChecked = isChecked;
+        }
     }
     
     /**
@@ -426,7 +527,12 @@ jQuery(document).ready(function () {
     function prepareResultsWithUnits() {
         const outputResults = {};
         Object.entries(results).forEach(([key, value]) => {
-            const config = parseConfigMap[key];
+            // Check parseConfigMap first, then fallback to manualConfig
+            let config = parseConfigMap[key];
+            if (!config && window.manualConfig) {
+                config = window.manualConfig.find(m => m.handle === key);
+            }
+            
             if (value && config?.unit) {
                 const unit = config.unit;
                 outputResults[key] = value.toString().endsWith(unit) ? value : value + unit;
@@ -445,6 +551,7 @@ jQuery(document).ready(function () {
     function processMetricsThroughHandlebars(baseData) {
         const processedMetrics = {};
         
+        // Read from metrics object (still the primary store for param values)
         Object.entries(metrics).forEach(([key, value]) => {
             if (typeof value === 'string' && value.includes('{{')) {
                 try {
@@ -875,8 +982,24 @@ jQuery(document).ready(function () {
             if (measurementsLoaded && parametersLoaded && optionsLoaded && reportTemplateLoaded && manualConfigLoaded) {
                 console.log(`Loaded report config: ${config.name}`);
                 
-                // DON'T clear metrics - preserve all form selections across template switches
-                // Only clear tracking flags from previous config
+                // [v5.5] Clear all state on template switch - fresh start
+                Object.keys(metrics).forEach(key => delete metrics[key]);
+                Object.keys(results).forEach(key => delete results[key]);
+                Object.keys(selectedOptions).forEach(key => delete selectedOptions[key]);
+                if (window.manuallyEditedParams) {
+                    Object.keys(window.manuallyEditedParams).forEach(key => delete window.manuallyEditedParams[key]);
+                }
+                if (window.modalChangedInSession) {
+                    Object.keys(window.modalChangedInSession).forEach(key => delete window.modalChangedInSession[key]);
+                }
+                if (window.modalInitialState) {
+                    Object.keys(window.modalInitialState).forEach(key => delete window.modalInitialState[key]);
+                }
+                if (window.modalDropdownState) {
+                    Object.keys(window.modalDropdownState).forEach(key => delete window.modalDropdownState[key]);
+                }
+                
+                // Clear tracking flags from previous config
                 Object.keys(modalPreviewManuallyEdited).forEach(key => delete modalPreviewManuallyEdited[key]);
                 Object.keys(summaryCheckboxManuallyEdited).forEach(key => delete summaryCheckboxManuallyEdited[key]);
                 Object.keys(excludedModals).forEach(key => delete excludedModals[key]);
@@ -887,6 +1010,16 @@ jQuery(document).ready(function () {
                 // Initialize section visibility states based on config
                 initializeModalVisibility();
                 
+                // [v5.5] Ensure manualConfig items are in parseConfigMap for unit lookup
+                // This must happen after manualConfig is loaded but before generateMeasurementsTable
+                if (window.manualConfig && Array.isArray(window.manualConfig)) {
+                    window.manualConfig.forEach(item => {
+                        if (!parseConfigMap[item.handle]) {
+                            parseConfigMap[item.handle] = item;
+                        }
+                    });
+                }
+                
                 // [v5.2] Initialize variable registry from loaded configs
                 initializeVariableRegistry();
                 
@@ -895,30 +1028,6 @@ jQuery(document).ready(function () {
                 runCalculations(); // Calculate derived values
                 $("#options-content").empty();
                 buildOptionsForm();
-                
-                // After rebuilding the form, update UI elements from preserved metrics
-                // This ensures dropdowns and textareas show the user's previous selections
-                Object.keys(metrics).forEach(key => {
-                    const value = metrics[key];
-                    
-                    // Update dropdown if it exists
-                    const $select = $(`#${key}-select`);
-                    if ($select.length) {
-                        $select.val(value).trigger('change');
-                    }
-                    
-                    // Update textarea if it exists
-                    const $textarea = $(`#${key}-textarea`);
-                    if ($textarea.length) {
-                        $textarea.val(value);
-                    }
-                    
-                    // Update custom textarea if it exists
-                    const $customTextarea = $(`#${key}-custom-textarea`);
-                    if ($customTextarea.length) {
-                        $customTextarea.val(value);
-                    }
-                });
                 
                 updateSummary();
                 // Update section previews with imported data
@@ -1371,9 +1480,15 @@ jQuery(document).ready(function () {
             Object.keys(window.hiddenModals).forEach(key => delete window.hiddenModals[key]);
         }
         
-        // Clear summary checkbox states
-        if (window.summaryCheckboxStates) {
-            Object.keys(window.summaryCheckboxStates).forEach(key => delete window.summaryCheckboxStates[key]);
+        // [v5.43] Reset summaryChecked in registry to defaults
+        if (window.variableRegistry && window.parameters) {
+            Object.keys(window.variableRegistry).forEach(key => {
+                const entry = window.variableRegistry[key];
+                if (entry && entry.summaryChecked !== undefined) {
+                    const paramConfig = window.parameters[key];
+                    entry.summaryChecked = paramConfig?.summaryDefault === true;
+                }
+            });
         }
         
         // Reset tracking flags
@@ -1396,11 +1511,15 @@ jQuery(document).ready(function () {
     function updateSummary() {
         const summaryItems = [];
         
+        // [v5.43] Track processed parameters to avoid duplicates
+        // (same param can appear in multiple modals)
+        const processedParams = new Set();
+        
         // Prepare data for Handlebars using shared utility
         const resultsWithUnits = prepareResultsWithUnits();
         const summaryData = { ...resultsWithUnits, ...metrics };
         
-        // [v5.42] Collect summary items from modal checkboxes
+        // [v5.43] Collect summary items - read summaryChecked from registry
         options.forEach(section => {
             if (!section.variables) return;
             
@@ -1410,29 +1529,27 @@ jQuery(document).ready(function () {
             }
             
             section.variables.forEach(varKey => {
+                // [v5.43] Skip if already processed (param can appear in multiple modals)
+                if (processedParams.has(varKey)) {
+                    return;
+                }
+                
                 // [v5.42] Look up parameter definition from global parameters
                 const option = window.parameters ? window.parameters[varKey] : null;
                 
                 if (!option || !option.enableSummary) return;
                 
-                const $checkbox = $(`#${varKey}-summary-modal`);
+                // Mark as processed
+                processedParams.add(varKey);
+                
                 const metricValue = metrics[varKey];
                 
-                // Determine if checkbox is checked:
-                // - If modal exists (checkbox in DOM), use actual checkbox state
-                // - If modal doesn't exist (lazy loading), use virtual state
-                let isChecked = false;
-                if ($checkbox.length) {
-                    // Checkbox exists in DOM - use its state
-                    isChecked = $checkbox.is(':checked');
-                } else {
-                    // Checkbox doesn't exist yet (modal not created) - use virtual state
-                    isChecked = window.summaryCheckboxStates?.[varKey] ?? false;
-                }
+                // [v5.43] Read summaryChecked from registry (single source of truth)
+                const isChecked = getRegistrySummaryChecked(varKey);
                 
                 // Include if either:
                 // 1. summaryAlwaysInclude is true (no checkbox required), OR
-                // 2. checkbox is checked (from DOM or virtual state) and has value
+                // 2. checkbox is checked (from registry) and has value
                 const shouldInclude = (option.summaryAlwaysInclude === true && metricValue && metricValue.trim()) ||
                                      (isChecked && metricValue && metricValue.trim());
                 
@@ -1522,8 +1639,8 @@ jQuery(document).ready(function () {
         
         console.log('[v5.1] updateSummary called - autoGeneratedContent:', autoGeneratedContent ? autoGeneratedContent.substring(0, 100) : '(empty string)');
         
-        // [v5.0] Update Summary in metrics (no separate textarea in new architecture)
-        // Always update metrics.Summary for use in ContentEditable
+        // [v5.5] Update Summary in registry (single source of truth)
+        // setParamValue updates both registry AND metrics object
         if (summaryManuallyEdited && metrics.Summary) {
             // Append new items to existing manual content
             const currentLines = metrics.Summary.split('\n').filter(line => line.trim());
@@ -1531,11 +1648,12 @@ jQuery(document).ready(function () {
             const newLines = autoLines.filter(line => !currentLines.includes(line));
             
             if (newLines.length > 0) {
-                metrics.Summary = metrics.Summary + '\n' + newLines.join('\n');
+                const updatedContent = metrics.Summary + '\n' + newLines.join('\n');
+                setParamValue('Summary', updatedContent);
             }
         } else {
             // Replace with auto-generated
-            metrics.Summary = autoGeneratedContent;
+            setParamValue('Summary', autoGeneratedContent);
         }
         
         // TODO [v5.0]: Old Summary textarea code below - kept for reference
@@ -1552,7 +1670,7 @@ jQuery(document).ready(function () {
                 if (newLines.length > 0) {
                     const updatedContent = $summaryTextarea.val() + '\n' + newLines.join('\n');
                     $summaryTextarea.val(updatedContent);
-                    metrics.Summary = updatedContent;
+                    setParamValue('Summary', updatedContent);
                     if (typeof window.autoResizeTextarea === 'function') {
                         window.autoResizeTextarea($summaryTextarea);
                     }
@@ -1560,7 +1678,7 @@ jQuery(document).ready(function () {
             } else {
                 // Replace with auto-generated
                 $summaryTextarea.val(autoGeneratedContent);
-                metrics.Summary = autoGeneratedContent;
+                setParamValue('Summary', autoGeneratedContent);
                 if (typeof window.autoResizeTextarea === 'function') {
                     window.autoResizeTextarea($summaryTextarea);
                 }
@@ -2274,59 +2392,36 @@ jQuery(document).ready(function () {
     function setupInlineButtonHandlers() {
         const $reportTextarea = $('#report-textarea');
         
-        // Edit button - open modal
+        // [v5.5] Edit button - build and open modal on-demand
         $reportTextarea.off('click', '.inline-edit-button').on('click', '.inline-edit-button', function(e) {
             e.preventDefault();
             e.stopPropagation();
             
             const modalKey = $(this).data('modal');
-            const modalId = `${modalKey}-modal`;
-            const $modal = $(`#${modalId}`);
             
-            // [v5.2] Initialize modal state tracking for bi-directional updates
-            // This captures dropdown states so we can detect if user changed them
-            if (!window.modalChangedInSession) window.modalChangedInSession = {};
-            if (!window.modalInitialState) window.modalInitialState = {};
-            if (!window.modalDropdownState) window.modalDropdownState = {};
-            
-            window.modalChangedInSession[modalKey] = false;
-            window.modalInitialState[modalKey] = {};
-            window.modalDropdownState[modalKey] = {};
-            
-            // Find all params in this modal and capture their dropdown states
-            $modal.find('select[data-param]').each(function() {
-                const paramKey = $(this).data('param');
-                window.modalDropdownState[modalKey][paramKey] = $(this).val() || '';
-                window.modalInitialState[modalKey][paramKey] = window.metrics?.[paramKey] || '';
+            // [v5.5] Create and open modal on-demand
+            if (typeof window.openModalByKey === 'function') {
+                const $modal = window.openModalByKey(modalKey);
                 
-                // [v5.2] If this param was manually edited, show the custom textarea
-                if (window.manuallyEditedParams && window.manuallyEditedParams[paramKey]) {
-                    const $customRow = $modal.find(`#${paramKey}-custom-row`);
-                    const $customTextarea = $modal.find(`#${paramKey}-custom-textarea`);
-                    const $select = $(this);
+                if ($modal) {
+                    // Initialize modal state tracking for bi-directional updates
+                    if (!window.modalChangedInSession) window.modalChangedInSession = {};
+                    if (!window.modalInitialState) window.modalInitialState = {};
+                    if (!window.modalDropdownState) window.modalDropdownState = {};
                     
-                    if ($customRow.length && $customTextarea.length) {
-                        // Show custom row and populate with current value
-                        $customRow.show();
-                        $customTextarea.val(window.metrics?.[paramKey] || '');
-                        
-                        // Dim the dropdown to indicate custom mode
-                        $select.css({
-                            'opacity': '0.5',
-                            'background-color': '#f0f0f0'
-                        });
-                        
-                        console.log(`[v5.2] Showing custom textarea for manually edited param: ${paramKey}`);
-                    }
+                    window.modalChangedInSession[modalKey] = false;
+                    window.modalInitialState[modalKey] = {};
+                    window.modalDropdownState[modalKey] = {};
+                    
+                    // Capture initial states for change detection
+                    $modal.find('select[data-param]').each(function() {
+                        const paramKey = $(this).data('param');
+                        window.modalDropdownState[modalKey][paramKey] = $(this).val() || '';
+                        window.modalInitialState[modalKey][paramKey] = window.metrics?.[paramKey] || '';
+                    });
                 }
-            });
-            
-            // Open the modal
-            $modal.addClass('active');
-            
-            // Auto-scroll measurements table (skip for Summary)
-            if (modalKey !== 'Summary' && typeof window.scrollToMeasurementModal === 'function') {
-                window.scrollToMeasurementModal(modalKey);
+            } else {
+                console.error('[v5.5] openModalByKey not available');
             }
         });
         
@@ -2627,7 +2722,17 @@ jQuery(document).ready(function () {
     window.getRegistryEntry = getRegistryEntry;
     window.getRegistryValues = getRegistryValues;
     
-    // [v5.42] Measurement data exports
+    // [v5.43] Summary status registry functions
+    window.getRegistrySummaryChecked = getRegistrySummaryChecked;
+    window.setRegistrySummaryChecked = setRegistrySummaryChecked;
+    
+    // [v5.5] Registry value accessor functions
+    window.getMeasurementValue = getMeasurementValue;
+    window.getMeasurementWithUnit = getMeasurementWithUnit;
+    window.getParamValue = getParamValue;
+    window.setParamValue = setParamValue;
+    
+    // [v5.42] Measurement data exports (legacy compatibility)
     window.results = results;  // Parsed measurement values
     window.getParseConfigMap = function() { return parseConfigMap; };  // Measurement metadata
     

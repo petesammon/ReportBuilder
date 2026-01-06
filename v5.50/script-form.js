@@ -1,18 +1,16 @@
 // form.js - Clean rebuild of form builder with auto-summary
-// v5.42 - Decoupled modalKey, full text wrapping with registry storage
-// Modals are created at page load, virtual state objects remain as central state stores
+// v5.5 - On-demand modal building, registry as single source of truth
+// Modals are built when opened and destroyed when closed
 
 jQuery(document).ready(function () {
     
     // Initialize default state for parameters
-    // Populates window.selectedOptions and window.summaryCheckboxStates as central state
+    // Populates window.selectedOptions as central state for option objects
+    // [v5.43] Summary checkbox states now stored in registry
     function initializeDefaultState() {
         // Initialize or preserve existing state
         if (!window.selectedOptions) {
             window.selectedOptions = {};
-        }
-        if (!window.summaryCheckboxStates) {
-            window.summaryCheckboxStates = {};
         }
         
         // [v5.42] Iterate through all modal groupings and their variables
@@ -61,14 +59,8 @@ jQuery(document).ready(function () {
                     }
                 }
                 
-                // Initialize summary checkbox states
-                if (paramOption.enableSummary === true) {
-                    // Only initialize if not already set (preserve user changes)
-                    if (window.summaryCheckboxStates[varKey] === undefined) {
-                        // Use summaryDefault from config, default to false
-                        window.summaryCheckboxStates[varKey] = paramOption.summaryDefault === true;
-                    }
-                }
+                // [v5.43] Summary checkbox states are initialized in registry by script-report.js
+                // No need to initialize here - registry is source of truth
             });
         });
     }
@@ -217,8 +209,7 @@ jQuery(document).ready(function () {
         const $formContainer = $("#options-content");
         $formContainer.empty();
         
-        // IMPORTANT: Remove all previously created modals
-        // Modals are appended to body, not to #options-content, so they persist across rebuilds
+        // [v5.5] Remove any existing modal (on-demand modals should be destroyed on close)
         $('.modal:not(#import-modal)').remove();
         
         // Reset hidden sections for new template (prevents state from previous template persisting)
@@ -235,7 +226,8 @@ jQuery(document).ready(function () {
         
         $formContainer.append($reportContainer);
         
-        // [v5.0] Create modals for all sections (unified function handles both Section and Summary)
+        // [v5.5] Initialize section state (excluded/hidden) but do NOT create modals
+        // Modals are created on-demand when user clicks edit button
         window.options.forEach(section => {
             if (section.modalKey || section.summary === true) {
                 const modalKey = section.modalKey || 'Summary';
@@ -253,9 +245,6 @@ jQuery(document).ready(function () {
                 if (isDefaultHidden) {
                     window.hiddenModals[modalKey] = true;
                 }
-                
-                // Create modal using unified function
-                createModal(section);
             }
         });
         
@@ -265,7 +254,7 @@ jQuery(document).ready(function () {
         // [v5.0] Initialize summary
         if (typeof window.updateSummary === 'function') {
             window.updateSummary();
-            console.log('[v5.0] updateSummary called in buildForm, metrics.Summary =', window.metrics.Summary !== undefined ? (window.metrics.Summary === '' ? '(empty string)' : window.metrics.Summary.substring(0, 50)) : 'undefined');
+            console.log('[v5.5] updateSummary called in buildForm');
         }
         
         // [v5.0] Setup ContentEditable event handlers
@@ -275,12 +264,6 @@ jQuery(document).ready(function () {
         if (typeof window.updateReportTextarea === 'function') {
             window.updateReportTextarea();
         }
-        
-        // TODO [v5.0 REFACTOR]: Old section-based textarea code removed
-        // Previous version created individual textareas for each section
-        // New version uses single ContentEditable with span-wrapped parameters
-        // Exclude button functionality moved to parameter-level hiding
-        // See git history for original implementation
     }
     
     // TODO [v5.0]: Summary modal creation
@@ -312,12 +295,14 @@ jQuery(document).ready(function () {
     }
     
     // Build checkbox HTML for a parameter
+    // [v5.43] Read initial state from registry (single source of truth)
     function buildCheckboxHtml(paramKey, paramOption) {
-        // Use virtual state if available, otherwise use summaryDefault
         let defaultChecked = '';
-        if (window.summaryCheckboxStates && window.summaryCheckboxStates[paramKey] !== undefined) {
-            defaultChecked = window.summaryCheckboxStates[paramKey] ? 'checked' : '';
+        // Read from registry if available
+        if (typeof window.getRegistrySummaryChecked === 'function') {
+            defaultChecked = window.getRegistrySummaryChecked(paramKey) ? 'checked' : '';
         } else {
+            // Fallback to config default
             defaultChecked = paramOption.summaryDefault ? 'checked' : '';
         }
         return `<input type="checkbox" id="${paramKey}-summary-modal" data-param="${paramKey}" ${defaultChecked} />`;
@@ -620,19 +605,21 @@ jQuery(document).ready(function () {
         return shouldCheck;
     }
     
-    // Update checkbox state in both DOM and virtual state
+    // Update checkbox state in both DOM and registry
+    // [v5.43] Write to registry as single source of truth
     function updateCheckboxState($checkbox, shouldCheck, paramKey) {
         if ($checkbox && $checkbox.length) {
             $checkbox.prop('checked', shouldCheck);
             
-            // Sync virtual state for lazy loading
-            if (window.summaryCheckboxStates) {
-                window.summaryCheckboxStates[paramKey] = shouldCheck;
+            // [v5.43] Sync to registry
+            if (typeof window.setRegistrySummaryChecked === 'function') {
+                window.setRegistrySummaryChecked(paramKey, shouldCheck);
             }
         }
     }
     
     // Handle summary exclude logic
+    // [v5.43] Write to registry as single source of truth
     function handleSummaryExclude(paramKey, paramOption) {
         if (paramOption.summaryExclude && Array.isArray(paramOption.summaryExclude)) {
             paramOption.summaryExclude.forEach(excludeKey => {
@@ -640,9 +627,9 @@ jQuery(document).ready(function () {
                 if ($excludeCheckbox.length && $excludeCheckbox.is(':checked')) {
                     $excludeCheckbox.prop('checked', false);
                     
-                    // Sync virtual state
-                    if (window.summaryCheckboxStates) {
-                        window.summaryCheckboxStates[excludeKey] = false;
+                    // [v5.43] Sync to registry
+                    if (typeof window.setRegistrySummaryChecked === 'function') {
+                        window.setRegistrySummaryChecked(excludeKey, false);
                     }
                     
                     if (window.summaryCheckboxManuallyEdited) {
@@ -654,6 +641,7 @@ jQuery(document).ready(function () {
     }
     
     // Handle summary restore logic - re-check excluded items if appropriate
+    // [v5.43] Read/write registry as single source of truth
     function handleSummaryRestore(paramKey, paramOption) {
         if (paramOption.summaryExclude && Array.isArray(paramOption.summaryExclude)) {
             paramOption.summaryExclude.forEach(excludeKey => {
@@ -677,15 +665,15 @@ jQuery(document).ready(function () {
                             Array.isArray(otherParamOption.summaryExclude) && 
                             otherParamOption.summaryExclude.includes(excludeKey)) {
                             
-                            // Check if this parameter's checkbox is checked
-                            // IMPORTANT: Check both DOM and virtual state
-                            const $otherCheckbox = $(`#${otherVarKey}-summary-modal`);
+                            // [v5.43] Check registry for state, fallback to DOM
                             let isOtherChecked = false;
-                            
-                            if ($otherCheckbox.length) {
-                                isOtherChecked = $otherCheckbox.is(':checked');
-                            } else if (window.summaryCheckboxStates && window.summaryCheckboxStates[otherVarKey] !== undefined) {
-                                isOtherChecked = window.summaryCheckboxStates[otherVarKey];
+                            if (typeof window.getRegistrySummaryChecked === 'function') {
+                                isOtherChecked = window.getRegistrySummaryChecked(otherVarKey);
+                            } else {
+                                const $otherCheckbox = $(`#${otherVarKey}-summary-modal`);
+                                if ($otherCheckbox.length) {
+                                    isOtherChecked = $otherCheckbox.is(':checked');
+                                }
                             }
                             
                             if (isOtherChecked) {
@@ -701,9 +689,9 @@ jQuery(document).ready(function () {
                     if ($excludeCheckbox.length && !$excludeCheckbox.is(':checked')) {
                         $excludeCheckbox.prop('checked', true);
                         
-                        // Sync virtual state
-                        if (window.summaryCheckboxStates) {
-                            window.summaryCheckboxStates[excludeKey] = true;
+                        // [v5.43] Sync to registry
+                        if (typeof window.setRegistrySummaryChecked === 'function') {
+                            window.setRegistrySummaryChecked(excludeKey, true);
                         }
                     }
                 }
@@ -1029,11 +1017,11 @@ jQuery(document).ready(function () {
     }
     
     // Handle manual checkbox changes
-    // This is the KEY FIX for the reported issue
+    // [v5.43] Write to registry as single source of truth
     function handleManualCheckboxChange(paramKey, paramOption, isChecked) {
-        // Update virtual state
-        if (window.summaryCheckboxStates) {
-            window.summaryCheckboxStates[paramKey] = isChecked;
+        // [v5.43] Update registry (single source of truth)
+        if (typeof window.setRegistrySummaryChecked === 'function') {
+            window.setRegistrySummaryChecked(paramKey, isChecked);
         }
         
         // Mark as manually edited
@@ -1163,8 +1151,82 @@ jQuery(document).ready(function () {
     // END OF SHARED UTILITIES
     // ============================================================================
     
+    // ============================================================================
+    // [v5.5] MODAL LIFECYCLE MANAGEMENT
+    // Modals are created on-demand when opened and destroyed when closed
+    // ============================================================================
+    
+    /**
+     * [v5.5] Destroy a modal and remove from DOM
+     * @param {string} modalId - Modal element ID
+     */
+    function destroyModal(modalId) {
+        const $modal = $(`#${modalId}`);
+        if ($modal.length) {
+            $modal.remove();
+            console.log(`[v5.5] Destroyed modal: ${modalId}`);
+        }
+    }
+    
+    /**
+     * [v5.5] Open a modal by modalKey - creates on-demand if needed
+     * @param {string} modalKey - The modal key (section identifier)
+     * @param {boolean} scrollToSection - Whether to scroll measurements table
+     * @returns {jQuery} - The modal element
+     */
+    function openModalByKey(modalKey) {
+        const modalId = `${modalKey}-modal`;
+        
+        // Destroy existing modal if any
+        destroyModal(modalId);
+        
+        // Find section config
+        const section = window.options.find(s => 
+            s.modalKey === modalKey || (modalKey === 'Summary' && s.summary === true)
+        );
+        
+        if (!section) {
+            console.warn(`[v5.5] Section not found for modalKey: ${modalKey}`);
+            return null;
+        }
+        
+        // Create the modal
+        createModal(section);
+        
+        // Get reference and open
+        const $modal = $(`#${modalId}`);
+        $modal.addClass('active');
+        
+        // Auto-scroll measurements table (skip for Summary)
+        if (modalKey !== 'Summary' && typeof window.scrollToMeasurementModal === 'function') {
+            window.scrollToMeasurementModal(modalKey);
+        }
+        
+        return $modal;
+    }
+    
+    /**
+     * [v5.5] Close current modal and optionally navigate to another
+     * @param {string} currentModalId - Current modal ID to close
+     * @param {string} nextModalKey - Optional next modal to open (null = just close)
+     */
+    function closeAndNavigate(currentModalId, nextModalKey) {
+        // Destroy current modal
+        destroyModal(currentModalId);
+        
+        // Open next modal if specified
+        if (nextModalKey) {
+            openModalByKey(nextModalKey);
+        }
+    }
+    
+    // Expose globally for use by script-report.js
+    window.openModalByKey = openModalByKey;
+    window.destroyModal = destroyModal;
+    window.closeAndNavigate = closeAndNavigate;
+    
     // Create modal for Summary section (REFACTORED - uses shared utilities)
-    // [v5.0] Unified modal creation - handles both Summary and Section modals
+    // [v5.5] Modals are created on-demand - this function is called when user clicks edit
     function createModal(section) {
         const isSummarySection = section.summary === true || section.modalKey === "Summary";
         const modalKey = section.modalKey || "Summary";
@@ -1305,14 +1367,14 @@ jQuery(document).ready(function () {
             attachMeasurementEventHandlers($modal, measurementKeys);
         }
         
-        // Common event handlers
+        // [v5.5] Common event handlers - destroy modal on close
         $(`.close-button[data-modal="${modalId}"]`).on('click', function() {
-            $(`#${modalId}`).removeClass('active');
+            destroyModal(modalId);
         });
         
         $(`#${modalId}`).on('click', function(e) {
             if ($(e.target).is(`#${modalId}`)) {
-                $(this).removeClass('active');
+                destroyModal(modalId);
             }
         });
         
@@ -1362,7 +1424,7 @@ jQuery(document).ready(function () {
                 }
                 
                 // Close the modal
-                $(`#${modalId}`).removeClass('active');
+                destroyModal(modalId);
             });
         } else if (isDefaultHidden) {
             // DefaultHidden sections: Close button saves changes like Done button
@@ -1412,7 +1474,7 @@ jQuery(document).ready(function () {
                     window.updateChangedParameters(changedParams);
                 }
                 
-                $(`#${modalId}`).removeClass('active');
+                destroyModal(modalId);
             });
         }
         
@@ -1435,25 +1497,23 @@ jQuery(document).ready(function () {
                 prevSection = findPreviousVisibleSection(allSections, currentIndex);
             }
             
+            // [v5.5] Destroy current modal first, then open new one
+            destroyModal(modalId);
+            
             if (prevSection) {
                 const prevSectionKey = prevSection.section.modalKey;
-                const prevModalId = `${prevSectionKey}-modal`;
-                
-                $(`#${prevModalId}`).addClass('active');
-                $(`#${modalId}`).removeClass('active');
-                
-                if (!isSummarySection && typeof window.scrollToMeasurementModal === 'function') {
-                    window.scrollToMeasurementModal(prevSectionKey);
-                }
-            } else {
-                // No previous section - just close
-                $(`#${modalId}`).removeClass('active');
+                openModalByKey(prevSectionKey);
             }
         });
         
         // Section-specific handlers
         if (!isSummarySection) {
+            // [v5.5] Template button opens modal from measurements table
             $(`.template-button[data-modal="${modalKey}"]`).on('click', function() {
+                // Open modal on-demand (it will be created fresh with current values)
+                openModalByKey(modalKey);
+                
+                // Initialize state tracking after modal is created
                 if (!window.modalChangedInSession) window.modalChangedInSession = {};
                 if (!window.modalInitialState) window.modalInitialState = {};
                 if (!window.modalDropdownState) window.modalDropdownState = {};
@@ -1462,46 +1522,13 @@ jQuery(document).ready(function () {
                 window.modalInitialState[modalKey] = {};
                 window.modalDropdownState[modalKey] = {};
                 
-                paramKeys.forEach(paramKey => {
-                    // Store the current metrics value (may include manual edits)
+                // Capture current state for change detection
+                const $newModal = $(`#${modalId}`);
+                $newModal.find('select[data-param]').each(function() {
+                    const paramKey = $(this).data('param');
+                    window.modalDropdownState[modalKey][paramKey] = $(this).val() || '';
                     window.modalInitialState[modalKey][paramKey] = window.metrics?.[paramKey] || '';
-                    
-                    const $select = $modal.find(`#${paramKey}-select`);
-                    const $textarea = $modal.find(`#${paramKey}-textarea`);
-                    const $customRow = $modal.find(`#${paramKey}-custom-row`);
-                    const $customTextarea = $modal.find(`#${paramKey}-custom-textarea`);
-                    
-                    // [v5.2] Store the DROPDOWN's initial selected value separately
-                    // This lets us detect if user changed the dropdown vs just closing modal
-                    if ($select.length) {
-                        window.modalDropdownState[modalKey][paramKey] = $select.val() || '';
-                        
-                        // [v5.2] If this param was manually edited, show the custom textarea
-                        if (window.manuallyEditedParams && window.manuallyEditedParams[paramKey]) {
-                            if ($customRow.length && $customTextarea.length) {
-                                $customRow.show();
-                                $customTextarea.val(window.metrics?.[paramKey] || '');
-                                $select.css({
-                                    'opacity': '0.5',
-                                    'background-color': '#f0f0f0'
-                                });
-                                console.log(`[v5.2] Showing custom textarea for manually edited param: ${paramKey}`);
-                            }
-                        }
-                    }
-                    
-                    // Sync textarea to current metrics value (for custom: true params)
-                    if ($textarea.length) {
-                        $textarea.val(window.metrics?.[paramKey] || '');
-                    }
-                    // Note: We don't sync dropdown to metrics - it stays on last selected option
                 });
-                
-                $(`#${modalId}`).addClass('active');
-                
-                if (typeof window.scrollToMeasurementModal === 'function') {
-                    window.scrollToMeasurementModal(modalKey);
-                }
             });
             
             $(`.generate-section-button[data-modal="${modalKey}"]`).on('click', function() {
@@ -1558,7 +1585,7 @@ jQuery(document).ready(function () {
                     window.updateChangedParameters(changedParams);
                 }
                 
-                $(`#${modalId}`).removeClass('active');
+                destroyModal(modalId);
             });
             
             $(`.modal-next-button[data-modal="${modalKey}"]`).on('click', function() {
@@ -1608,23 +1635,20 @@ jQuery(document).ready(function () {
                     window.updateChangedParameters(changedParams);
                 }
                 
-                $(`#${modalId}`).removeClass('active');
+                // [v5.5] Destroy current modal first
+                destroyModal(modalId);
                 
                 const allSections = window.options.filter(s => s.modalKey);
                 const currentIndex = allSections.findIndex(s => s.modalKey === modalKey);
                 const nextVisible = findNextVisibleSection(allSections, currentIndex);
                 
+                // [v5.5] Open next modal on-demand
                 if (nextVisible) {
                     const nextSectionKey = nextVisible.section.modalKey;
-                    const nextModalId = `${nextSectionKey}-modal`;
-                    $(`#${nextModalId}`).addClass('active');
-                    
-                    if (typeof window.scrollToMeasurementModal === 'function') {
-                        window.scrollToMeasurementModal(nextSectionKey);
-                    }
+                    openModalByKey(nextSectionKey);
                 } else {
-                    const summaryModal = $('#Summary-modal');
-                    if (summaryModal.length) summaryModal.addClass('active');
+                    // Open Summary modal
+                    openModalByKey('Summary');
                 }
             });
             
@@ -1636,7 +1660,7 @@ jQuery(document).ready(function () {
                         window.resetTriggeredModal(modalKey);
                     }
                     // Close the modal after resetting
-                    $(`#${modalId}`).removeClass('active');
+                    destroyModal(modalId);
                 } else {
                     // Use unified toggle function from script-report.js
                     const isNowExcluded = typeof window.toggleModalExclusion === 'function' 

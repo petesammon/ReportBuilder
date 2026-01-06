@@ -15,8 +15,8 @@
 // - Wrap fixed text with variable: <!--@Operator1-->Operator: {{Operator1}}<!--/@Operator1-->
 // - Variables without fixed text don't need markers - they'll be cleared and whitespace collapsed
 //
-window.outputTemplateString = `<!--button:mHeader--><!--@mHeader-->US Trans-Thoracic Echocardiogram:<!--/@mHeader-->
-{{pHeader}}
+window.outputTemplateString = `<!--button:mHeader--><!--@mHeader-->US Trans-Thoracic Echocardiogram:
+{{pHeader}}<!--/@mHeader-->
 
 <!--button:mStudy--><!--@pMachine-->Performed on: {{pMachine}}<!--/@pMachine-->
 <!--@Operator1-->Operator: {{Operator1}}<!--/@Operator1-->

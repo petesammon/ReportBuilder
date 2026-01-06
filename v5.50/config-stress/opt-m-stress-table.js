@@ -2,7 +2,7 @@
 // Defines which measurements to show and in what order
 window.measurements = [
     {
-        sectionTitle: "Operator(s)",
+        modalTitle: "Operator(s)",
         highlight: true,
         items: [
             "Operator1",
@@ -10,7 +10,7 @@ window.measurements = [
         ]
     },    
     {
-        sectionTitle: "Protocol",
+        modalTitle: "Protocol",
         highlight: true,
         items: [
             "MaxHR",
@@ -23,7 +23,7 @@ window.measurements = [
         ]
     },    
     {
-        sectionTitle: "Exercise Stress",
+        modalTitle: "Exercise Stress",
         highlight: true,
         items: [
             "ExMinutes",
@@ -31,7 +31,7 @@ window.measurements = [
         ]
     }, 
     {
-        sectionTitle: "Dobutamine Stress",
+        modalTitle: "Dobutamine Stress",
         highlight: true,
         items: [
             "MaxDobutamineDose",
@@ -39,14 +39,14 @@ window.measurements = [
         ]
     },
     {
-        sectionTitle: "Luminity Dilution",
+        modalTitle: "Luminity Dilution",
         highlight: true,
         items: [
             "mlsLuminity",
             "mlsNaCl",
         ]
     },    {
-        sectionTitle: "Contrast",
+        modalTitle: "Contrast",
         highlight: true,
         items: [
             "ContrastAdministered",
