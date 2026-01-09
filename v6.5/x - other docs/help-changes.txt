@@ -1,0 +1,124 @@
+Changes in v4.11 (from v4.10):
+    1. 'lazy-loading' to avoid processing bottleneck of creating all modals on page initialisation
+    2. refatoring of script-form.js to remove duplication (new combined section/summary creation code)
+    3. change script-form to dot notation instead of bracket notation for summary code
+        fixed - custom text not being added to textareas
+        fixed - custom text not replacing statements in summary
+    4. updates to stress form and report
+    5. fixed hiddenSection copy to clipboard exclusion
+    
+Changes in v4.12:
+    1. drop-down-free modal options with autoResizeTextarea (with minimum height set by textareaSize: x)
+    2. fixed issue with custom textarea not resizing as expected
+    
+Changes in v4.13:
+    1.  update - attribute 'title' changed to 'sectionTitle'
+    2.  update - removed 'enableSectionPreview' as redundant
+    3.  update - changed all parameter titles to p*
+    4.  update - summary:true now used to identify/create summary section (referenced to by {{Summary}} in report)
+    5.  update - form selections now persist across template changes
+    6.  update - reset button added next to template dropdown (clears form selections)
+    7.  update - import modal clear button now clears cache of save measurments
+    8.  update - page refresh now completely clears all saved data
+    9.  updated - all valve sections to include prosthetic valve statements
+    10. fixed - form issue with normal valves summary statement ordering (from 29 to 39 - Ao is at 30, MV is at 40)
+    11. fixed - issue where auto-add-to-summary valve selections are manually unticked, but the 'Normal valves' statement is not restored to summary. 
+    12. added - Oncology EF summary statement, but this will need some further thought/totally new form/report templates
+    
+    
+Issues with v5.a:
+    X cursor jumping from measurements to contenteditable
+    X summary not found
+    X button placement - finally solved!
+    X modals don't update contenteditable yet
+    X section markers on report to define section to be hidden in full when excluded, and to define button location at section start
+    X unify modal creation code
+    X fix modal navigation flow
+    X special rules for summary modal to hide [next] and [-] buttons
+    X copy to clipboard showing handlebars for all measurements
+    X not pulling EF into summary
+    X copy to clipboard needs to remove utton placement markers
+    X summary not updating with drop-down changes
+    
+Update to v5.1:
+    Issues:
+    X modals don't update report    
+    X hidden sections collapse the text area too much, buttons overlap
+    X backspace next to buttons, removes buttons...
+    X copy to clipboard not excluding sections
+
+Updates in v5.2:
+    X reinstate triggersection code
+        X seems that this is currently enabled by 'triggerSection' in selection rather than 'defaultHidden' status
+        X orphaned code for hide triggered section button
+
+Updated in v5.3:
+    X changed to 'modal' instead of 'section' nomeclature (see Changes_v5.2.md for full details)
+        X change sectionPreviewKey to modalKey
+    X parameter spans now include 'data-modal' (<span data-param="pAorta" data-modal="modalAo" class="param-span">...</span>)
+    X sort out green highlighting (multiple applications - should only apply once on textarea rendering: green = variable, yellow = fixed text, orange = manual text)
+    X completely new data-flow architecture with central registry created on page load from existing options files
+    X hidden groups not re-hiding on [x] button click
+    X manual text edits within parameter spans not being stored
+    X ? manual text-edits outside of parameter spans - how are they handled and stored?
+    
+Updated in v5.35:
+    X seperate out LV Measurement and EF options
+    X add visual EF measurment
+
+Updated in v5.4:
+    X significant refactor...
+        X remove vestigial lazy-loading functionality which is not being used
+        X move to 'never re-render html' model to preserve manual edits in text-area
+    X very complex and time-consuming process to get conditional parameters working (<!--if: pRWMAs--> etc)
+    X calculate DVI
+    X renamed all options files for easier understanding/futureproofing
+    X LV Other Comments - automatically adding to summary despite 'summaryOnChange: false'
+    X copy to clipboard button needs to span both columns (and/or remove the 2-column structure entirely!)
+    X hidden modal needs [edit] button!!
+    X colouring of parameters in textarea
+    X remove green border from textarea-focus
+    
+    X allow measurements to be editable
+    X units not getting appended to 'manual' measurements
+    
+    X update parsing file and example file with new measurements
+
+Updated to v5.42:
+    (I lost the file changes betwen there and now...!!!)
+    summary: 
+        X updated central registry 
+            X removed modalKey links to parameters (only used for modal creation)
+            X all manual text edits entered into registry for persistence (with unique ID)
+            X any clearerd text is kept as clear entry in registry (rather than registry entry deleted)
+        X ability to use multiple modals to control the same parameters
+        X text-coloring enabled and working well
+        X added measurement fields to modals (under 'variables' array)
+        X minimum dataset modal
+        
+        X BP on modal not working as expected...
+        X additional modal adding summary statements twice...
+            x registry now tracks summary status and reads to relevant functions
+            
+Updated to v5.5:
+    X page is built initially from registry
+    X modals are temporary and built/destroyed on demand (reference registry for build states)
+    X results (parameters) and metrics (measurements) are consolidated into registry (instead of seperate stores)
+    X units are stored seperately and only appended on report insertion
+    
+    X ! need to draw measurement units into Stress report (why not working?) - only works on default because the measurements are duplicated in opt-i-parse.js
+    X force registry rebuild on template change
+    X spLV in non-summary modal adds EF statement to front position (just had to change summaryOrder as modal order determines location on same line)
+    x widened measurements table from 260px to 270px (to avoid wrapping)
+    x fixed spelling of 'abnormalities' in RWMA summarytext
+    XXXX right click on parameter for drop-down options
+    X issue with moved parameter string, then update parameter, updates the moved string, but also inserts new string in original location
+
+Updated to v6:
+    x - full refactor to get rid of seperate metrics and results stores - all entries now run through central 'registry'
+    x - 
+
+To Do list:    
+    - Auto parameter selection based on measurements/other parameteres ('algorithm: "diastology" atribute?)
+    
+    - (Autovalidate operator?)

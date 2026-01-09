@@ -1,0 +1,54 @@
+Diastology: 
+// NSR, normal EF
+        IF "pRHythm" = 'Sinus rhythm' AND "EFBP" >50% AND "pRWMAs" = false THEN...
+// assigned to 'normal' flowchart            
+                IF "EEPrimeAv" less than 14 
+                AND "LAESVInd" less than 34 
+                AND "TRVmax" not greater than 2.79 
+                
+                THEN
+// assigned to left arm                  
+                    IF "Gender" equals Male AND "Age" less than 40 AND "EPrimeSept" greater than 7 AND "EPrimeLat" greater than 9 
+                        THEN = "Normal diastolic function for age."
+// <40, normal E primes                            
+                    IF "Gender" equals Male
+                                AND     "Age" less than 40
+                                AND     "EPrimeSept" not greater than 7
+                                OR      "EPrimeLat" not greater than 9
+                                THEN    = title: "Impaired diastolic function with normal filling pressures."
+// <40, abnormal E primes                            
+                            
+                        IF          "Gender" equals Female
+                            AND     "Age" less than 40
+                            AND     "EPrimeSept" greater than 8
+                            AND     "EPrimeLat" greater than 11
+                            THEN    = title: "Normal diastolic function for age."
+                            
+                            IF          "Gender" equals Female
+                                AND     "Age" less than 40
+                                AND     "EPrimeSept" not greater than 8
+                                OR      "EPrimeLat" not greater than 11
+                                THEN    = title: "Impaired diastolic function with normal filling pressures."
+                        
+                        IF          "Age" between 40-65
+                            AND     "EPrimeSept" greater than 5
+                            AND     "EPrimeLat" greater than 6
+                            THEN    = title: "Normal diastolic function for age."
+                            
+                            IF          "Age" between 40-65
+                                AND     "EPrimeSept" not greater than 5
+                                OR      "EPrimeLat" not greater than 6
+                                THEN    = title: "Impaired diastolic function with normal filling pressures."
+                                
+                        IF          "Age" greater than 65
+                            AND     "EPrimeSept" greater than 4
+                            AND     "EPrimeLat" greater than 5
+                            THEN    = title: "Normal diastolic function for age."
+                            
+                            IF          "Age" greater than 65
+                                AND     "EPrimeSept" not greater than 4
+                                OR      "EPrimeLat" not greater than 5
+                                THEN    = title: "Impaired diastolic function with normal filling pressures."
+                        
+                        
+            

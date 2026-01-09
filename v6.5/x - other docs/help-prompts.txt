@@ -1,0 +1,87 @@
+---- Building v6.0 ----
+
+Hi Claude. Here are my current project files which we will be working on to build v6.0 - please catalogue these and add them to the Report Builder project folder. Please clear any other previous files from the project folder as we will be focusing on these files only going forwards. 
+
+I would like to make some significant changes to the code. Let's start with desired logic for various elements.
+
+1) desired central variable registry behaviour: 
+    - on page load, all variables (both measurements and parameters) specified within config files defined by the selected config-report.js are processed directly into a central registry/data-store (no secondary stores/aliases)
+    - measurements are added to the registry with values and units as seperate attributes - so that values and units can be handled independently throughout the codebase (units are only ever appended to the values on insertion into the report textarea)
+    - parameters are added to the registry alongisde their current 'checkbox status' - with any summary functions (i.e. summaryOnChange, summaryExclude, update summary, modal creation, checkbox control etc) referencing the registry directly to get/set the current checkbox status and ensure reliable handling of summary creation
+    - all entries within the registry should have a 'clean/dirty' attribute to track whether the value has been user-edited or not (where user-editing means manual text-entry, either in the content-editable textarea, or in any other text-area)
+    - all registry entry attributes should be globally availble for other functions to access as required
+    - there should be a get/set handler such that the user only ever sees the current value in the registry - possible rules: 
+        - any functions that produce user-viewable information are signalled to update in realtime when a registry entry is changed (e.g. measurements table updates when a change is made within a measurement span in the report; parameter string in the report is updated when a drop-down for that parameter is changed)
+        - any function that reads from the registry should pull latest information before presenting it to the user (e.g. modal loads with current registry entry pre-selected)
+    - there should, ideally, not be any aliased or secondary stores other than the central registry - to avoid possible errors in read-write timings (e.g. metrics and results stores should be consolidated into the central registry)
+    - parameters and measurements should be able to be inserted into the report irrespective of whether there is a modal to control them or not
+    - legacy results object should be removed (with results being directly processed through central registry)
+    - legacy metrics object should be removed (with metrics being directly processed through central registry)
+
+2) desired contenteditable textarea ('report') behaviour:
+    - on page load (but after central registry creation), all elements within the report template should be parsed into hidden spans
+    - hidden span markers/handles should include reference to:
+        a) the string 'type' (measurement, parameter, fixed text, manual text)
+        b) a unique identifier that matches with registry entry (parameter = title - e.g. 'pLVSF', measurement = title - e.g. 'LVEDV', fixed text = unique ID, manual edit = unique ID), and 
+        c) 'clean'/'ditrty' status.
+    - all hidden span contents should be stored and uniquely identifiable within the central registry. 
+    - where there is an existing entry already loaded into the central registry (parameters, measurements), the strings within the spans will reflect the value within the central registry
+    - where there is no existing registry entry, a new entry will be added such that all user-viewable text within the text-area is stored and uniquely identifiable within the variable registry
+    - clarification on rules/scenarios as follows:
+        - any variables (parameters or measurements, which are rendered from {{*}} strings on the template report) are inserted into the report within hidden spans that identify both the 'type' (measurement or parameter) and a unique reference to the existing central registry entry (parameter title - e.g. 'pLVSF', measurement title - e.g. 'LVEDV') to ensure robust cross-referencing
+            - variable spans should also include a unique sequential numerical reference number (ID) to allow future more complex handling of multiple occurences of the same variable within the report
+            - all IDs relating to the same variable should be stored as an array within the variable entry in the registry (i.e. the same variable entry lists all the IDs for strings relating to that particular variable in the report) 
+            - variables (measurements, parameters) should NEVER have more than one entry in the central registry
+            - when the variable is updated within the registry (from any source), all instances of that variable should be updated within the report (regardless of ID)
+        - any 'fixed text' strings (between '<!--*-->' spans and/or {{*}} spans on the report template) are inserted into the report within hidden spans that identify both the 'type' ('fixed text') and a sequential unique numerical identifier. each fixed text string is added as a new entry in the central registry alongside the type, clean/dirty status, and the unique identifer - to ensure robust cross-referencing of
+            - for clarity, unlike variables, multiple instances of fixed text with the same value should be stored as seperate entries within the central registry such that updates to one instance should NOT affect other instances with the same value
+        - any manual edits subsequently made within any parameter, measurement or 'fixed text' spans should overwrite the previous value within the central registry in realtime, with the registry entry updated to reflect that the value is now 'dirty' (for clarity, this should ALSO apply to measurements - the central registry value should be updated with the manually edited value, and this value is cascaded to the measurements table, and the entry is marked as 'dirty')
+        - any manual text subsequently entered outside of the inserted spans are wrapped in hidden spans that that identify both the 'type' ('manual addition') and a unique sequential numerical identifier. each manual addition string is added as a new entry the central registry alongside the type, clean/dirty status (always 'dirty'), and the unique identifer.
+            - for clarity, unlike variables, multiple instances of manually added text with the same value should be stored as seperate entries within the central registry, such that updates to one instance should NOT affect other instances with the same value
+        - any line breaks added within 'parameter','fixed text' or 'manual additions' should be stored in the central registry, so that line breaks are preserved on any report rebuild. 
+        - line breaks should not be allowed within 'measurement' strings
+        - when any span contents are manually cleared by the user, span wrappers should persist on the report with an empty string and the registry entry should persist with an empty value (i.e. once created, hidden span wrappers should be protected from deletion under all circumstances)
+    - the contenteditable html should be updated on a granular level only. full re-renders of the report text should ONLY occur as a result of the following direct user actions:
+        1) page refresh
+        2) template change
+        3) clicking the refresh button adjacent to the template selector
+        - for clarity, any automatic rebuild commands within functions that fall outside of these three scenarios should be removed, as full re-renders should never occur outside of the scope defined above (notable erroneous occurances at present include: importmeasurements)
+
+3) desired text coloring rules:
+    - css styles should differentiate appearance of different hidden spans within the report contenteditable textarea, with rules as follows:
+        a) all 'dirty' strings = subtle red highlight (this includes all manual edits - which will only ever be 'dirty')
+        b) all 'clean' parameter strings = subtle green highlight
+        c) all 'clean' measurements strings = subtle blue highlight
+        d) all 'clean' fixed text strings = subtle yellow highlight
+        e) any remaining strings = dark grey highlight with white text (for visual debugging as this this state should not exist)
+
+4) desired [copy to clipboard] behaviour:
+    - the copied output from the [copy to clipboard] function should match the visible report in every way. As such, the copy to clipboard function should simply strip the hidden spans, but preserve all of the visible content within them, including line breaks. There should be no additional processing in the copy-to-clipboard step.     
+    
+Please could you carefully trace through the logic above and make the necessary changes to align the existing code to the logic? Where clarification is required, please ask before proceeding.
+
+For clarity, no changes should be made to any visual elements of the page other than the text coloring rules. 
+
+
+------ next up ------
+
+unexpected issues: 
+- summary being duplicated under certain circumastances (? accidental deletion of hidden span marker and existing summary text not being identified as such, and full rebuild of page instead of granular updating)
+- report header being duplicated multiple times if cursor is placed before header and user presses delete (? accidental deletion of hidden span and existing header text being mis-identified, on full rebuild, both spans being identified,but unable to delete?)
+- custom text entered into mode is displayed as green on the report when it should be red (? clean/dirty status not being accurately sotred/rules not correct)
+- manual measurements entered into measurement table not drawn into report if user then imports new data (? multuple data stores with non-matching data and/or missin update calls/pushes)   
+- unable to delete lines of code (full re-render due to missing buttons?)    
+    
+    
+Now, for some updates to existing functionality. 
+1) the hiddenSection and triggerSection functionality is to be removed in entirety. This includes all handlers and visual elements that relate speficially to this functionality. 
+2) buttons ([edit], [-], [+]) will no longer be displayed within the textarea - so all functionality relating to button parsing from the template, button locating within the textarea and adjustments to the textarea to account for button presence can be removed from the code.     - the core code to create buttons from modals
+    
+    
+    
+I am also experiencing an issue where [copy to clipboard] output doesn't match contenteditable layout - some line-breaks are missing, so some of the text gets compacted onto a single line.  
+
+Please could yo 
+
+
+?? handling of 
