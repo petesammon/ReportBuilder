@@ -1,0 +1,1088 @@
+/* EchoTools v6.5 - Style Report CSS */
+/* Updated with 4-column modal layout, edit button styling, calculated measurement styling, and icon buttons */
+
+:root {
+    --pico-font-size: 100%;
+    /* Consistent element height */
+    --element-height: 32px;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
+main.container {
+    height: 100%;
+    padding: 0;
+    max-width: none;
+}
+
+/* ============================================================================
+   TWO-COLUMN LAYOUT
+   ============================================================================ */
+
+.two-column-layout {
+    display: grid;
+    grid-template-columns: 325px 1fr;
+    gap: 1rem;
+    height: 100%;
+    padding: 1rem;
+}
+
+@media (min-width: calc(1300px + 2rem)) {
+    .two-column-layout {
+        max-width: 1300px;
+        margin: 0 auto;
+    }
+}
+
+/* ============================================================================
+   MEASUREMENTS PANEL (Left Column)
+   ============================================================================ */
+
+#measurements-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    min-width: 0; /* Prevent grid blowout */
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    background: var(--pico-background-color);
+    z-index: 10;
+    padding: 0.5rem 0;
+    padding-right: 15px; /* Align button with content below */
+    flex-shrink: 0;
+}
+
+.panel-header h2 {
+    margin: 0;
+    font-size: 1.3rem;
+}
+
+.panel-header button {
+    margin: 0;
+    height: var(--element-height);
+    padding: 0 0.8rem;
+    font-size: 0.8rem;
+}
+
+#measurements-table {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 15px; /* Space for scrollbar */
+    min-width: 0; /* Prevent content blowout */
+}
+
+/* ============================================================================
+   MEASUREMENTS TABLE
+   ============================================================================ */
+
+.measurement-group-header {
+    font-size: 0.8rem;
+    font-weight: 350;
+    padding: 0.35rem 0.5rem;
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #dee2e6;
+    margin-top: 0.5rem;
+    margin-left: 0;
+    margin-right: 0;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    transition: background-color 0.3s ease;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.measurement-group-header:first-child {
+    margin-top: 0;
+    background-color: var(--pico-primary-background);
+    color: white;
+}
+
+.measurement-group-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+/* Column widths - with table-layout: fixed, these include padding
+   Content area: 310px (325 grid - 15 scrollbar padding)
+   Value td: 80 input + 4 gap + 65 unit + 16 padding = 165px
+   Label td: 310 - 165 = 145px */
+.measurement-group-table td:first-child {
+    width: 145px;
+}
+
+.measurement-group-table td:last-child {
+    width: 165px;
+}
+
+.measurement-group-table td {
+    padding: 0.2rem 0.5rem;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.8rem;
+    box-sizing: border-box;
+    vertical-align: middle;
+}
+
+.measurement-label {
+    white-space: normal;
+    word-wrap: break-word;
+    text-align: right;
+}
+
+.measurement-value {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 100%;
+}
+
+/* Reset Pico CSS input defaults for measurement inputs - ultra specific */
+#measurements-table .measurement-group-table input[type="text"].measurement-input,
+.measurement-group-table input.measurement-input,
+.measurement-input,
+input.measurement-input[type="text"] {
+    width: 80px !important;
+    min-width: 0 !important;
+    max-width: 80px !important;
+    flex: 0 0 80px !important;
+    height: 26px !important;
+    padding: 0.2rem 0.4rem !important;
+    font-size: 0.8rem !important;
+    border: 1px solid var(--pico-muted-border-color) !important;
+    border-radius: 3px !important;
+    margin: 0 !important;
+    margin-bottom: 0 !important;
+    text-align: right;
+    box-sizing: border-box !important;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Full-width input (extends into unit space): 80 + 4 (gap) + 65 (unit) = 149px */
+#measurements-table .measurement-group-table input[type="text"].measurement-input.full-width,
+.measurement-group-table input.measurement-input.full-width,
+.measurement-input.full-width,
+input.measurement-input.full-width[type="text"] {
+    width: 149px !important;
+    max-width: 149px !important;
+    flex: 0 0 149px !important;
+    text-align: left;
+}
+
+.measurement-input:focus {
+    border-color: var(--pico-primary-border);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(118, 191, 68, 0.15);
+}
+
+/* Calculated measurement inputs - subtle blue background */
+.measurement-input.calculated {
+    background-color: rgba(59, 130, 246, 0.08);
+}
+
+.measurement-input.calculated:focus {
+    background-color: rgba(59, 130, 246, 0.12);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.measurement-unit {
+    color: var(--pico-muted-color);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    width: 65px;
+    flex: 0 0 65px;
+    text-align: left;
+    overflow: hidden;
+}
+
+/* Hide unit when input is full-width */
+.measurement-input.full-width + .measurement-unit {
+    display: none;
+}
+
+/* ============================================================================
+   OPTIONS PANEL (Right Column)
+   ============================================================================ */
+
+#options-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Template selector row - CENTERED */
+.template-selector-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+    padding-bottom: 0.5rem;
+}
+
+.template-selector-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.template-selector-row label {
+    margin: 0;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.template-selector-row select {
+    min-width: 300px;
+    height: var(--element-height);
+    margin: 0;
+    padding: 0 2rem 0 0.75rem;
+}
+
+/* ============================================================================
+   ICON BUTTONS (Auto/Lightbulb, Eye, Reset) - v6.5
+   ============================================================================ */
+
+.icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--element-height);
+    height: var(--element-height);
+    min-width: var(--element-height);
+    padding: 0 !important;
+    margin: 0;
+    background-color: var(--pico-primary-background);
+    border: var(--pico-border-width) solid var(--pico-primary-border);
+    border-radius: var(--pico-border-radius);
+    color: var(--pico-primary-inverse);
+    cursor: pointer;
+    transition: background-color var(--pico-transition),
+                border-color var(--pico-transition);
+}
+
+.icon-button:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
+}
+
+.icon-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 var(--pico-outline-width) var(--pico-primary-focus);
+}
+
+.icon-button svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    fill: none;
+}
+
+/* Secondary icon button (e.g., Reset) - grey styling */
+.icon-button.secondary {
+    background-color: var(--pico-secondary-background);
+    border-color: var(--pico-secondary-border);
+    color: var(--pico-secondary-inverse);
+}
+
+.icon-button.secondary:hover {
+    background-color: var(--pico-secondary-hover-background);
+    border-color: var(--pico-secondary-hover-border);
+}
+
+.icon-button.secondary:focus {
+    box-shadow: 0 0 0 var(--pico-outline-width) var(--pico-secondary-focus);
+}
+
+/* Hide text in icon buttons, show only icon */
+#run-algorithms {
+    font-size: 0;
+}
+
+.template-divider {
+    margin: 0 0 0.5rem 0;
+    opacity: 1;
+    border: none;
+    border-top: 2px solid rgba(128, 128, 128, 0.4);
+    flex-shrink: 0;
+}
+
+/* Report textarea */
+#report-textarea,
+.report-contenteditable {
+    flex: 1;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-family: inherit;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 0.75rem;
+    padding-left: 38px; /* creates space for button column on left */
+    background-color: #fff;
+    min-height: 0;
+}
+
+#report-textarea:focus,
+.report-contenteditable:focus {
+    outline: none;
+    border-color: var(--pico-primary-border);
+    box-shadow: 0 0 0 2px rgba(118, 191, 68, 0.15);
+}
+
+/* Copy button */
+.copy-button-container {
+    margin-top: 0.75rem;
+    flex-shrink: 0;
+}
+
+#copy-report {
+    display: block;
+    width: 100%;
+    height: var(--element-height);
+}
+
+/* ============================================================================
+   BUTTON STYLES
+   ============================================================================ */
+
+button {
+    height: var(--element-height);
+    padding: 0 1rem;
+    font-size: 0.9rem;
+}
+
+/* All selects match button height with smaller text */
+select {
+    height: var(--element-height);
+    font-size: 0.85rem;
+    padding: 0 2rem 0 0.5rem;
+    line-height: var(--element-height);
+}
+
+/* Lime green primary buttons */
+#copy-report,
+#submit,
+#open-import-modal,
+.inline-edit-button,
+.modal-back-button,
+.modal-next-button,
+.modal-done-button,
+.modal-edit-button {
+    background-color: var(--pico-primary-background);
+    border-color: var(--pico-primary-border);
+    color: var(--pico-primary-inverse);
+}
+
+#copy-report:hover,
+#submit:hover,
+#open-import-modal:hover,
+.inline-edit-button:hover,
+.modal-back-button:hover,
+.modal-next-button:hover,
+.modal-done-button:hover,
+.modal-edit-button:hover {
+    background-color: var(--pico-primary-hover-background);
+    border-color: var(--pico-primary-hover-border);
+}
+
+/* Secondary/gray buttons */
+#reset-selections,
+#clear-import,
+.secondary {
+    background-color: var(--pico-secondary-background);
+    border-color: var(--pico-secondary-border);
+    color: var(--pico-secondary-inverse);
+}
+
+#reset-selections:hover,
+#clear-import:hover,
+.secondary:hover {
+    background-color: var(--pico-secondary-hover-background);
+    border-color: var(--pico-secondary-hover-border);
+}
+
+/* ============================================================================
+   INLINE BUTTONS (Edit button within report text)
+   ============================================================================ */
+
+.inline-button-group {
+    display: block; /* Block so it sits on its own line */
+    float: left; /* Float left to pull into margin space */
+    margin-left: -38px; /* Pull back into the padding space (matches padding-left) */
+    width: 30px; /* Wider to fit both buttons side-by-side */
+    margin-right: 5px; /* Small gap between buttons and text */
+    margin-bottom: 0;
+    text-align: right; /* Align buttons to the right of their column */
+    user-select: none;
+    -webkit-user-select: none;
+    white-space: nowrap;
+    line-height: 2; /* Bigger buttons - overlap onto next line */
+}
+
+.inline-edit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 4px !important;
+    margin: 0 !important;
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+    min-height: 0 !important;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+/* ============================================================================
+   MODAL STYLES - Base (applies to .modal and .modal-overlay)
+   ============================================================================ */
+
+.modal,
+.modal-overlay {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Import modal needs higher z-index to appear above form modals */
+#import-modal {
+    z-index: 1100;
+}
+
+.modal.active,
+.modal-overlay.active {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 5vh;
+}
+
+.modal-content {
+    background-color: var(--pico-background-color);
+    border-radius: var(--pico-border-radius);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    min-width: 300px;
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    position: relative;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+/* Close button positioned absolute right */
+.modal-header .close-button {
+    position: absolute;
+    right: 1rem;
+}
+
+.close-button {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--pico-muted-color);
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--pico-border-radius);
+}
+
+.close-button:hover {
+    background-color: var(--pico-muted-border-color);
+    color: var(--pico-color);
+}
+
+.modal-body {
+    padding: 0;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0; /* Important for flex container scrolling */
+}
+
+/* Add padding to table container, not modal-body, for proper sticky behavior */
+.modal-body .template-options-table {
+    margin: 0;
+}
+
+.modal-body .template-options-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-body .template-options-table tbody td:first-child,
+.modal-body .template-options-table tbody td:last-child {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+/* ============================================================================
+   MODAL ACTIONS BAR - Navigation Buttons
+   ============================================================================ */
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    background-color: #f8f9fa;
+}
+
+.modal-back-button,
+.modal-done-button,
+.modal-next-button {
+    margin: 0 !important;
+    padding: 0 1.25rem !important;
+    height: var(--element-height) !important;
+    font-size: 0.9rem !important;
+}
+
+/* Invisible placeholder button to maintain layout when Back is hidden */
+.modal-back-placeholder {
+    visibility: hidden;
+    margin: 0 !important;
+    padding: 0 1.25rem !important;
+    height: var(--element-height) !important;
+    font-size: 0.9rem !important;
+    width: auto;
+    min-width: 70px; /* Match approximate width of "< Back" button */
+}
+
+/* ============================================================================
+   MODAL STYLES - Group Modals (RIGHT COLUMN ONLY overlay)
+   ============================================================================ */
+
+.modal-overlay {
+    left: auto;
+    right: 0;
+    width: calc(100% - 325px - 2rem);
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+@media (min-width: calc(1300px + 2rem)) {
+    .modal-overlay {
+        right: calc((100% - 1300px + 2rem) / 2);
+        width: calc(1300px - 325px - 2rem);
+    }
+}
+
+.modal-overlay.active {
+    padding: 5vh 1rem 1rem 1rem;
+}
+
+.modal-overlay .modal-content {
+    max-width: 1000px;
+    width: 95%;
+}
+
+/* ============================================================================
+   TEMPLATE OPTIONS TABLE - 4 COLUMN LAYOUT IN MODALS
+   ============================================================================ */
+
+.template-options-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.template-options-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--pico-background-color);
+}
+
+.template-options-table thead th {
+    color: var(--pico-muted-color);
+    font-weight: 600;
+    font-size: 0.8rem;
+    padding: 0.75rem 0.5rem;
+    border-bottom: 2px solid var(--pico-muted-border-color);
+    background-color: var(--pico-background-color);
+}
+
+/* Column 1: Label - max 220px */
+.template-options-table thead th:first-child {
+    text-align: right;
+    width: 25%;
+    max-width: 220px;
+}
+
+/* Column 2: Edit button - 40px fixed */
+.template-options-table thead th:nth-child(2) {
+    text-align: center;
+    width: 40px;
+}
+
+/* Column 3: Value - flexible */
+.template-options-table thead th:nth-child(3) {
+    text-align: left;
+    width: auto;
+}
+
+/* Column 4: Summary - 60px fixed */
+.template-options-table thead th:last-child {
+    text-align: center;
+    width: 60px;
+}
+
+.template-options-table tbody td {
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    vertical-align: middle;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.8rem; /* Reduced from default */
+}
+
+/* Add left padding to first column */
+.template-options-table tbody td:first-child {
+    padding-left: 1rem;
+}
+
+/* Add right padding to last column */
+.template-options-table tbody td:last-child {
+    padding-right: 1rem;
+}
+
+/* Add padding to header first/last columns too */
+.template-options-table thead th:first-child {
+    padding-left: 1rem;
+}
+
+.template-options-table thead th:last-child {
+    padding-right: 1rem;
+}
+
+/* Column 1: Label */
+.template-options-table .param-label,
+.template-options-table .measurement-label {
+    font-weight: 500;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    text-align: right;
+    padding-right: 1rem;
+    width: 220px;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Column 2: Edit button */
+.template-options-table .param-edit,
+.template-options-table .measurement-edit {
+    text-align: center;
+    width: 40px;
+    padding: 0.35rem 0.25rem;
+}
+
+/* Modal edit button - same pen symbol, 32px height, lime green */
+.modal-edit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px !important;
+    min-height: 32px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 0.9rem !important;
+    line-height: 1 !important;
+    border-radius: var(--pico-border-radius);
+    cursor: pointer;
+}
+
+/* Column 3: Options/Value */
+.template-options-table .param-options,
+.template-options-table .measurement-value-cell {
+    padding: 0.35rem 0.5rem;
+}
+
+.template-options-table .param-options select,
+.template-options-table .param-options textarea {
+    width: 100%;
+    min-width: 250px;
+    margin: 0;
+    height: var(--element-height);
+    font-size: 0.8rem; /* Reduced from 0.85rem */
+}
+
+.template-options-table .param-options textarea,
+.template-options-table .modal-textarea {
+    /* Start at dropdown height, auto-resize by JS when needed */
+    height: var(--element-height);
+    min-height: var(--element-height);
+    resize: none;
+    font-family: inherit;
+    font-size: 0.8rem; /* Reduced from 0.85rem */
+    line-height: 1.4;
+    padding: 0.4rem 0.6rem;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+/* Custom textarea below dropdown */
+.modal-custom-textarea {
+    width: 100%;
+    margin-top: 0.5rem !important;
+    /* Start at exact dropdown height, will be auto-resized by JS */
+    height: var(--element-height);
+    min-height: var(--element-height);
+    resize: none;
+    font-family: inherit;
+    font-size: 0.8rem; /* Reduced from 0.85rem */
+    /* Line height calculated to fit in 32px with padding */
+    line-height: 1.4;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--pico-form-element-border-color);
+    border-radius: var(--pico-border-radius);
+    box-sizing: border-box;
+    overflow: hidden;
+    /* Prevent browser default textarea styling */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+.modal-custom-textarea:focus {
+    border-color: var(--pico-form-element-active-border-color);
+    outline: none;
+    box-shadow: 0 0 0 var(--pico-outline-width) var(--pico-form-element-focus-color);
+}
+
+/* Greyed out dropdown (when custom textarea is enabled) */
+.modal-select.greyed-out {
+    opacity: 0.5;
+    background-color: #f5f5f5;
+}
+
+/* Column 4: Summary checkbox */
+.template-options-table .param-summary,
+.template-options-table .measurement-summary {
+    text-align: center;
+    width: 60px;
+}
+
+.template-options-table .param-summary input[type="checkbox"] {
+    margin: 0;
+    width: 20px;
+    height: 20px;
+}
+
+/* ============================================================================
+   MODAL MEASUREMENT ROWS
+   ============================================================================ */
+
+.modal-measurement-row td {
+    background-color: rgba(0, 100, 255, 0.03);
+}
+
+.modal-measurement-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.modal-measurement-input {
+    width: 80px !important;
+    min-width: 0 !important;
+    max-width: 80px !important;
+    height: var(--element-height);
+    padding: 0.3rem 0.5rem;
+    font-size: 0.8rem;
+    text-align: right;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    margin: 0 !important;
+    margin-bottom: 0 !important;
+    box-sizing: border-box;
+}
+
+/* Full-width modal measurement input (extends into unit space): 80 + 4 + 65 = 149px */
+.modal-measurement-input.full-width {
+    width: 149px !important;
+    max-width: 149px !important;
+    text-align: left;
+}
+
+.modal-measurement-input:focus {
+    border-color: var(--pico-primary-border);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(118, 191, 68, 0.15);
+}
+
+/* Calculated measurement inputs in modals - subtle blue background */
+.modal-measurement-input.calculated {
+    background-color: rgba(59, 130, 246, 0.08);
+}
+
+.modal-measurement-input.calculated:focus {
+    background-color: rgba(59, 130, 246, 0.12);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.modal-measurement-unit {
+    color: var(--pico-muted-color);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    width: 65px;
+    flex: 0 0 65px;
+    text-align: left;
+}
+
+/* Hide unit when input is full-width */
+.modal-measurement-input.full-width + .modal-measurement-unit {
+    display: none;
+}
+
+/* ============================================================================
+   IMPORT MODAL SPECIFIC STYLES
+   ============================================================================ */
+
+.format-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0 1rem;
+    flex-wrap: wrap;
+}
+
+.format-selector label {
+    margin: 0;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.format-selector select {
+    flex: 1;
+    min-width: 150px;
+    margin: 0;
+}
+
+.format-selector button {
+    margin: 0;
+}
+
+.format-selector .help-button {
+    padding: 0 0.65rem;
+    font-size: 0.9rem;
+}
+
+#report {
+    width: calc(100% - 2rem);
+    min-height: 300px;
+    font-family: monospace;
+    font-size: 0.85rem;
+    resize: vertical;
+    margin: 0 1rem 1rem 1rem;
+}
+
+/* ============================================================================
+   [v6.0] SPAN TEXT COLORING RULES
+   ============================================================================ */
+
+[data-type],
+[data-handle] {
+    border-radius: 2px;
+    padding: 0 1px;
+    transition: background-color 0.15s ease;
+}
+
+/* Clean measurements - Blue */
+.span-clean-measurement,
+[data-type="measurement"][data-status="clean"] {
+    background-color: rgba(0, 100, 255, 0.08);
+}
+
+.span-clean-measurement:hover,
+[data-type="measurement"][data-status="clean"]:hover {
+    background-color: rgba(0, 100, 255, 0.15);
+}
+
+/* Clean parameters - Green */
+.span-clean-parameter,
+[data-type="parameter"][data-status="clean"] {
+    background-color: rgba(0, 185, 0, 0.08);
+}
+
+.span-clean-parameter:hover,
+[data-type="parameter"][data-status="clean"]:hover {
+    background-color: rgba(0, 185, 0, 0.15);
+}
+
+/* Clean fixed text - Yellow */
+.span-clean-fixed,
+[data-type="fixed-text"][data-status="clean"] {
+    background-color: rgba(255, 200, 0, 0.08);
+}
+
+.span-clean-fixed:hover,
+[data-type="fixed-text"][data-status="clean"]:hover {
+    background-color: rgba(255, 200, 0, 0.15);
+}
+
+/* Dirty (any type) - Red */
+.span-dirty,
+[data-status="dirty"],
+[data-type="manual"] {
+    background-color: rgba(255, 50, 50, 0.08);
+}
+
+.span-dirty:hover,
+[data-status="dirty"]:hover,
+[data-type="manual"]:hover {
+    background-color: rgba(255, 50, 50, 0.15);
+}
+
+/* Auto (algorithm-set) - Darker red/maroon */
+.span-auto,
+[data-status="auto"] {
+    background-color: rgba(180, 0, 80, 0.12);
+}
+
+.span-auto:hover,
+[data-status="auto"]:hover {
+    background-color: rgba(180, 0, 80, 0.20);
+}
+
+/* Unknown state - Grey */
+.span-unknown {
+    background-color: rgba(50, 50, 50, 0.9);
+    color: white;
+}
+
+.span-unknown:hover {
+    background-color: rgba(30, 30, 30, 0.95);
+}
+
+/* ============================================================================
+   PARAM BLOCKS (conditional if-block wrappers)
+   ============================================================================ */
+
+.param-block {
+    display: inline;
+}
+
+.param-block:not(.block-empty)::before {
+    content: "\A";
+    white-space: pre;
+}
+
+.param-block.block-empty {
+    display: none;
+}
+
+/* ============================================================================
+   PARAMETER CONTEXT MENU
+   ============================================================================ */
+
+.param-context-menu {
+    position: fixed;
+    z-index: 10000;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 4px 0;
+    margin: 0;
+    list-style: none;
+    min-width: 150px;
+    max-width: 600px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.param-context-menu .context-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.param-context-menu .context-menu-item:hover {
+    background-color: #f0f0f0;
+}
+
+.param-context-menu .context-menu-item.selected {
+    background-color: #e3f2fd;
+    font-weight: 500;
+}
+
+.param-context-menu .context-menu-item.selected::before {
+    content: "✓ ";
+    color: #1976d2;
+}
+
+.param-context-menu .context-menu-separator {
+    height: 1px;
+    background-color: #e0e0e0;
+    margin: 4px 8px;
+    padding: 0;
+}
+
+.param-context-menu .context-menu-custom {
+    color: #666;
+    font-style: italic;
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+.text-muted {
+    color: var(--pico-muted-color);
+}
+
+.text-small {
+    font-size: 0.85rem;
+}
+
+.hidden {
+    display: none !important;
+}

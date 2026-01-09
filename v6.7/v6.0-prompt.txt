@@ -1,0 +1,117 @@
+------- start of v6.7 ------
+
+here are my working files that I would like to focus on - we'll be building v6.7. 
+my query is long, so I have uploaded it as v6.7-prompt.txt
+
+I want to focus on the summary - the current process, as far as I understand, is:
+1) updateSummary is the main summary cretion function
+2) summary is built entirely from variables (no fixed-text within the summary)
+3) inclusion of variables within the summary is determined by summary checkbox status - read from the central registry and updated in realtie
+4) where summary stuts = true, the appropriate statement ('title' or 'summarytext') is read from the relevant parameter file
+5) individual parameter strings are combined into a single string, with ordering and line-breaks governed by 'summaryOrder' number - where multiple items have the same summary order, then order is determined by ... ???
+6) rules are applied to add line breaks and strip spaces between adjoining statements
+7) the full summary string is inserted into the report as a single span
+8) if any paramter is updated/added/removed within the summary string, the whole summary string is rebuilt and re-inserted
+9) the complete summary string isn't saved anywhere other than on the report text area, so any manual edits within the summary are cleared on summary rebuild
+
+Assuming this represents the current process fairly, I would like to alter some of the flow, to the following. 
+1) on page initialisation andregistry creation, a new 'summarystring' attribute is created for all parameter entries, but left with an empty value
+2) updateSummary remains the main summary handler, but new handlers may also be required
+2) summary continues to be built entirely from variables (which in reality, can only be 'parameters')
+3) inclusion of parameters within the summary is determined by summary checkbox status (as recorded on and read from the central registry)
+4) the string to be included in the summary ('summarystring') should be goverened by the following rules/priority:
+    - where parameter selction has 'summarytext' specified, the 'summarytext' value is used as the 'summarystring'
+    - where parameter selction has no 'summarytext', 'title' value is used as the 'summarystring'
+    - where parameter value has been manually edited, the manually edited text string is used as the 'summarystring'
+5) ordered of 'summarystrings' continues to be governed by summaryOrder value, however with some updated logic as follows:
+    - summaryOrder values will comprise two numerical values seperated by a period (e.g. 1.1, 1.2, 2.1, 4.1 etc)
+    - the first number represents the line order (e.g. 4.1 goes on a new line below 2.1, which is a line below 1.1)
+    - the second number represents the order within the line (e.g. 1.2 goes after 1.1 on the same line)
+    - where two entries have the same value, line order will be determined by position on the original file (e.g. line order on opt-r-parameters.js)
+6) existing rules regarding line breaks and removal/addition of spaces will apply (the timing of this step relative to saving to registry and span-wrapping will need to be carefully considered to ensure that line breaks and correct spacing is correctly stored and preserved)
+7) once the content of each 'summarystring' is finalised, a new handler will write this 'summarystring' value to the corresponding 'summarystring' attribute for the linked parameter entry within the central registry (for preservation of the completed string, and to allow subsewuent manual editing if desired)
+7) each 'summarystring' is wrapped individually in hidden spans - with the following attributes:
+    - data-handle - given that all entries will be linked to parameters, this will be the handle for the linked parameter (e.g. 'pDiastology')
+    - data-type - in all cases, this will be 'summarystring'
+    - clean/dirty/auto status - this will read from the central registry status, such that
+        - clean = linked parameter was selected on dropdown
+        - dirty = linked parameter was entered manually (either on modal textarea or within report textarea)
+        - auto = linked parameter was selected by algorithm
+8) only after strings are wrapped in individual spans are they entered into the report textarea - this preserves string independence and opens the door for granular updating of the summary instead of full rebuild on any parameter change
+9) full rebuild of summary is restricted to ONLY the same instances as full-rebuild for the rest of the report, namely: 1 - page reload, 2 - force refreshusing [refresh] button, 3 - changing to template with different input or parameter files.
+10) manual edits within 'summarystring' spans will update the associated registry 'summarystring' value in real-time (for preservation of manual edits within the summary) and will set the span status to 'dirty'.
+10) any manual text entered between spans in the summary is treated exactly as manual edits elsewhere in the report (stored to registry with uniwue ID, 'dirty' status etc) 
+11) a new text coloring rule will be required for 'summarystring' spans (initially, this can match settings for 'parameter' spans - with the same behaviour for clean/dirty/auto status)
+12) since full rebuilds of the summary no longer occur, the html position of any manual text strings should be preserved within the summary
+11) whenever a parameter summary status changes from 'true' to 'false', a handler will clear the relevnt 'summarystring' from the parameter within the central registry
+
+I am aware this is a detialed query - so please seek clarification where required before continuing.
+
+v6.7 --------------------> 
+
+1. summarystring source priority: option B is correct
+2. summaryorder backwards compatibility: please treat '5' as '5.0'
+3. line breaks: option A is correct
+4. summary span wrapper: for my purposes, the summary as a whole does not require a wrapper - option B is sufficient
+5. granular update scope: 
+    - interesting question. I think when checkbox is unticked, we have to retain the span, but with empty value, in order to mainting html positioning of spans. if checkbox isre-ticked, then the existing span is re-populated. This ensures robustness in positioning, and as long as empty spans don't add spaces or line-breaks to the text, the theoretical presence of mulitple empty spans shouldn't cause any issues. 
+    - we may have to have some parsing logic to identify the correct position to add new spans, let's try the following logic:
+        - new summarystring has summaryOrder 3.2 (X = 3,Y = 2)
+            - search for other instances of summarystrings with summaryOrder 3:
+                - if present: insert new summarystring into same line as first instance of summarystring with summaryOrder X=3
+                    - for line order: insert as second span on that line (as y = 2)
+                - if no other summaryOrder 3.x strings: search for first instance of summaryorder 2.x and insert in new line following; iterate to line after 1.x if not present etc...
+6. manual spans: persist in there current location until manually deleted
+7. empty lines and spacing: I actually think that line breaks and spaces should be stored within spans to preserve formatting robustly - perhaps when building spans, a trialing space should be inserted at the end of the string by defualt; a span with '^' at the start should instruct the removal of the trailing space from the previous span. line breaks between different summaryOrder X-levels should be inserted within 'fixed text' spans at the start of a new summaryOrder line - this allows the user to delete the contents and clear the line break if required, and add back a line break by making a manual edit with a line break if desired. 
+
+Are all of the above repsonses workable?
+
+v6.7 --------------------> 
+
+thank you this sounds good, please proceed. 
+just a couple of small points of clarification: 
+1. I think we should insert {{Summary}} as an empty (but identifiable) span at the very start of the summary, to ensure we know where to locate new summarystring statements if they have a lower X-level than all other statements. 
+2. initial render of summary spans: the initial data-status should be read from the existing status for the linked parameter entry in the registry (which could be 'clean', 'auto' OR 'dirty' - if the parameter string itself was edited manually)
+3. phase 5, granular update handlers, dropdown changed: update summarystring to reflect new value (regardless of clean/dirty status - should overwrite manual changes to the summarystring)
+4. right-click contextual - this should be enabled for summarystring spans, with the same behaviour as it already has for 'fixed text' and 'manual edit' spans
+
+v6.7 --------------------> 1
+
+thank you. a core requirement for v6 was a registry-first approach to data flows. Can I confirm that these latest changes preserve that concept, without adding secondary data stores or aliases? If so, please could you trace back through the changes to ensure a registry-first approach with any getting/setting, and that all changes to values are made globally available and cascade existing elements. 
+
+v6.7 --------------------> 2
+
+ok thank you. I've just loaded the files and there is no text at all after the 'Summary:' fixed text within the contenteditable. I notice from the console log: v6.7] Summary anchor not found script-report.js:1170:21
+[v6.7] Report textarea updated (full render) script-report.js:805:17
+[v6.5 Form] ContentEditable handlers attached script-form.js:40:17
+[v6.5 Form] Form built
+
+v6.7 --------------------> 2
+
+bingo! it works. great!
+
+Some unexpected behaviour:
+1. select parameter value that enables summaryExclude for spValves - spValves statement removed as expected, but blank line left where spValves statement was, next summary statement on line below (unexpected, no blank line should be left)
+2. place cursor at end of summary line, press enter key, start typing - span is yellow ('fixed text') rather than the expected red ('manual edit')
+3. place cursor at end of final summary statement, press enter key > cursor move to next line (expected), previous summary line turns red for 'manual edit' (unexpected) > start typing: cursor returns to previous line and appends text input to previous summary line
+
+All of these look to be issues with line breaks within spans and how they are parsed?
+
+v6.7 --------------------> 2
+
+
+bugs:
+- switch to pEff template: auto lvh doesn't work (but auto diastology does)
+- switch to stress, switch back - modal2 button doesn't restore
+
+
+
+To Do:
+(deferred) - measurements-within-parameters
+    - can we get measurements-within-parameters to be treated as measurements on report? 
+    - can we get measurement units on report to be treated as 'fixed text' and seperate from values so that measurement values can be updated properly in the report (edge scenario, but would avoid confusion...)
+
+
+
+
+

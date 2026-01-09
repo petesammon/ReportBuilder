@@ -1,0 +1,57 @@
+US Trans-Thoracic Echocardiogram:
+The report is compiled in accordance to a locally agreed combination of BSE Guidelines 2024 and ASE/EACVI guidelines 2016/2025. Unless specified in the report conclusion, it is the sole responsibility of the referring physician to act upon the findings of this study. In specific cases where delay may result in patient harm, sonographers will refer for urgent clinical support.
+
+Performed on: GE E95
+Operator: Pete Sammon (Echocardiographer)
+Technical Quality: Fair
+ECG: Sinus rhythm, 
+Height: 200.0cm, Weight: 250.2kg, BSA: 3.55m2
+BP: 300/100mmHg
+
+Left Ventricle:
+Normal left ventricular systolic function.
+Normal wall thickness. Normal LV geometry.
+No left ventricular dilatation.
+Normal diastolic function for age.
+
+IVS = 9.5cm, PWd = 9.7cm, LVIDd = 9.6cm, LVIDs = 9.8cm
+LV Mass = 500g (Indexed = 250g/m2), RWT = 2
+Peak E velocity = 100cm/s, E DecT = 283ms, Peak A velocity = 100cm/s, E/A ratio = 1.0
+Septal E prime = 4.5cm/s, Lateral E prime = 15.4cm/s, E/E prime (averaged) = 8.4
+Septal S prime = 7.3cm/s, Lateral S prime = 5.2cm/s
+Auto EF = 25.1%
+Global Averaged Longitudinal Strain = -4.2%
+
+Mitral Valve:
+Thin and mobile leaflets, opens well. No mitral stenosis. Trivial mitral regurgitation.
+
+Left Atrium:
+Not dilated. LA volume (Biplane) = 79.4ml, Indexed = 39.9ml/m2 (Normal = <34ml/m2, Borderline dilated = 34-38ml/m2, Dilated = >38ml/m2)
+
+Aortic Valve:
+Trileaflet, thin and mobile cusps, opens well. No aortic stenosis. No aortic regurgitation.
+AV Vmax = 1.2m/s
+
+Aorta:
+Not dilated.
+(Measured leading edge to leading edge, at end diastole as per departmental protocol)
+Sinus of Valsalva = 36.8mm, Indexed to height = 21.1mm/m (Normal range, male: 14.8-23.2mm/m) (Normal range, female: 14.1-22.1mm/m)
+Sinotubular Junction = 30.7mm, Indexed to height = 17.6mm/m (Normal range, male: 12.6-19.8mm/m) (Normal range, female: 12.2-19.4mm/m)
+Ascending aorta = 35.0mm, Indexed to height = 20.0mm/m (Normal range, male: 12.6-21.4mm/m) (Normal range, female: 12.3-21.1mm/m)
+No coarctation.
+
+Right Ventricle:
+Normal radial and longitudinal function.
+No right ventricular dilatation. No right ventricular hypertrophy.
+RVD1 = 5.1cm
+TAPSE = 0.7cm, S prime = 4cm/s
+
+Right atrium:
+Not dilated. RA area = 16cm2, Indexed = 8.3cm2/m2
+
+Tricuspid Valve:
+
+Summary:
+Normal left ventricular systolic function, normal wall thickness, no dilatation. Estimated ejection fraction 27.4%
+Normal right ventricular function, normal size.
+No significant valvular abnormalities.

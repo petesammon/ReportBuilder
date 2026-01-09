@@ -1,0 +1,52 @@
+/* ============================================================================
+   v6.7 SUMMARYSTRING SPAN ADDITIONS
+   Add these to style-report.css after the existing span color classes
+   ============================================================================ */
+
+/* Clean summarystring - Green (matches parameters since linked) */
+.span-clean-summarystring,
+[data-type="summarystring"][data-status="clean"] {
+    background-color: rgba(0, 185, 0, 0.08);
+}
+
+.span-clean-summarystring:hover,
+[data-type="summarystring"][data-status="clean"]:hover {
+    background-color: rgba(0, 185, 0, 0.15);
+}
+
+/* Summary anchor - invisible placeholder */
+.summary-anchor,
+[data-type="summary-anchor"] {
+    display: inline;
+    background: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* Summary line break spans - match fixed text styling */
+.summary-linebreak,
+[data-type="summary-linebreak"] {
+    background-color: rgba(255, 200, 0, 0.08);
+}
+
+.summary-linebreak:hover,
+[data-type="summary-linebreak"]:hover {
+    background-color: rgba(255, 200, 0, 0.15);
+}
+
+/* Ensure summarystring dirty/auto states use standard colors */
+[data-type="summarystring"][data-status="dirty"] {
+    background-color: rgba(255, 50, 50, 0.08);
+}
+
+[data-type="summarystring"][data-status="dirty"]:hover {
+    background-color: rgba(255, 50, 50, 0.15);
+}
+
+[data-type="summarystring"][data-status="auto"] {
+    background-color: rgba(180, 0, 80, 0.12);
+}
+
+[data-type="summarystring"][data-status="auto"]:hover {
+    background-color: rgba(180, 0, 80, 0.20);
+}
