@@ -5,7 +5,7 @@ const reportConfigs = [
         manual: "opt-m-manual.js",
         measurements: "opt-m-table.js",
         parameters: "opt-r-parameters.js",
-        options: ["opt-r-modals.js", "opt-r-modals-2.js"],  // Now an array - can add more files
+        options: ["opt-r-modals.js", "opt-r-modals-views.js", "opt-r-modals-details.js"], 
         report: "opt-r-template.js",
         algorithms: ["opt-a-diastology.js", "opt-a-lvh.js"],
         default: true,
@@ -16,9 +16,9 @@ const reportConfigs = [
         manual: "opt-m-manual.js",
         measurements: "opt-m-table.js",
         parameters: "opt-r-parameters.js",
-        options: ["opt-r-modals.js"],  // Now an array
+        options: ["opt-r-modals.js", "opt-r-modals-views.js", "opt-r-modals-details.js"],
         report: "opt-r-template-peff.js",
-        algorithms: ["opt-a-diastology.js"],
+        algorithms: ["opt-a-diastology.js", "opt-a-lvh.js"],
     },
     {
         id: "stress",
@@ -26,8 +26,8 @@ const reportConfigs = [
         manual: "config-stress/opt-m-stress-manual.js",
         measurements: "config-stress/opt-m-stress-table.js",
         parameters: "config-stress/opt-r-stress-parameters.js",
-        options: ["config-stress/opt-r-stress-modals.js"],  // Now an array
+        options: ["config-stress/opt-r-stress-modals.js"],
         report: "config-stress/opt-r-stress-template.js",
-        algorithms: [], // No algorithms for stress template
+        algorithms: [],
     },
 ];

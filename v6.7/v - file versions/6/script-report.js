@@ -2132,7 +2132,6 @@ jQuery(document).ready(function () {
                     partialOptionsLoaded++;
                     if (partialOptionsLoaded === partialOptionsArray.length) {
                         options = partialLoadedSections;
-                        window.options = options; // Sync window.options with merged array
                         
                         // Sort optionsFiles by fileIndex to maintain order
                         optionsFiles.sort((a, b) => a.fileIndex - b.fileIndex);
@@ -2310,7 +2309,6 @@ jQuery(document).ready(function () {
                     if (optionsFilesLoaded === optionsFilesArray.length) {
                         // All options files loaded - merge into single options array
                         options = loadedOptionsSections;
-                        window.options = options; // Sync window.options with merged array
                         
                         // Sort optionsFiles by fileIndex to maintain order
                         optionsFiles.sort((a, b) => a.fileIndex - b.fileIndex);

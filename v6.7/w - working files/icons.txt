@@ -1,0 +1,53 @@
+// Ultrasound sector
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3 L4 19"></path>
+        <path d="M12 3 L20 19"></path>
+        <path d="M4 19 Q12 23 20 19"></path>
+        <path d="M12 3 L12 17" opacity="0.5"></path>
+        <path d="M12 3 L8 18" opacity="0.5"></path>
+        <path d="M12 3 L16 18" opacity="0.5"></path>
+    </svg>
+
+// Stack
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+        <path d="M2 17l10 5 10-5"></path>
+        <path d="M2 12l10 5 10-5"></path>
+    </svg>
+
+// Lightbulb
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18h6"></path>
+        <path d="M10 22h4"></path>
+        <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7z"></path>
+    </svg>
+
+// Refresh
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 2v6h-6"></path>
+        <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+        <path d="M3 22v-6h6"></path>
+        <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
+    </svg>
+
+// Lightning Bolt
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" stroke-width="2">
+        <path d="M15 1 L8 12 L11 12 L8 23 L16 12 L13 12 Z"></path>
+    </svg>
+    
+// Eye
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <path fill-rule="evenodd" d="M12 5 C6 5 1 12 1 12 C1 12 6 19 12 19 C18 19 23 12 23 12 C23 12 18 5 12 5 Z M12 16 C9.8 16 8 14.2 8 12 C8 9.8 9.8 8 12 8 C14.2 8 16 9.8 16 12 C16 14.2 14.2 16 12 16 Z" stroke-width="2"></path>
+    </svg>  
+    
+// Magnifying Glass
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="10" cy="10" r="7"></circle>
+        <path d="M22 22 L15 15"></path>
+    </svg>
+    
+// Pen Edit
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4 L4 4 C2.9 4 2 4.9 2 6 L2 20 C2 21.1 2.9 22 4 22 L18 22 C19.1 22 20 21.1 20 20 L20 13"></path>
+        <path d="M18.5 2.5 C19.3 1.7 20.7 1.7 21.5 2.5 C22.3 3.3 22.3 4.7 21.5 5.5 L12 15 L8 16 L9 12 Z"></path>
+    </svg>

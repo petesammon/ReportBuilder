@@ -67,6 +67,7 @@ ECG: {{pRhythm}}, {{HR}}
 {{pCoarc}}
 
 <!--button:mRV-->Right Ventricle:
+<!--if:pRVComments-->{{pRVComments}}<!--/if-->
 {{pRVF}}
 {{pRVD}} {{pRVH}}
 {{pRVMeasurements}}

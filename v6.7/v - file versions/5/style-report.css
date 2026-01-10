@@ -1,5 +1,5 @@
-/* EchoTools v6.7 - Style Report CSS */
-/* Updated with 4-column modal layout, edit button styling, calculated measurement styling, icon buttons, and dynamic options file buttons */
+/* EchoTools v6.5 - Style Report CSS */
+/* Updated with 4-column modal layout, edit button styling, calculated measurement styling, and icon buttons */
 
 :root {
     --pico-font-size: 100%;
@@ -10,26 +10,50 @@
        TEXT COLOR VARIABLES - Span highlighting for report content
        ======================================================================== */
     
-    --textcolor-measurement: rgba(0, 100, 255, 0);
-    --textcolor-measurement-hover: rgba(0, 0, 0, 0.10);
-    --textcolor-measurement-subtle: rgba(0, 100, 255, 0);
-    --textcolor-parameter: rgba(0, 185, 0, 0);
-    --textcolor-parameter-hover: rgba(0, 0, 0, 0.10);
-    --textcolor-fixed: rgba(255, 200, 0, 0);
-    --textcolor-fixed-hover: rgba(0, 0, 0, 0.10);
-    --textcolor-dirty: rgba(50, 89, 255, 0.08);
-    --textcolor-dirty-hover: rgba(50, 89, 255, 0.2);
-    --textcolor-auto: rgba(118, 191, 68, 0.2);
-    --textcolor-auto-hover: rgba(118, 191, 68, 0.4);
+    /* Measurement (Blue) */
+    --textcolor-measurement: rgba(0, 100, 255, 0.08);
+    --textcolor-measurement-hover: rgba(0, 100, 255, 0.15);
+    --textcolor-measurement-subtle: rgba(0, 100, 255, 0.03);
+    
+    /* Parameter (Green) */
+    --textcolor-parameter: rgba(0, 185, 0, 0.08);
+    --textcolor-parameter-hover: rgba(0, 185, 0, 0.15);
+    
+    /* Fixed Text (Yellow) */
+    --textcolor-fixed: rgba(255, 200, 0, 0.08);
+    --textcolor-fixed-hover: rgba(255, 200, 0, 0.15);
+    
+    /* Dirty/Manual (Red) */
+    --textcolor-dirty: rgba(255, 50, 50, 0.08);
+    --textcolor-dirty-hover: rgba(255, 50, 50, 0.15);
+    
+    /* Auto/Algorithm (Maroon) */
+    --textcolor-auto: rgba(180, 0, 80, 0.12);
+    --textcolor-auto-hover: rgba(180, 0, 80, 0.20);
+    
+    /* Unknown (Grey) */
     --textcolor-unknown: rgba(50, 50, 50, 0.9);
     --textcolor-unknown-hover: rgba(30, 30, 30, 0.95);
-    --textcolor-summarystring: rgba(0, 185, 0, 0);
-    --textcolor-summarystring-hover: rgba(0, 0, 0, 0.10);
-    --textcolor-summarylinebreak: rgba(255, 200, 0, 0);
-    --textcolor-summarylinebreak-hover: rgba(255, 200, 0, 0);
     
-    --textcolor-calculated: rgba(59, 130, 246, 0);
-    --textcolor-calculated-focus: rgba(59, 130, 246, 0);
+    /* Summarystring - Clean (Green, same as parameters by default) */
+    --textcolor-summarystring: rgba(0, 185, 0, 0.08);
+    --textcolor-summarystring-hover: rgba(0, 185, 0, 0.15);
+    
+    /* Summarystring - Dirty (Red) */
+    --textcolor-summarystring-dirty: rgba(255, 50, 50, 0.08);
+    --textcolor-summarystring-dirty-hover: rgba(255, 50, 50, 0.15);
+    
+    /* Summarystring - Auto (Maroon) */
+    --textcolor-summarystring-auto: rgba(180, 0, 80, 0.12);
+    --textcolor-summarystring-auto-hover: rgba(180, 0, 80, 0.20);
+    
+    /* Summary Linebreak (Yellow, same as fixed by default) */
+    --textcolor-summarylinebreak: rgba(255, 200, 0, 0.08);
+    --textcolor-summarylinebreak-hover: rgba(255, 200, 0, 0.15);
+    
+    /* Calculated Inputs (Blue - different shade) */
+    --textcolor-calculated: rgba(59, 130, 246, 0.08);
+    --textcolor-calculated-focus: rgba(59, 130, 246, 0.12);
     --textcolor-calculated-border: #3b82f6;
     --textcolor-calculated-shadow: rgba(59, 130, 246, 0.15);
 }
@@ -264,13 +288,6 @@ input.measurement-input.full-width[type="text"] {
 
 .template-selector-group {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-/* Container for dynamic options file buttons */
-#options-file-buttons {
-    display: inline-flex;
     align-items: center;
     gap: 0.5rem;
 }
@@ -1065,19 +1082,19 @@ select {
 
 /* Ensure summarystring dirty/auto states use standard colors */
 [data-type="summarystring"][data-status="dirty"] {
-    background-color: var(--textcolor-dirty);
+    background-color: var(--textcolor-summarystring-dirty);
 }
 
 [data-type="summarystring"][data-status="dirty"]:hover {
-    background-color: var(--textcolor-dirty-hover);
+    background-color: var(--textcolor-summarystring-dirty-hover);
 }
 
 [data-type="summarystring"][data-status="auto"] {
-    background-color: var(--textcolor-auto);
+    background-color: var(--textcolor-summarystring-auto);
 }
 
 [data-type="summarystring"][data-status="auto"]:hover {
-    background-color: var(--textcolor-auto-hover);
+    background-color: var(--textcolor-summarystring-auto-hover);
 }
 
 

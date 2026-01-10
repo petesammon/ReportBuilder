@@ -53,14 +53,14 @@ BP: {{BP}}`},
         summaryOrder: 1,
     },
     pLVComments: {
-        title: "Other comments",
+        title: "LV Comments",
         options: "customtext",
         enableSummary: true,
         summaryOnChange: false,
         summaryOrder: 2,
     },
     pLVSF: {
-        title: "Systolic Function",
+        title: "LV Systolic Function",
         options: [
             { label: "Normal systolic function", title: "Normal left ventricular systolic function.", summarytext: "Normal left ventricular systolic function,", default: true },
             { label: "Borderline low systolic function", title: "Borderline low left ventricular systolic function.", summarytext: "Borderline low left ventricular systolic function,"},
@@ -74,7 +74,7 @@ BP: {{BP}}`},
         summaryOrder: 3.0,
     },
     pLVH: {
-        title: "LV Geometry",
+        title: "LV Wall Thickness",
         options: [
             { label: "Normal wall thickness", title: "Normal wall thickness.", summarytext: "normal wall thickness,", default: true },
             { label: "Increased wall thickness", title: "Incresed wall thickness.", summarytext: "increased wall thickness,"},
@@ -97,7 +97,7 @@ BP: {{BP}}`},
         summaryOrder: 3.2,
     },
     pLVD: {
-        title: "Dilatation",
+        title: "LV Dilatation",
         options: [
             { label: "Not dilated", title: "No left ventricular dilatation.", summarytext: "no dilatation.", default: true },
             { label: "Mild dilatation", title: "Mild left ventricular dilatation.", summarytext: "mild dilatation." },
@@ -109,7 +109,7 @@ BP: {{BP}}`},
         summaryOrder: 3.3,
     },
     pDiastology: {
-        title: "Diastolic function",
+        title: "LV Diastolic function",
         options: [
             { label: "Normal diastolic function for age", title: "Normal diastolic function for age.", default: true },
             { label: "Impaired diastolic function, normal filling pressures.", title: "Impaired diastolic function, normal filling pressures." },
@@ -176,7 +176,7 @@ Global Averaged Longitudinal Strain = {{GLS}}`},
         ],
     },
     pMV: {
-        title: "Leaflets",
+        title: "Mitral Leaflets",
         options: [
             { label: "Normal leaflets", title: "Thin and mobile leaflets, opens well.", default: true },
             { label: "Annular thickening, thin and mobile leaflets", title: "Mitral annular thickening, leaflets remain thin and mobile, opens well." },
@@ -193,7 +193,7 @@ Global Averaged Longitudinal Strain = {{GLS}}`},
         summaryExclude: ["spValves"],
     },
     pMS: {
-        title: "Stenosis",
+        title: "Mitral Stenosis",
         options: [
             { label: "No stenosis", title: "No mitral stenosis.", default: true },
             { label: "Mild stenosis", title: "Mild mitral stenosis." },
@@ -211,7 +211,7 @@ Global Averaged Longitudinal Strain = {{GLS}}`},
         summaryExclude: ["spValves"],
     },
     pMR: {
-        title: "Regurgitation",
+        title: "Mitral Regurgitation",
         options: [
             { label: "Trivial regurgitation", title: "Trivial mitral regurgitation.", default: true },
             { label: "Mild regurgitation", title: "Mild mitral regurgitation." },
@@ -238,7 +238,7 @@ Global Averaged Longitudinal Strain = {{GLS}}`},
         summaryExclude: ["spValves"],
     },
     pMVMeasurements: {
-        title: "Measurement Template",
+        title: "MV Measurements",
         options: [
             { label: "(none)", title: "", default: true },
             { label: "Inflow", title: `MV Inflow: Vmax = {{MVVmax}}, MeanPG = {{MVMeanPG}}, VTI = {{MVVTI}}`},
@@ -248,7 +248,7 @@ MR Jet: VC width = {{MRVCD}}, PISAr (Als Vel. of {{MRALSVEL}}) = {{MRPISA}}, VTI
         ],
     },
     pLA: {
-        title: "Size",
+        title: "LA Size",
         options: [
             { label: "Not dilated", title: "Not dilated.", default: true },
             { label: "Borderline dilated", title: "Borderline dilated.", summarytext: "Borderline dilated left atrium."},
@@ -259,7 +259,7 @@ MR Jet: VC width = {{MRVCD}}, PISAr (Als Vel. of {{MRALSVEL}}) = {{MRPISA}}, VTI
         summaryOrder: 20.0,
     },
     pAV: {
-        title: "Leaflets",
+        title: "Aortic Leaflets",
         options: [
             { label: "Trileaflet, normal", title: "Trileaflet, thin and mobile cusps, opens well.", default: true },
             { label: "Trileaflet, thickened and restricted", title: "Trileaflet, thickened cusps with restricted opening."},
@@ -276,7 +276,7 @@ MR Jet: VC width = {{MRVCD}}, PISAr (Als Vel. of {{MRALSVEL}}) = {{MRPISA}}, VTI
         summaryExclude: ["spValves"],
     },
     pAS: {
-        title: "Stenosis",
+        title: "Aortic Stenosis",
         options: [
             { label: "No stenosis", title: "No aortic stenosis.", default: true },
             { label: "Mild stenosis", title: "Mild aortic stenosis." },
@@ -297,7 +297,7 @@ Low-flow/low-gradient aortic stenosis - unable to differentiate between moderate
         summaryExclude: ["spValves"],
     },
     pAR: {
-        title: "Regurgitation",
+        title: "Aortic Regurgitation",
         options: [
             { label: "No regurgitation", title: "No aortic regurgitation.", default: true },
             { label: "Trivial regurgitation", title: "Trivial aortic regurgitation." },
@@ -325,7 +325,7 @@ Low-flow/low-gradient aortic stenosis - unable to differentiate between moderate
         summaryExclude: ["spValves"],
     },
     pAVMeasurements: {
-        title: "Measurement Template",
+        title: "AV Measurements",
         options: [
             { label: "Vmax only (Default)", title: `AV Vmax = {{AVVmax}}`, default: true },
             { label: "Aortic Stenosis", title: `LVOT Diameter = {{LVOTd}}, LV SV = {{LVSV}} (Indexed = {{LVSVI}})
@@ -345,7 +345,7 @@ LV CO = {{LVCO}} (Indexed = {{LVCI}})`},
         ],
     },
     pAorta: {
-        title: "Dilataion",
+        title: "Aortic Diltation",
         options: [
             { label: "Not dilated", title: "Not dilated.", default: true },
             { label: "Dilated root and ascending", title: "Dilated aortic root and proximal ascending aorta."},
@@ -372,7 +372,7 @@ Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, female: 12.
         ],
     },
     pCoarc: {
-        title: "Coarctation",
+        title: "Aortic Coarctation",
         options: [
             { label: "No coarctation", title: "No coarctation.", default: true },
             { label: "Unable to assess - poor views", title: "Unable to assess for coarctation due to poor arch views."},
@@ -384,8 +384,15 @@ Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, female: 12.
         summaryThreshold: ["Coarctation demonstrated"],
         summaryOrder: 31.0,
     },
+    pRVComments: {
+        title: "RV Comments",
+        options: "customtext",
+        enableSummary: true,
+        summaryOnChange: false,
+        summaryOrder: 2,
+    },
     pRVF: {
-        title: "Function",
+        title: "RV Function",
         options: [
             { label: "Normal function", title: "Normal radial and longitudinal function.", summarytext: "Normal right ventricular function,", default: true },
             { label: "Impaired radial function only", title: "Impaired radial function, normal longitudinal function.", summarytext: "Impaired right ventricular function," },
@@ -397,7 +404,7 @@ Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, female: 12.
         summaryOrder: 10.0,
     },      
     pRVD: {
-        title: "Dilatation",
+        title: "RV Dilatation",
         options: [
             { label: "Not dilated", title: "No right ventricular dilatation.", summarytext: "normal size", default: true },
             { label: "Dilated", title: "Dilated right ventricle.", summarytext: "dilated" },
@@ -407,7 +414,7 @@ Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, female: 12.
         summaryOrder: 10.1,
     },
     pRVH: {
-        title: "Hypertrophy",
+        title: "RV Hypertrophy",
         options: [
             { label: "No hypertrophy", title: "No right ventricular hypertrophy.", summarytext: "^.", default: true },
             { label: "Hypertrophied", title: "Hypertrophied right ventricle.", summarytext: "^, hypertrophied." },
@@ -417,7 +424,7 @@ Ascending aorta = {{Ao}}, Indexed to height = {{AoI}} (Normal range, female: 12.
         summaryOrder: 10.2,
     },
     pRVMeasurements: {
-        title: "Measurement Template",
+        title: "RV Measurements",
         options: [
             { label: "Default", title: `RVD1 = {{RVD1}}
 TAPSE = {{TAPSE}}, S prime = {{RVS}}`, default: true },
@@ -429,7 +436,7 @@ TAPSE = {{TAPSE}}, S prime = {{RVS}}, FAC = {{FAC}}`},
         ],
     },
     pRA: {
-        title: "Size",
+        title: "RA Size",
         options: [
             { label: "Not dilated", title: "Not dilated.", default: true },
             { label: "Dilated", title: "Dilated.", summarytext: "Dilated right atrium."  },
@@ -439,7 +446,7 @@ TAPSE = {{TAPSE}}, S prime = {{RVS}}, FAC = {{FAC}}`},
         summaryOrder: 20.1,
     },
     pTV: {
-        title: "Leaflets",
+        title: "Tricuspid Leaflets",
         options: [
             { label: "Normal leaflets", title: "Thin and mobile leaflets, opens well.", default: true },
             { label: "BioTVR", title: "BioTVR in situ, stable.", summarytext: "BioTVR stable." },
@@ -454,7 +461,7 @@ TAPSE = {{TAPSE}}, S prime = {{RVS}}, FAC = {{FAC}}`},
         summaryExclude: ["spValves"],
     },
     pTS: {
-        title: "Stenosis",
+        title: "Tricuspid Stenosis",
         options: [
             { label: "No stenosis", title: "No tricuspid stenosis.", default: true },
             { label: "Mild stenosis", title: "Mild tricuspid stenosis." },
@@ -472,7 +479,7 @@ TAPSE = {{TAPSE}}, S prime = {{RVS}}, FAC = {{FAC}}`},
         summaryExclude: ["spValves"],
     },
     pTR: {
-        title: "Regurgitation",
+        title: "Tricuspid Regurgitation",
         options: [
             { label: "Trivial regurgitation", title: "Trivial tricuspid regurgitation.", default: true },
             { label: "Mild regurgitation", title: "Mild tricuspid regurgitation." },
@@ -506,7 +513,7 @@ TAPSE = {{TAPSE}}, S prime = {{RVS}}, FAC = {{FAC}}`},
         ],
     },
     pTVMeasurements: {
-        title: "Additional Measurements",
+        title: "TV Measurements",
         options: [
             { label: "(none)", title: "", default: true },
             { label: "Inflow", title: `TV Inflow: Vmax = {{TVVmax}}, MeanPG = {{TVMeanPG}}, VTI = {{TVVTI}}`},
@@ -516,7 +523,7 @@ TR Jet: VC width = {{TRVCD}}, PISAr (Als Vel. of {{TRALSVEL}}) = {{TRPISA}}, VTI
         ],
     },
     pPV: {
-        title: "Leaflets",
+        title: "Pulmonary Leaflets",
         options: [
             { label: "Normal leaflets", title: "Thin and mobile cusps where seen.", default: true },
             { label: "PPVI", title: "PPVI in situ, stable.", summarytext: "PPVI stable." },
@@ -531,7 +538,7 @@ TR Jet: VC width = {{TRVCD}}, PISAr (Als Vel. of {{TRALSVEL}}) = {{TRPISA}}, VTI
         summaryExclude: ["spValves"],
     },
     pPS: {
-        title: "Stenosis",
+        title: "Pulmonary Stenosis",
         options: [
             { label: "No stenosis", title: "No pulmonary stenosis.", default: true },
             { label: "Mild stenosis", title: "Mild pulmonary stenosis." },
@@ -549,7 +556,7 @@ TR Jet: VC width = {{TRVCD}}, PISAr (Als Vel. of {{TRALSVEL}}) = {{TRPISA}}, VTI
         summaryExclude: ["spValves"],
     },
     pPR: {
-        title: "Regurgitation",
+        title: "Pulmonary Regurgitation",
         options: [
             { label: "Trivial regurgitation", title: "Trivial pulmonary regurgitation.", default: true },
             { label: "Mild regurgitation", title: "Mild pulmonary regurgitation." },
@@ -576,14 +583,14 @@ TR Jet: VC width = {{TRVCD}}, PISAr (Als Vel. of {{TRALSVEL}}) = {{TRPISA}}, VTI
         summaryExclude: ["spValves"],
     },
     pPVN: {
-        title: "Systolic Notch",
+        title: "PV Systolic Notch",
         options: [
             { label: "No systolic notch", title: "No mid-systolic notch.", default: true },
             { label: "Systolic notch demonstrated", title: "Systolic notch demonstrated." },
         ],
     },
     pPVMeasurements: {
-        title: "Measurement Template",
+        title: "PV Measurements",
         options: [
             { label: "Default", title: `PV Vmax = {{PVVmax}}`, default: true },
             { label: "Full RVOT and PV assessment", title: `RVOT Vmax = {{RVOTVmax}}, RVOT MaxPG = {{RVOTMaxPG}}, RVOT MeanPG = {{RVOTMeanPG}}, RVOT VTI = {{RVOTVTI}}
@@ -665,7 +672,7 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
         summaryOrder: 83,
     },
     pEffSize: {
-        title: "Size",
+        title: "PEff Size",
         options: [
             { label: "Trivial global", title: "Trivial global pericardial effusion.", summarytext: "Trivial global pericardial effusion" , default: true,},
             { label: "Small global", title: "Small global pericardial effusion.", summarytext: "Small global pericardial effusion"},
@@ -678,14 +685,14 @@ PV Vmax = {{PVVmax}}, PV MaxPG = {{PVMaxPG}}, PV MeanPG = {{PVMeanPG}}, PV VTI =
         summaryOrder: 90,
     },
     pEffOther: {
-        title: "Other Comments",
+        title: "PEff Comments",
         options: "customtext",        
         enableSummary: true,
         summaryDefault: false,
         summaryOrder: 90,
     },
     pEffMeasures: {
-        title: "Measurements",
+        title: "PEff Measurements",
         options: [
             { label: "Default", title: `Measures maximally at end-diastole:
 - LV:   {{#if LVPLAX}}{{LVPLAX}} (PLAX), {{/if}}{{#if LVPSAX}}{{LVPSAX}} (PSAX), {{/if}}{{#if LVA4C}}{{LVA4C}} (A4C), {{/if}}{{#if LVSC}}{{LVSC}} (Subcostal){{/if}}
@@ -696,7 +703,7 @@ And at end-systole:
         ],
     },
     pEffCompromise: {
-        title: "Haemodynamic Compromise",
+        title: "PEff Haemodynamic Compromise",
         options: [
             { label: "No haemodynamic compromise", title: "No haemodynamic compromise.", summarytext: "without haemodynamic compromise.", default: true,},
             { label: "Mixed parameters", title: "Mixed parameters for haemodynamic compromise.", summarytext: "with mixed parameters for haemodynamic compromise."},
@@ -708,21 +715,21 @@ And at end-systole:
         summaryOrder: 90,
     },
     pSeptMotion: {
-        title: "Septal Motion",
+        title: "PEff Septal Motion",
         options: [
             { label: "Normal", title: "Normal septal motion.", default: true },
             { label: "Septal bounce", title: "Septal bounce."},
         ],
     },
     pRVCollapse: {
-        title: "RV Collapse",
+        title: "PEff RV Collapse",
         options: [
             { label: "No RV collapse", title: "No mid-diastolic RV collapse.", default: true },
             { label: "RV collapse", title: "Mid-diastolic RV collapse demonstrated."},
         ],
     },
     pRACollapse: {
-        title: "RA Collapse",
+        title: "PEff RA Collapse",
         options: [
             { label: "No RA collapse", title: "No mid-systolic RA collapse.", default: true },
             { label: "RA collapse", title: "Mid-systolic RA collapse demonstrated."},
@@ -730,7 +737,7 @@ And at end-systole:
         ],
     },
     pEffIVC: {
-        title: "IVC",
+        title: "PEff IVC",
         options: [
             { label: "Normal size, collapse >50%", title: "Normal IVC size, collapses >50%.", default: true },
             { label: "Normal size, collapse <50%", title: "Normal size IVC, collapses <50%"},
@@ -741,7 +748,7 @@ And at end-systole:
         ],
     },
     pEffVariation: {
-        title: "Respiratory Variation",
+        title: "PEff Respiratory Variation",
         options: [
             { label: "No significant respiratory variation.", title: "No significant respiratory variation.", default: true },
             { label: "Significant respiratory variation.", title: "Significant respiratory variation."},
@@ -749,7 +756,7 @@ And at end-systole:
         ],
     },
     pEffInflow: {
-        title: "MV/TV Inflow",
+        title: "PEff MV/TV Inflow",
         options: [
             { label: "Default", title: `MV inflow: Vmax = {{EffMVVmax}}, Vmin = {{EffMVVmin}}; Variation = {{EffMVVar}} (normal range <25%)
 TV inflow: Vmax = {{EffTVVmax}}, Vmin = {{EffTVVmin}}; Variation = {{EffTVVar}} (normal range <40%)`, default: true },
@@ -769,7 +776,7 @@ TV inflow: Vmax = {{EffTVVmax}}, Vmin = {{EffTVVmin}}; Variation = {{EffTVVar}} 
         summaryOrder: 3.4,
     },
     spValves: {
-        title: "Valves",
+        title: "Summary Valve Statement",
         options: [
             { label: "Normal valves", title: "No significant valvular abnormalities.", default: true },
         ],

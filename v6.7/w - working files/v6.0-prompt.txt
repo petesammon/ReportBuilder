@@ -86,7 +86,7 @@ ok thank you. I've just loaded the files and there is no text at all after the '
 [v6.5 Form] ContentEditable handlers attached script-form.js:40:17
 [v6.5 Form] Form built
 
-v6.7 --------------------> 2
+v6.7 --------------------> 3
 
 bingo! it works. great!
 
@@ -97,12 +97,47 @@ Some unexpected behaviour:
 
 All of these look to be issues with line breaks within spans and how they are parsed?
 
-v6.7 --------------------> 2
+v6.7 --------------------> 4
+
+hi claude. can you help me make this css easier to read/edit for text coloring rules? I would like a list of color variables at the top of the document with the style: 
+--textcolor-measurement: rgba(0, 100, 255, 0.08)
+--textcolor-measurement-hover: rgba(0, 100, 255, 0.15)
+...etc (for all similar color attributes, with style classes updated accordingly to link to --textcolor-* strings)
+
+v6.7 --------------------> 5
+
+hi claude, here are my current v6.7 working files - we recently moved to supporting multiple 'options' files within confir-report.js - but we need to refine how these are managed/interacted with on the page. rules should be as follows:
+- each 'options' file creates its own button at the top of the page, between the template dropdown, and the [auto] button if present (the [reset] button if the [auto] button isn't present)
+- the existing html includes a defualt fixed button with an 'eye' icon - but this should be removed and replaced with the required code to create dynamic button insertion.
+- each 'options' file includes an icon string at the top of the file (via window.optionsFileMeta) with the icon to be inserted within the button to access that 'options' file
+- navigation within modals only in the same 'options' file should remain as it is currently implemented
+- using inline text button marker to access modals should remain as it is
+- the only change should be creating dynamic insertion of 'options' file buttons as described
+- there is no maximum number of buttons - each options file should be represented by a new button (I will review if there is ever a situation where this becomes a problem)
+
+- in addition, I would like the 'pen' symbol on the inline-text [edit] buttons to be replaced with the following icon: 
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 4 L4 4 C2.9 4 2 4.9 2 6 L2 20 C2 21.1 2.9 22 4 22 L18 22 C19.1 22 20 21.1 20 20 L20 13"></path>
+    <path d="M18.5 2.5 C19.3 1.7 20.7 1.7 21.5 2.5 C22.3 3.3 22.3 4.7 21.5 5.5 L12 15 L8 16 L9 12 Z"></path>
+</svg>
+
+v6.7 --------------------> 6
+
+great. Bug: when I switch templates (from Normal BHI TTE to Normal BHI + PEff), then switch back - all of the inline edit buttons are missing! Can you investigate why this might be happening?
+
+v6.7 --------------------> 7
+
+ok great, and another bug - when I switch from Normal BHI TTE to Normal BHI + PEff and then click the [Auto] button - the diastology algortihm runs as expected, but the LVH algorithm doesn't seem to have any visible output - can you identify why? I've uploaded the relevant template file
+
 
 
 bugs:
-- switch to pEff template: auto lvh doesn't work (but auto diastology does)
-- switch to stress, switch back - modal2 button doesn't restore
+- modalKeys links to measurement table doens't work on secondary modal flows
+
+
+updates:
+- automaticnumbering of summary lines... (for stress particularly)
+
 
 
 
@@ -110,6 +145,7 @@ To Do:
 (deferred) - measurements-within-parameters
     - can we get measurements-within-parameters to be treated as measurements on report? 
     - can we get measurement units on report to be treated as 'fixed text' and seperate from values so that measurement values can be updated properly in the report (edge scenario, but would avoid confusion...)
+
 
 
 
